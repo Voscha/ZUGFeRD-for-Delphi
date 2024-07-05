@@ -574,16 +574,12 @@ type
     /// <param name="currency">Curency of the allowance</param>
     /// <param name="actualAmount">Actual allowance charge amount</param>
     /// <param name="reason">Reason for the allowance</param>
-    /// <param name="reasonCodeCharge"></param>
-    /// <param name="reasonCodeAllowance"></param>
     /// <param name="taxTypeCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxCategoryCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxPercent">VAT rate for the allowance</param>
     procedure AddTradeAllowanceCharge(const isDiscount: Boolean;
              const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes;
              const actualAmount: Currency; const reason: string;
-             const reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
-             const reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes;
              const taxTypeCode: TZUGFeRDTaxTypes;
              const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
              const taxPercent: Currency); overload;
@@ -821,6 +817,10 @@ begin
   FDebitorBankAccounts           := TObjectList<TZUGFeRDBankAccount>.Create;
   FPaymentMeans                  := nil;//TZUGFeRDPaymentMeans.Create;
   FSellerOrderReferencedDocument := nil;//TZUGFeRDSellerOrderReferencedDocument.Create;
+
+  //Default values:
+  FProfile := TZUGFeRDProfile.Unknown;
+  FType := TZUGFeRDInvoiceType.Invoice;
 end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
@@ -1139,6 +1139,10 @@ procedure TZUGFeRDInvoiceDescriptor.SetBuyer(const name, postcode, city, street:
   globalID: TZUGFeRDGlobalID = nil; const receiver: string = '';
   legalOrganization: TZUGFeRDLegalOrganization = nil);
 begin
+  if Assigned(FBuyer) then
+    FBuyer.Free;
+  FBuyer := TZUGFeRDParty.Create;
+
   FBuyer.ID.ID := id;
   FBuyer.ID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiers.Unknown;
   FBuyer.Name := name;
@@ -1158,6 +1162,9 @@ procedure TZUGFeRDInvoiceDescriptor.SetSeller(const name, postcode, city, street
   globalID: TZUGFeRDGlobalID = nil;
   legalOrganization: TZUGFeRDLegalOrganization = nil);
 begin
+  if Assigned(FSeller) then
+    FSeller.Free;
+  FSeller := TZUGFeRDParty.Create;
   FSeller.ID.ID := id;
   FSeller.ID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiers.Unknown;
   FSeller.Name := name;
@@ -1174,6 +1181,10 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetSellerContact(const name: string = ''; const orgunit: string = '';
   const emailAddress: string = ''; const phoneno: string = ''; const faxno: string = '');
 begin
+  if Assigned(FSellerContact) then
+    FSellerContact.Free;
+  FSellerContact := TZUGFeRDContact.Create;
+
   FSellerContact.Name := name;
   FSellerContact.OrgUnit := orgunit;
   FSellerContact.EmailAddress := emailAddress;
@@ -1184,6 +1195,10 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetBuyerContact(const name: string; const orgunit: string = '';
   const emailAddress: string = ''; const phoneno: string = ''; const faxno: string = '');
 begin
+  if Assigned(FBuyerContact) then
+    FBuyerContact.Free;
+  FBuyerContact := TZUGFeRDContact.Create;
+
   FBuyerContact.Name := name;
   FBuyerContact.OrgUnit := orgunit;
   FBuyerContact.EmailAddress := emailAddress;
@@ -1193,6 +1208,9 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetSpecifiedProcuringProject(const id, name: string);
 begin
+  if Assigned(FSpecifiedProcuringProject) then
+    FSpecifiedProcuringProject.Free;
+  FSpecifiedProcuringProject := TZUGFeRDSpecifiedProcuringProject.Create;
   FSpecifiedProcuringProject.ID := id;
   FSpecifiedProcuringProject.Name := name;
 end;
@@ -1248,6 +1266,10 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: TDateTime = 0);
 begin
+  if Assigned(FDeliveryNoteReferencedDocument) then
+    FDeliveryNoteReferencedDocument.Free;
+  FDeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
+
   FDeliveryNoteReferencedDocument.ID := deliveryNoteNo;
   FDeliveryNoteReferencedDocument.IssueDateTime:= deliveryNoteDate;
 end;
@@ -1261,6 +1283,10 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetContractReferencedDocument(const contractNo: string; const contractDate: TDateTime);
 begin
+  if Assigned(FContractReferencedDocument) then
+    FContractReferencedDocument.Free;
+  FContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
+
   FContractReferencedDocument.ID := contractNo; //TODO memeak
   FContractReferencedDocument.IssueDateTime:= contractDate;
 end;
@@ -1282,8 +1308,6 @@ procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(
   const isDiscount: Boolean; const basisAmount: Currency;
   const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency;
   const reason: string;
-  const reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes;
-  const reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes;
   const taxTypeCode: TZUGFeRDTaxTypes;
   const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency);
 var
@@ -1292,8 +1316,6 @@ begin
   tradeAllowanceCharge := TZUGFeRDTradeAllowanceCharge.Create;
   tradeAllowanceCharge.ChargeIndicator := not isDiscount;
   tradeAllowanceCharge.Reason := reason;
-  tradeAllowanceCharge.ReasonCodeAllowance := reasonCodeAllowance;
-  tradeAllowanceCharge.ReasonCodeCharge := reasonCodeCharge;
   tradeAllowanceCharge.BasisAmount := basisAmount;
   tradeAllowanceCharge.ActualAmount := actualAmount;
   tradeAllowanceCharge.Currency := currency;
@@ -1334,6 +1356,9 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
 begin
+  if assigned(FInvoiceReferencedDocument) then
+    FInvoiceReferencedDocument.Free;
+  FInvoiceReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
   FInvoiceReferencedDocument.ID := id;
   FInvoiceReferencedDocument.IssueDateTime:= IssueDateTime;
 end;
@@ -1535,8 +1560,8 @@ begin
   newItem.Description := description;
   newItem.UnitCode := unitCode;
   newItem.UnitQuantity := unitQuantity;
-//  newItem.GrossUnitPrice := grossUnitPrice;
-//  newItem.NetUnitPrice := netUnitPrice;
+  newItem.GrossUnitPrice := grossUnitPrice;
+  newItem.NetUnitPrice := netUnitPrice;
   newItem.BilledQuantity := billedQuantity;
   if lineTotalAmount <> 0.0 then
     newItem.LineTotalAmount:= LineTotalAmount;
