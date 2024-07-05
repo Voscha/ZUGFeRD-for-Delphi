@@ -25,6 +25,7 @@ uses
   ,System.Variants,System.IOUtils,System.Win.COMObj
   ,System.NetEncoding
   ,Generics.Defaults
+  ,Generics.Collections
   ;
 
 type
@@ -33,6 +34,8 @@ type
   public
     class function CreateUuid : String;
     class function GetDataAsBase64(_Stream : TStream) : String;
+    class function FindFirstMatchingItem<T:class>(List: TObjectList<T>; Predicate: TFunc<T, Boolean>): T;
+    class function Any<T:class>(const List: TObjectList<T>; Predicate: TFunc<T, Boolean>): Boolean;
   end;
 
   IZUGFeRDPdfHelper = interface
@@ -443,11 +446,40 @@ end;
 
 { TZUGFeRDHelper }
 
+class function TZUGFeRDHelper.Any<T>(const List: TObjectList<T>;
+  Predicate: TFunc<T, Boolean>): Boolean;
+var
+  Item: T;
+begin
+  Result := False;
+  for Item in List do
+  begin
+    if Predicate(Item) then
+    begin
+      Result := True;
+      Break;
+    end;
+  end;
+end;
+
 class function TZUGFeRDHelper.CreateUuid: String;
 begin
   Result := TGUID.NewGuid.ToString;
   Delete(Result,1,1);
   Delete(Result,Length(Result),1);
+end;
+
+class function TZUGFeRDHelper.FindFirstMatchingItem<T>(List: TObjectList<T>;
+  Predicate: TFunc<T, Boolean>): T;
+var
+  Item: T;
+begin
+  for Item in List do
+  begin
+    if Predicate(Item) then
+      Exit(Item);
+  end;
+  Result := nil; // If no match is found
 end;
 
 class function TZUGFeRDHelper.GetDataAsBase64(_Stream: TStream): String;
