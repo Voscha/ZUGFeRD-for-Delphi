@@ -84,6 +84,8 @@ type
 
 implementation
 
+uses intf.ZUGFeRDMimeTypeMapper;
+
 { TZUGFeRDInvoiceDescriptor20Writer }
 
 procedure TZUGFeRDInvoiceDescriptor20Writer.Save(
@@ -265,7 +267,7 @@ begin
           Writer.WriteEndElement(); // !ram:IssueDateTime
       end;
 
-      Writer.WriteElementString('ram:LineID', Format('%d',[tradeLineItem.AssociatedDocument.LineID]));
+      Writer.WriteElementString('ram:LineID', Format('%s',[tradeLineItem.AssociatedDocument.LineID]));
       Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
       Writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
 
@@ -484,10 +486,22 @@ begin
     begin
       Writer.WriteStartElement('ram:AdditionalReferencedDocument');
 
+      Writer.WriteOptionalElementString('ram:Name', document.Name);
+
+      if (document.AttachmentBinaryObject <> nil) then
+      begin
+        Writer.WriteStartElement('ram:AttachmentBinaryObject');
+        Writer.WriteAttributeString('filename', document.Filename);
+        Writer.WriteAttributeString('mimeCode', TZUGFeRDMimeTypeMapper.GetMimeType(document.Filename));
+        Writer.WriteValue(TZUGFeRDHelper.GetDataAsBase64(document.AttachmentBinaryObject));
+        Writer.WriteEndElement(); // !AttachmentBinaryObject()
+      end;
+
       if (document.IssueDateTime.HasValue) then
       begin
         Writer.WriteStartElement('ram:FormattedIssueDateTime');
         Writer.WriteStartElement('qdt:DateTimeString');
+        Writer.WriteAttributeString('format', '102');
         Writer.WriteValue(_formatDate(document.IssueDateTime.Value));
         Writer.WriteEndElement(); // !udt:DateTimeString
         Writer.WriteEndElement(); // !FormattedIssueDateTime
@@ -498,6 +512,7 @@ begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
       end;
 
+      Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
       Writer.WriteElementString('ram:ID', document.ID);
       Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
     end; // !foreach(document)
@@ -781,6 +796,25 @@ begin
     Writer.WriteEndElement();
   end;
 
+(*
+            //  15. SpecifiedTradePaymentTerms (optional)
+            if (this.Descriptor.PaymentTerms != null || !string.IsNullOrWhiteSpace(Descriptor.PaymentMeans?.SEPAMandateReference))
+            {
+                Writer.WriteStartElement("ram:SpecifiedTradePaymentTerms");
+                Writer.WriteOptionalElementString("ram:Description", this.Descriptor.PaymentTerms?.Description);
+                if (this.Descriptor.PaymentTerms?.DueDate.HasValue ?? false)
+                {
+                    Writer.WriteStartElement("ram:DueDateDateTime");
+                    _writeElementWithAttribute(Writer, "udt:DateTimeString", "format", "102", _formatDate(this.Descriptor.PaymentTerms.DueDate.Value));
+                    Writer.WriteEndElement(); // !ram:DueDateDateTime
+                }
+                Writer.WriteOptionalElementString("ram:DirectDebitMandateID", Descriptor.PaymentMeans?.SEPAMandateReference);
+                Writer.WriteEndElement();
+            }
+
+
+*)
+
   //  15. SpecifiedTradePaymentTerms (optional)
   for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
   begin
@@ -792,7 +826,8 @@ begin
       _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
       Writer.WriteEndElement(); // !ram:DueDateDateTime
     end;
-    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
+    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SepaMandateReference);
+(*    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
     //TODO PaymentTerms.PartialPaymentAmount
     //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
     if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) or
@@ -809,6 +844,7 @@ begin
       Writer.WriteEndElement();
       //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
     end;
+*)
     Writer.WriteEndElement();
   end;
 
