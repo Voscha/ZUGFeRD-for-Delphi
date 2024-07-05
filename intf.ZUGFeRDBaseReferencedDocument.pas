@@ -31,6 +31,7 @@ type
     FIssueDateTime: ZUGFeRDNullable<TDateTime>;
   public
     constructor Create;
+    constructor CreateWithParams(const aID: string; aIssueDateTime: TDateTime);
     destructor Destroy; override;
 
     /// <summary>
@@ -51,6 +52,14 @@ implementation
 constructor TZUGFeRDBaseReferencedDocument.Create;
 begin
 //  FIssueDateTime := ZUGFeRDNullable<TDateTime>.Create;
+end;
+
+constructor TZUGFeRDBaseReferencedDocument.CreateWithParams(const aID: string;
+  aIssueDateTime: TDateTime);
+begin
+  inherited Create;
+  FID := aID;
+  FIssueDateTime := aIssueDateTime;
 end;
 
 destructor TZUGFeRDBaseReferencedDocument.Destroy;

@@ -32,8 +32,19 @@ type
   public
     property No: string read FNo write FNo;
     property SchemeID: TZUGFeRDTaxRegistrationSchemeID read FSchemeID write FSchemeID;
+    constructor CreateWithParams(aSchemeID: TZUGFeRDTaxRegistrationSchemeID; aNo: string);
   end;
 
 implementation
+
+{ TZUGFeRDTaxRegistration }
+
+constructor TZUGFeRDTaxRegistration.CreateWithParams(aSchemeID: TZUGFeRDTaxRegistrationSchemeID;
+  aNo: string);
+begin
+  inherited Create;
+  FSchemeID := aSchemeID;
+  FNo := aNo;
+end;
 
 end.

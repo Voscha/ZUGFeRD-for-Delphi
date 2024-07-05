@@ -28,6 +28,7 @@ type
     FID: string;
     FName: string;
   public
+    constructor CreateWithParams(const aID, aName: string);
     /// <summary>
     /// Project reference ID
     /// </summary>
@@ -40,5 +41,14 @@ type
 
 implementation
 
+
+{ TZUGFeRDSpecifiedProcuringProject }
+
+constructor TZUGFeRDSpecifiedProcuringProject.CreateWithParams(const aID, aName: string);
+begin
+  Create;
+  FID := aID;
+  FName := aName;
+end;
 
 end.

@@ -28,6 +28,7 @@ type
     FDescription: string;
     FValue: string;
   public
+    constructor CreateWithParams(const aDescription, aValue: string);
     /// <summary>
     /// Beschriebene Produkteigenschaft
     /// </summary>
@@ -39,5 +40,15 @@ type
   end;
 
 implementation
+
+{ TZUGFeRDApplicableProductCharacteristic }
+
+constructor TZUGFeRDApplicableProductCharacteristic.CreateWithParams(const aDescription,
+  aValue: string);
+begin
+  inherited Create;
+  FDescription := aDescription;
+  FValue := aValue;
+end;
 
 end.

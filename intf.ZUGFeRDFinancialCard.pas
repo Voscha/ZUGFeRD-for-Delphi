@@ -28,6 +28,7 @@ type
     FId: string;
     FCardholderName: string;
   public
+    constructor CreateWithParams(const aId, aCardholderName: string);
     /// <summary>
     ///     Payment card primary account number.
     /// </summary>
@@ -39,5 +40,14 @@ type
   end;
 
 implementation
+
+{ TZUGFeRDFinancialCard }
+
+constructor TZUGFeRDFinancialCard.CreateWithParams(const aId, aCardholderName: string);
+begin
+  inherited Create;
+  FId := aID;
+  FCardholdername := aCardholderName;
+end;
 
 end.
