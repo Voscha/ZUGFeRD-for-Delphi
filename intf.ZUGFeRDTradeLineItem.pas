@@ -87,7 +87,7 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure AddAdditionalReferencedDocument(id: string;
+    procedure AddAdditionalReferencedDocument(aID: string;
       date: TDateTime = 0; code : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
 
     procedure AddReceivableSpecifiedTradeAccountingAccount(
@@ -420,13 +420,13 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(
-  id: string; date: TDateTime = 0;
+  aID: string; date: TDateTime = 0;
   code: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
   with FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1] do
   begin
-    ID := id;
+    ID := aID;
     if date <= 0 then
       IssueDateTime:= Nil
     else
@@ -439,7 +439,7 @@ procedure TZUGFeRDTradeLineItem.SetOrderReferencedDocument(
   orderReferencedId: string; orderReferencedDate: IZUGFeRDNullableParam<TDateTime>);
 begin
   if FBuyerOrderReferencedDocument = nil then
-    FBuyerOrderReferencedDocument := BuyerOrderReferencedDocument.Create;
+    FBuyerOrderReferencedDocument := TZUGFeRDBuyerOrderReferencedDocument.Create;
   with FBuyerOrderReferencedDocument do
   begin
     ID := orderReferencedId;
@@ -451,7 +451,7 @@ procedure TZUGFeRDTradeLineItem.SetContractReferencedDocument(
   contractReferencedId: string; contractReferencedDate: IZUGFeRDNullableParam<TDateTime>);
 begin
   if FContractReferencedDocument = nil then
-    FContractReferencedDocument := ContractReferencedDocument.Create;
+    FContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
   with FContractReferencedDocument do
   begin
     ID := contractReferencedId;
