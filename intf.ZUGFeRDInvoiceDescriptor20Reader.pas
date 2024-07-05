@@ -331,8 +331,6 @@ begin
                                    Result.Currency,
                                    _nodeAsDecimal(nodes[i], './/ram:ActualAmount', 0),
                                    _nodeAsString(nodes[i], './/ram:Reason'),
-                                   TZUGFeRDSpecialServiceDescriptionCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
-                                   TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
                                    TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:TypeCode')),
                                    TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:CategoryCode')),
                                    _nodeAsDecimal(nodes[i], './/ram:CategoryTradeTax/ram:RateApplicablePercent', 0));
@@ -435,6 +433,9 @@ begin
   Result.Postcode := _nodeAsString(node, 'ram:PostalTradeAddress/ram:PostcodeCode');
   Result.City := _nodeAsString(node, 'ram:PostalTradeAddress/ram:CityName');
   Result.Country := TZUGFeRDCountryCodesExtensions.FromString(_nodeAsString(node, 'ram:PostalTradeAddress/ram:CountryID'));
+
+  lineOne := _nodeAsString(node, 'ram:PostalTradeAddress/ram:LineOne');
+  lineTwo := _nodeAsString(node, 'ram:PostalTradeAddress/ram:LineTwo');
 
   if (not lineTwo.IsEmpty) then
   begin

@@ -68,6 +68,7 @@ type
     function GetValidURIs : TArray<string>;
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
+    function _nodeAsAddressParty(baseNode: IXMLDomNode; const xpath: string) : TZUGFeRDParty;
     function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDAdditionalReferencedDocument;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
   public
@@ -492,29 +493,114 @@ begin
 //  Result.ReferenceTypeCode := TZUGFeRDReferenceTypeCodesExtensions.FromString(_nodeAsString(a_oXmlNode, 'ram:ReferenceTypeCode'));
 end;
 
+function TZUGFeRDInvoiceDescriptor22UblReader._nodeAsAddressParty(baseNode: IXMLDomNode;
+  const xpath: string): TZUGFeRDParty;
+var
+  node : IXmlDomNode;
+begin
+  Result := nil;
+  if (baseNode = nil) then
+    exit;
+  node := baseNode.SelectSingleNode(xpath);
+  if (node = nil) then
+    exit;
+
+
+  var retval := TZUGFeRDParty.Create;
+  retval.Street := _nodeAsString(node, 'cbc:StreetName');
+  retval.AddressLine3 := _nodeAsString(node, 'cbc:AdditionalStreetName');
+  retval.City := _nodeAsString(node, 'cbc:CityName');
+  retval.Postcode := _nodeAsString(node, 'cbc:PostalZone');
+  retval.CountrySubdivisionName := _nodeAsString(node, 'cbc:CountrySubentity');
+  retval.Country := TZUGFeRDCountryCodesExtensions.FromString(_nodeAsString(node, 'cac:Country/cbc:IdentificationCode'));
+
+  var addressLine2: string  := _nodeAsString(node, 'cac:AddressLine/cbc:Line');
+  if not string.IsNullOrWhiteSpace(addressLine2) then
+  begin
+    if string.IsNullOrWhiteSpace(retval.AddressLine3) then
+      retval.AddressLine3 := addressLine2
+    else if not string.IsNullOrWhiteSpace(addressLine2) AND string.IsNullOrWhiteSpace(retval.ContactName) then
+      retval.ContactName := addressLine2;
+  end;
+  result := retval;
+end;
+
 function TZUGFeRDInvoiceDescriptor22UblReader._nodeAsLegalOrganization(
   basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
-//var
-//  node : IXmlDomNode;
+var
+  node : IXmlDomNode;
 begin
-//  Result := nil;
-//  if (baseNode = nil) then
-//    exit;
-//  node := baseNode.SelectSingleNode(xpath);
-//  if (node = nil) then
-//    exit;
-//  Result := TZUGFeRDLegalOrganization.CreateWithParams(
-//               TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(_nodeAsString(node, 'ram:ID/@schemeID')),
-//               _nodeAsString(node, 'ram:ID'),
-//               _nodeAsString(node, 'ram:TradingBusinessName'));
+  Result := nil;
+  if (baseNode = nil) then
+    exit;
+  node := baseNode.SelectSingleNode(xpath);
+  if (node = nil) then
+    exit;
+
+  Result := TZUGFeRDLegalOrganization.CreateWithParams(
+               TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(
+               _nodeAsString(node, 'cbc:CompanyID/@schemeID')),
+               _nodeAsString(node, 'cbc:RegistrationName'));
 end;
 
 function TZUGFeRDInvoiceDescriptor22UblReader._nodeAsParty(basenode: IXmlDomNode;
   const xpath: string) : TZUGFeRDParty;
 var
   node : IXmlDomNode;
-  lineOne,lineTwo : String;
 begin
+  Result := nil;
+  if (baseNode = nil) then
+    exit;
+  node := baseNode.SelectSingleNode(xpath);
+  if (node = nil) then
+    exit;
+
+
+  var retval: TZUGFeRDParty := _nodeAsAddressParty(node, xpath + '/cac:PostalAddress');
+  if retval = nil then
+    retval := TZUGFeRDParty.Create;
+
+  var id := TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(
+    _nodeAsString(node, 'cac:PartyIdentification/cbc:ID/@schemeID')),
+    _nodeAsString(node, 'cac:PartyIdentification/cbc:ID'));
+
+  if id.SchemeID = TZUGFeRDGlobalIDSchemeIdentifiers.GLN then
+  begin
+    retval.ID := TZUGFeRDGlobalID.Create;
+    retval.GlobalID := id;
+  end
+  else begin
+    retval.ID := id;
+    retval.GlobalID := TZUGFeRDGlobalID.Create;
+  end;
+
+  retval.Name := _nodeAsString(node, 'cac:PartyName/cbc:Name');
+  retval.SpecifiedLegalOrganization := _nodeAsLegalOrganization(node, 'cac:PartyLegalEntity');
+
+  if string.IsNullOrWhiteSpace(retval.Name) then
+    retval.Name := _nodeAsString(node, 'cac:PartyLegalEntity/cbc:RegistrationName');
+
+
+  if string.IsNullOrWhiteSpace(retval.ContactName) then
+    retval.ContactName := '';
+
+  if string.IsNullOrEmpty(retval.AddressLine3) then
+    retval.AddressLine3 := '';
+
+  if string.IsNullOrEmpty(retval.CountrySubdivisionName) then
+    retval.CountrySubdivisionName := '';
+
+  if (string.IsNullOrEmpty(retval.City)) then
+    retval.City := '';
+
+  if (string.IsNullOrEmpty(retval.Postcode)) then
+    retval.Postcode := '';
+
+  if (string.IsNullOrEmpty(retval.Street)) then
+    retval.Street := '';
+
+  result := retval;
+
 //  Result := nil;
 //  if (baseNode = nil) then
 //    exit;
