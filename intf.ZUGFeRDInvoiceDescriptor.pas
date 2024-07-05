@@ -740,13 +740,13 @@ type
                   const billingPeriodEnd: IZUGFeRDNullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem; overload;
 
     procedure SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';
-                  const identifikationsnummer: string = '');
+                  const identifikationsnummer: string = ''; const mandatsnummer: string = '');
 
     /// <summary>
     ///     Sets up the payment means for SEPA direct debit.
     /// </summary>
     procedure SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string;
-  const information: string = '');
+      const sepaMandateReference: string; const information: string = '');
 
     /// <summary>
     ///     Sets up the payment means for payment via financial card.
@@ -1565,23 +1565,25 @@ begin
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';
-  const identifikationsnummer: string = '');
+  const identifikationsnummer: string = ''; const mandatsnummer: string = '');
 begin
   if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;
 
   Self.PaymentMeans.TypeCode := paymentCode;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := identifikationsnummer;
+  Self.PaymentMeans.SEPAMandateReference := mandatsnummer;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansSepaDirectDebit(const sepaCreditorIdentifier: string;
-  const information: string = '');
+      const sepaMandateReference: string; const information: string = '');
 begin
   if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;
 
   Self.PaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodes.SEPADirectDebit;
   Self.PaymentMeans.Information := information;
   Self.PaymentMeans.SEPACreditorIdentifier := sepaCreditorIdentifier;
+  Self.PaymentMeans.SEPAMandateReference := sepaMandateReference;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeansFinancialCard(const financialCardId: string;
