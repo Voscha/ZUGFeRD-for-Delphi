@@ -20,11 +20,12 @@ unit intf.ZUGFeRDInvoiceDescriptorReader;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.IOUtils, System.DateUtils
+  System.Classes, System.SysUtils, System.IOUtils, System.DateUtils, System.Variants
   ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf,intf.ZUGFeRDMSXML2_TLB
   ,intf.ZUGFeRDInvoiceDescriptor
   ,intf.ZUGFeRDExceptions
-  ,intf.ZUGFeRDXmlHelper;
+  ,intf.ZUGFeRDXmlHelper
+  , intf.ZUGfeRDHelper;
 
 type
   TZUGFeRDInvoiceDescriptorReader = class abstract
@@ -37,14 +38,14 @@ type
     function Load(xmldocument : IXMLDocument): TZUGFeRDInvoiceDescriptor; overload; virtual; abstract;
     function IsReadableByThisReaderVersion(const filename: string): Boolean; overload;
   protected
-    //function _GenerateNamespaceManagerFromNode(node: IXmlDomNode) : XmlNamespaceManager;
     function _nodeAsBool(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Boolean = False): Boolean;
     function _nodeAsString(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: string = ''): string;
     function _nodeAsInt(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Integer = 0): Integer;
     /// <summary>
     ///  reads the value from given xpath and interprets the value as decimal
     /// </summary>
-    function _nodeAsDecimal(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager = nil; } defaultValue: Currency = 0): Currency;
+    function _nodeAsDecimal(node: IXmlDomNode; const xpath: string; defaultValue: Currency = Default(Currency)): ZUGFeRDNullable<Currency>; overload;//Currency;
+    function _nodeAsDecimal(node: IXmlDomNode; const xpath: string; defaultValue: Variant): ZUGFeRDNullable<Currency>; overload;
     /// <summary>
     ///  reads the value from given xpath and interprets the value as date time
     /// </summary>
@@ -149,9 +150,10 @@ begin
 end;
 
 function TZUGFeRDInvoiceDescriptorReader._nodeAsDecimal(node: IXmlDomNode; const xpath: string; {nsmgr: XmlNamespaceManager;}
-  defaultValue: Currency): Currency;
+  defaultValue: Currency): ZUGFeRDNullable<Currency>; //Currency;
 var
   temp: string;
+  Value: Currency;
 begin
   Result := defaultValue;
 
@@ -159,7 +161,10 @@ begin
     exit;
 
   temp := _nodeAsString(node, xpath{, nsmgr});
-  TryStrToCurr(temp, Result, FormatSettings.Invariant);
+  if TryStrToCurr(temp, Value, FormatSettings.Invariant) then
+    Result := Value
+  else
+    Result := defaultValue;
 end;
 
 function TZUGFeRDInvoiceDescriptorReader._nodeAsDouble(node: IXmlDomNode;
@@ -282,6 +287,25 @@ begin
     raise TZUGFeRDUnsupportedException.Create('Invalid length of datetime value');
 end;
 
+function TZUGFeRDInvoiceDescriptorReader._nodeAsDecimal(node: IXmlDomNode; const xpath: string;
+  defaultValue: Variant): ZUGFeRDNullable<Currency>;
+var
+  temp: string;
+  Value: Currency;
+begin
+  if VarIsNull(defaultValue) then
+    Result := ZUGFeRDNullable<Currency>.Create(False)
+  else
+    Result := defaultValue;
+
+  if node = nil then
+    exit;
+
+  temp := _nodeAsString(node, xpath);
+  if TryStrToCurr(temp, Value, FormatSettings.Invariant) then
+    Result := Value;
+end;
+
 function TZUGFeRDInvoiceDescriptorReader.SafeParseDateTime(const year: string = '0';
   const month: string = '0'; const day: string = '0'; const hour: string = '0';
   const minute: string = '0'; const second: string = '0'): TDateTime;
@@ -389,25 +413,6 @@ begin
     break;
   end;
 end;
-
-//function TZUGFeRDInvoiceDescriptorReader._GenerateNamespaceManagerFromNode(
-//  node: IXmlDomNode) : XmlNamespaceManager;
-//begin
-//  XmlNamespaceManager nsmgr = new XmlNamespaceManager(node.OwnerDocument.NameTable);
-//  foreach (XmlAttribute attr in node.Attributes)
-//  {
-//      if (attr.Prefix == "xmlns")
-//      {
-//          nsmgr.AddNamespace(attr.LocalName, attr.Value);
-//      }
-//      else if (attr.Name == "xmlns")
-//      {
-//          nsmgr.AddNamespace(string.Empty, attr.Value);
-//      }
-//  }
-//
-//  return nsmgr;
-//end;
 
 end.
 

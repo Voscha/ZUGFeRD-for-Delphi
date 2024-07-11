@@ -127,6 +127,9 @@ type
     FBillingPeriodEnd: TDateTime;
     FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
     FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
+    procedure SetSellerParty(const Value: TZUGFeRDParty);
+    procedure SetInvoiceeParty(const Value: TZUGFeRDParty);
+    procedure SetBuyerParty(const Value: TZUGFeRDParty);
   public
     /// <summary>
     /// Invoice Number
@@ -195,7 +198,7 @@ type
     /// <summary>
     /// Information about the buyer
     /// </summary>
-    property Buyer: TZUGFeRDParty read FBuyer write FBuyer;
+    property Buyer: TZUGFeRDParty read FBuyer write SetBuyerParty;
 
     /// <summary>
     /// Buyer contact information
@@ -206,7 +209,7 @@ type
 
     property BuyerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FBuyerTaxRegistration;
     property BuyerElectronicAddress : TZUGFeRDElectronicAddress read FBuyerElectronicAddress;
-    property Seller: TZUGFeRDParty read FSeller write FSeller;
+    property Seller: TZUGFeRDParty read FSeller write SetSellerParty;
     property SellerContact: TZUGFeRDContact read FSellerContact write FSellerContact;
     property SellerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FSellerTaxRegistration;
     property SellerElectronicAddress : TZUGFeRDElectronicAddress read FSellerElectronicAddress;
@@ -214,7 +217,7 @@ type
     /// <summary>
     /// This party is optional and only relevant for Extended profile
     /// </summary>
-    property Invoicee: TZUGFeRDParty read FInvoicee write FInvoicee;
+    property Invoicee: TZUGFeRDParty read FInvoicee write SetInvoiceeParty;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
@@ -629,10 +632,17 @@ type
     /// <param name="totalPrepaidAmount">Anzahlungsbetrag</param>
     /// <param name="duePayableAmount">Zahlbetrag</param>
     /// <param name="roundingAmount">RoundingAmount / Rundungsbetrag, profile COMFORT and EXTENDED</param>
-    procedure SetTotals(const aLineTotalAmount: Currency = 0; const aChargeTotalAmount: Currency = 0;
-  const aAllowanceTotalAmount: Currency = 0; const aTaxBasisAmount: Currency = 0; const aTaxTotalAmount: Currency = 0;
-  const aGrandTotalAmount: Currency = 0; const aTotalPrepaidAmount: Currency = 0; const aDuePayableAmount: Currency = 0;
-  const aRoundingAmount: Currency = 0);
+    procedure SetTotals(
+      const aLineTotalAmount: IZUGFeRDNullableParam<Currency> = nil;
+      const aChargeTotalAmount: IZUGFeRDNullableParam<Currency> = nil;
+      const aAllowanceTotalAmount: IZUGFeRDNullableParam<Currency> = nil;
+      const aTaxBasisAmount: IZUGFeRDNullableParam<Currency> = nil;
+      const aTaxTotalAmount: IZUGFeRDNullableParam<Currency> = nil;
+      const aGrandTotalAmount: IZUGFeRDNullableParam<Currency> = nil;
+      const aTotalPrepaidAmount: IZUGFeRDNullableParam<Currency> = nil;
+      const aDuePayableAmount: IZUGFeRDNullableParam<Currency> = nil;
+      const aRoundingAmount: IZUGFeRDNullableParam<Currency> = nil
+    );
 
     /// <summary>
     /// Add information about VAT and apply to the invoice line items for goods and services on the invoice.
@@ -1151,10 +1161,8 @@ begin
   FBuyer.City := city;
   FBuyer.Street := street;
   FBuyer.Country := country;
-  if FBuyer.GlobalID <> nil then FBuyer.GlobalID.Free;
-  FBuyer.GlobalID := globalID; //TODO Mem Leak
-  if FBuyer.SpecifiedLegalOrganization <> nil then FBuyer.SpecifiedLegalOrganization.Free;
-  FBuyer.SpecifiedLegalOrganization := legalOrganization; //TODO Mem Leak
+  FBuyer.GlobalID := globalID;
+  FBuyer.SpecifiedLegalOrganization := legalOrganization;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetSeller(const name, postcode, city, street: string;
@@ -1172,10 +1180,8 @@ begin
   FSeller.City := city;
   FSeller.Street := street;
   FSeller.Country := country;
-  if FSeller.GlobalID <> nil then FSeller.GlobalID.Free;
-  FSeller.GlobalID := globalID; //TODO Mem Leak
-  if FSeller.SpecifiedLegalOrganization <> nil then FSeller.SpecifiedLegalOrganization.Free;
-  FSeller.SpecifiedLegalOrganization := legalOrganization; //TODO Mem Leak
+  FSeller.GlobalID := globalID;
+  FSeller.SpecifiedLegalOrganization := legalOrganization;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetSellerContact(const name: string = ''; const orgunit: string = '';
@@ -1241,6 +1247,13 @@ begin
   FSellerElectronicAddress.ElectronicAddressSchemeID := electronicAddressSchemeID;
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.SetSellerParty(const Value: TZUGFeRDParty);
+begin
+  if assigned(FSeller) then
+    FSeller.Free;
+  FSeller := Value;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
   const issueDateTime: TDateTime = 0; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
@@ -1262,6 +1275,13 @@ begin
     FOrderDate:= Nil
   else
     FOrderDate:= orderDate;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.SetBuyerParty(const Value: TZUGFeRDParty);
+begin
+  if assigned(FBuyer) then
+    FBuyer.Free;
+  FBuyer := Value;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: TDateTime = 0);
@@ -1354,6 +1374,13 @@ begin
   FTradeAllowanceCharges.Add(tradeAllowanceCharge);
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.SetInvoiceeParty(const Value: TZUGFeRDParty);
+begin
+  if assigned(FInvoicee) then
+    FInvoicee.Free;
+  FInvoicee := Value;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
 begin
   if assigned(FInvoiceReferencedDocument) then
@@ -1363,10 +1390,9 @@ begin
   FInvoiceReferencedDocument.IssueDateTime:= IssueDateTime;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetTotals(const aLineTotalAmount: Currency = 0; const aChargeTotalAmount: Currency = 0;
-  const aAllowanceTotalAmount: Currency = 0; const aTaxBasisAmount: Currency = 0; const aTaxTotalAmount: Currency = 0;
-  const aGrandTotalAmount: Currency = 0; const aTotalPrepaidAmount: Currency = 0; const aDuePayableAmount: Currency = 0;
-  const aRoundingAmount: Currency = 0);
+procedure TZUGFeRDInvoiceDescriptor.SetTotals(const aLineTotalAmount, aChargeTotalAmount,
+      aAllowanceTotalAmount, aTaxBasisAmount, aTaxTotalAmount, aGrandTotalAmount,
+      aTotalPrepaidAmount, aDuePayableAmount, aRoundingAmount: IZUGFeRDNullableParam<Currency>);
 begin
   LineTotalAmount:= aLineTotalAmount;
   ChargeTotalAmount:= aChargeTotalAmount;

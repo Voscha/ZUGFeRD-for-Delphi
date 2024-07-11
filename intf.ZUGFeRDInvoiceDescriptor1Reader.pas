@@ -20,7 +20,7 @@ unit intf.ZUGFeRDInvoiceDescriptor1Reader;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.DateUtils
+  System.SysUtils, System.Classes, System.DateUtils, System.Variants
   ,Xml.XMLDoc, Xml.XMLIntf, intf.ZUGFeRDMSXML2_TLB
   ,intf.ZUGFeRDXmlHelper
   ,intf.ZUGFeRDInvoiceDescriptorReader
@@ -310,13 +310,13 @@ begin
   end;
 
   Result.LineTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount', 0);
-  Result.ChargeTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:ChargeTotalAmount', 0);
-  Result.AllowanceTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:AllowanceTotalAmount', 0);
-  Result.TaxBasisAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TaxBasisTotalAmount',0);
+  Result.ChargeTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:ChargeTotalAmount', Null);
+  Result.AllowanceTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:AllowanceTotalAmount', Null);
+  Result.TaxBasisAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TaxBasisTotalAmount', Null);
   Result.TaxTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TaxTotalAmount', 0);
   Result.GrandTotalAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:GrandTotalAmount', 0);
   Result.RoundingAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:RoundingAmount', 0);
-  Result.TotalPrepaidAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TotalPrepaidAmount', 0);
+  Result.TotalPrepaidAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:TotalPrepaidAmount', Null);
   Result.DuePayableAmount:= _nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:DuePayableAmount', 0);
 
   if (doc.DocumentElement.SelectSingleNode('//ram:ApplicableSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssueDateTime/udt:DateTimeString') <> nil) then
@@ -388,12 +388,12 @@ begin
   Result.BuyerAssignedID := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:BuyerAssignedID');
   Result.Name := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Name');
   Result.Description := _nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:Description');
-  Result.UnitQuantity:=_nodeAsDecimal(tradeLineItem, './/ram:BasisQuantity', 1);
+  Result.UnitQuantity:=_nodeAsDouble(tradeLineItem, './/ram:BasisQuantity', 1);
   Result.BilledQuantity := _nodeAsDecimal(tradeLineItem, './/ram:BilledQuantity', 0);
-  Result.PackageQuantity := _nodeAsDecimal(tradeLineItem, './/ram:PackageQuantity', 0);
-  Result.ChargeFreeQuantity := _nodeAsDecimal(tradeLineItem, './/ram:ChargeFreeQuantity', 0);
+  Result.PackageQuantity := _nodeAsDouble(tradeLineItem, './/ram:PackageQuantity', 0);
+  Result.ChargeFreeQuantity := _nodeAsDouble(tradeLineItem, './/ram:ChargeFreeQuantity', 0);
 //  Result.LineTotalAmount.SetValue(_nodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0));
-  Result.LineTotalAmount:= _nodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0);
+  Result.LineTotalAmount:= _nodeAsDouble(tradeLineItem, './/ram:LineTotalAmount', 0);
   Result.TaxCategoryCode := TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));
   Result.TaxType := TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:TypeCode'));
   Result.TaxPercent := _nodeAsDecimal(tradeLineItem, './/ram:ApplicableTradeTax/ram:ApplicablePercent', 0);

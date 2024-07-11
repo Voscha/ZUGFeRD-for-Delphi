@@ -101,207 +101,656 @@ begin
 
   Descriptor := _descriptor;
   Writer := TZUGFeRDProfileAwareXmlTextWriter.Create(_stream,TEncoding.UTF8,Descriptor.Profile);
-  Writer.Formatting := TZUGFeRDXmlFomatting.xmlFormatting_Indented;
-  Writer.WriteStartDocument;
+  try
+    Writer.Formatting := TZUGFeRDXmlFomatting.xmlFormatting_Indented;
+    Writer.WriteStartDocument;
 
-  //#region Kopfbereich
-  Writer.WriteStartElement('rsm:CrossIndustryInvoice');
-  Writer.WriteAttributeString('xmlns', 'a', '', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  Writer.WriteAttributeString('xmlns', 'rsm', '', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
-  Writer.WriteAttributeString('xmlns', 'qdt', '', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
-  Writer.WriteAttributeString('xmlns', 'ram', '', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
-  Writer.WriteAttributeString('xmlns', 'xs', '', 'http://www.w3.org/2001/XMLSchema');
-  Writer.WriteAttributeString('xmlns', 'udt', '', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
-  //#endregion
+    //#region Kopfbereich
+    Writer.WriteStartElement('rsm:CrossIndustryInvoice');
+    Writer.WriteAttributeString('xmlns', 'a', '', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+    Writer.WriteAttributeString('xmlns', 'rsm', '', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
+    Writer.WriteAttributeString('xmlns', 'qdt', '', 'urn:un:unece:uncefact:data:standard:QualifiedDataType:100');
+    Writer.WriteAttributeString('xmlns', 'ram', '', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
+    Writer.WriteAttributeString('xmlns', 'xs', '', 'http://www.w3.org/2001/XMLSchema');
+    Writer.WriteAttributeString('xmlns', 'udt', '', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100');
+    //#endregion
 
-  //#region ExchangedDocumentContext
-  Writer.WriteStartElement('rsm:ExchangedDocumentContext');
-  if (Descriptor.IsTest) then
-  begin
-    Writer.WriteStartElement('ram:TestIndicator');
-    Writer.WriteElementString('udt:Indicator', ifthen(Descriptor.IsTest,'true','false'));
-    Writer.WriteEndElement(); // !ram:TestIndicator
-  end;
-
-  if (Descriptor.BusinessProcess <> '') then
-  begin
-    Writer.WriteStartElement('ram:BusinessProcessSpecifiedDocumentContextParameter', [TZUGFeRDProfile.Extended]);
-    Writer.WriteElementString('ram:ID', Descriptor.BusinessProcess, [TZUGFeRDProfile.Extended]);
-    Writer.WriteEndElement(); // !ram:BusinessProcessSpecifiedDocumentContextParameter
-  end;
-
-  Writer.WriteStartElement('ram:GuidelineSpecifiedDocumentContextParameter');
-  Writer.WriteElementString('ram:ID', TZUGFeRDProfileExtensions.EnumToString(Descriptor.Profile,TZUGFeRDVersion.Version20));
-  Writer.WriteEndElement(); // !ram:GuidelineSpecifiedDocumentContextParameter
-  Writer.WriteEndElement(); // !rsm:ExchangedDocumentContext
-
-  Writer.WriteStartElement('rsm:ExchangedDocument');
-  Writer.WriteElementString('ram:ID', Descriptor.InvoiceNo);
-  Writer.WriteElementString('ram:Name', _translateInvoiceType(Descriptor.Type_), [TZUGFeRDProfile.Extended]);
-  Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
-
-  if (Descriptor.InvoiceDate > 100) then
-  begin
-      Writer.WriteStartElement('ram:IssueDateTime');
-      Writer.WriteStartElement('udt:DateTimeString');
-      Writer.WriteAttributeString('format', '102');
-      Writer.WriteValue(_formatDate(Descriptor.InvoiceDate));
-      Writer.WriteEndElement(); // !udt:DateTimeString
-      Writer.WriteEndElement(); // !IssueDateTime
-  end;
-  _writeNotes(Writer, Descriptor.Notes);
-  Writer.WriteEndElement(); // !rsm:ExchangedDocument
-
-  //*
-  // * @todo continue here to adopt v2 tag names
-  // */
-
-  //#region SpecifiedSupplyChainTradeTransaction
-  Writer.WriteStartElement('rsm:SupplyChainTradeTransaction');
-
-  for var tradeLineItem : TZUGFeRDTradeLineItem in Descriptor.TradeLineItems do
-  begin
-    Writer.WriteStartElement('ram:IncludedSupplyChainTradeLineItem');
-
-    if (tradeLineItem.AssociatedDocument <> nil) then
+    //#region ExchangedDocumentContext
+    Writer.WriteStartElement('rsm:ExchangedDocumentContext');
+    if (Descriptor.IsTest) then
     begin
-      Writer.WriteStartElement('ram:AssociatedDocumentLineDocument');
-      Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.AssociatedDocument.LineID);
-      _writeNotes(Writer, tradeLineItem.AssociatedDocument.Notes);
-      Writer.WriteEndElement(); // ram:AssociatedDocumentLineDocument
+      Writer.WriteStartElement('ram:TestIndicator');
+      Writer.WriteElementString('udt:Indicator', ifthen(Descriptor.IsTest,'true','false'));
+      Writer.WriteEndElement(); // !ram:TestIndicator
     end;
 
-    // handelt es sich um einen Kommentar?
-    if tradeLineItem.AssociatedDocument <> nil then
-    if ((tradeLineItem.AssociatedDocument.Notes.Count > 0) and
-        (tradeLineItem.BilledQuantity = 0) and
-        (tradeLineItem.Description <> '')) then
+    if (Descriptor.BusinessProcess <> '') then
     begin
-      Writer.WriteEndElement(); // !ram:IncludedSupplyChainTradeLineItem
-      continue;
+      Writer.WriteStartElement('ram:BusinessProcessSpecifiedDocumentContextParameter', [TZUGFeRDProfile.Extended]);
+      Writer.WriteElementString('ram:ID', Descriptor.BusinessProcess, [TZUGFeRDProfile.Extended]);
+      Writer.WriteEndElement(); // !ram:BusinessProcessSpecifiedDocumentContextParameter
     end;
 
-    Writer.WriteStartElement('ram:SpecifiedTradeProduct');
-    if (tradeLineItem.GlobalID <> nil) then
-    if (tradeLineItem.GlobalID.SchemeID <> TZUGFeRDGlobalIDSchemeIdentifiers.Unknown) and (tradeLineItem.GlobalID.ID <> '') then
+    Writer.WriteStartElement('ram:GuidelineSpecifiedDocumentContextParameter');
+    Writer.WriteElementString('ram:ID', TZUGFeRDProfileExtensions.EnumToString(Descriptor.Profile,TZUGFeRDVersion.Version20));
+    Writer.WriteEndElement(); // !ram:GuidelineSpecifiedDocumentContextParameter
+    Writer.WriteEndElement(); // !rsm:ExchangedDocumentContext
+
+    Writer.WriteStartElement('rsm:ExchangedDocument');
+    Writer.WriteElementString('ram:ID', Descriptor.InvoiceNo);
+    Writer.WriteElementString('ram:Name', _translateInvoiceType(Descriptor.Type_), [TZUGFeRDProfile.Extended]);
+    Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
+
+    if (Descriptor.InvoiceDate > 100) then
     begin
-      _writeElementWithAttribute(Writer, 'ram:GlobalID', 'schemeID', TZUGFeRDGlobalIDSchemeIdentifiersExtensions.EnumToString(tradeLineItem.GlobalID.SchemeID), tradeLineItem.GlobalID.ID);
+        Writer.WriteStartElement('ram:IssueDateTime');
+        Writer.WriteStartElement('udt:DateTimeString');
+        Writer.WriteAttributeString('format', '102');
+        Writer.WriteValue(_formatDate(Descriptor.InvoiceDate));
+        Writer.WriteEndElement(); // !udt:DateTimeString
+        Writer.WriteEndElement(); // !IssueDateTime
     end;
+    _writeNotes(Writer, Descriptor.Notes);
+    Writer.WriteEndElement(); // !rsm:ExchangedDocument
 
-    Writer.WriteOptionalElementString('ram:SellerAssignedID', tradeLineItem.SellerAssignedID);
-    Writer.WriteOptionalElementString('ram:BuyerAssignedID', tradeLineItem.BuyerAssignedID);
-    Writer.WriteOptionalElementString('ram:Name', tradeLineItem.Name);
-    Writer.WriteOptionalElementString('ram:Description', tradeLineItem.Description);
+    //*
+    // * @todo continue here to adopt v2 tag names
+    // */
 
-    if (tradeLineItem.ApplicableProductCharacteristics <> nil) then
-    if (tradeLineItem.ApplicableProductCharacteristics.Count > 0) then
+    //#region SpecifiedSupplyChainTradeTransaction
+    Writer.WriteStartElement('rsm:SupplyChainTradeTransaction');
+
+    for var tradeLineItem : TZUGFeRDTradeLineItem in Descriptor.TradeLineItems do
     begin
-      for var productCharacteristic : TZUGFeRDApplicableProductCharacteristic in tradeLineItem.ApplicableProductCharacteristics do
+      Writer.WriteStartElement('ram:IncludedSupplyChainTradeLineItem');
+
+      if (tradeLineItem.AssociatedDocument <> nil) then
       begin
-        Writer.WriteStartElement('ram:ApplicableProductCharacteristic');
-        Writer.WriteOptionalElementString('ram:Description', productCharacteristic.Description);
-        Writer.WriteOptionalElementString('ram:Value', productCharacteristic.Value);
-        Writer.WriteEndElement(); // !ram:ApplicableProductCharacteristic
+        Writer.WriteStartElement('ram:AssociatedDocumentLineDocument');
+        Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.AssociatedDocument.LineID);
+        _writeNotes(Writer, tradeLineItem.AssociatedDocument.Notes);
+        Writer.WriteEndElement(); // ram:AssociatedDocumentLineDocument
+      end;
+
+      // handelt es sich um einen Kommentar?
+      if tradeLineItem.AssociatedDocument <> nil then
+      if ((tradeLineItem.AssociatedDocument.Notes.Count > 0) and
+          (tradeLineItem.BilledQuantity = 0) and
+          (tradeLineItem.Description <> '')) then
+      begin
+        Writer.WriteEndElement(); // !ram:IncludedSupplyChainTradeLineItem
+        continue;
+      end;
+
+      Writer.WriteStartElement('ram:SpecifiedTradeProduct');
+      if (tradeLineItem.GlobalID <> nil) then
+      if (tradeLineItem.GlobalID.SchemeID <> TZUGFeRDGlobalIDSchemeIdentifiers.Unknown) and (tradeLineItem.GlobalID.ID <> '') then
+      begin
+        _writeElementWithAttribute(Writer, 'ram:GlobalID', 'schemeID', TZUGFeRDGlobalIDSchemeIdentifiersExtensions.EnumToString(tradeLineItem.GlobalID.SchemeID), tradeLineItem.GlobalID.ID);
+      end;
+
+      Writer.WriteOptionalElementString('ram:SellerAssignedID', tradeLineItem.SellerAssignedID);
+      Writer.WriteOptionalElementString('ram:BuyerAssignedID', tradeLineItem.BuyerAssignedID);
+      Writer.WriteOptionalElementString('ram:Name', tradeLineItem.Name);
+      Writer.WriteOptionalElementString('ram:Description', tradeLineItem.Description);
+
+      if (tradeLineItem.ApplicableProductCharacteristics <> nil) then
+      if (tradeLineItem.ApplicableProductCharacteristics.Count > 0) then
+      begin
+        for var productCharacteristic : TZUGFeRDApplicableProductCharacteristic in tradeLineItem.ApplicableProductCharacteristics do
+        begin
+          Writer.WriteStartElement('ram:ApplicableProductCharacteristic');
+          Writer.WriteOptionalElementString('ram:Description', productCharacteristic.Description);
+          Writer.WriteOptionalElementString('ram:Value', productCharacteristic.Value);
+          Writer.WriteEndElement(); // !ram:ApplicableProductCharacteristic
+        end
+      end;
+
+      Writer.WriteEndElement(); // !ram:SpecifiedTradeProduct
+
+      Writer.WriteStartElement('ram:SpecifiedLineTradeAgreement', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+
+      if (tradeLineItem.BuyerOrderReferencedDocument <> nil) then
+      begin
+        Writer.WriteStartElement('ram:BuyerOrderReferencedDocument', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
+
+        //#region IssuerAssignedID
+        //Bestellnummer
+        Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.BuyerOrderReferencedDocument.ID);
+        //#endregion
+
+        //#region LineID
+        //Referenz zur Bestellposition
+        //ToDo: fehlt ganz
+        //#endregion
+
+        //#region IssueDateTime
+        if (tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.HasValue) then
+        begin
+          Writer.WriteStartElement('ram:FormattedIssueDateTime');
+          Writer.WriteStartElement('qdt:DateTimeString');
+          Writer.WriteAttributeString('format', '102');
+          Writer.WriteValue(_formatDate(tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.Value));
+          Writer.WriteEndElement(); // !qdt:DateTimeString
+          Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
+        end;
+        //#endregion
+
+        Writer.WriteEndElement(); // !ram:BuyerOrderReferencedDocument
+      end;
+
+      if (tradeLineItem.ContractReferencedDocument <> nil) then
+      begin
+        Writer.WriteStartElement('ram:ContractReferencedDocument', [TZUGFeRDProfile.Extended]);
+        if (tradeLineItem.ContractReferencedDocument.IssueDateTime.HasValue) then
+        begin
+          Writer.WriteStartElement('ram:FormattedIssueDateTime');
+          Writer.WriteStartElement('qdt:DateTimeString');
+          Writer.WriteAttributeString('format', '102');
+          Writer.WriteValue(_formatDate(tradeLineItem.ContractReferencedDocument.IssueDateTime.Value));
+          Writer.WriteEndElement(); // !udt:DateTimeString
+          Writer.WriteEndElement(); // !ram:IssueDateTime
+        end;
+        Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.ContractReferencedDocument.ID);
+        Writer.WriteEndElement(); // !ram:ContractReferencedDocument(Extended)
+      end;
+
+      for var document : TZUGFeRDAdditionalReferencedDocument in tradeLineItem.AdditionalReferencedDocuments do
+      begin
+        Writer.WriteStartElement('ram:AdditionalReferencedDocument', [TZUGFeRDProfile.Extended]);
+        if (document.IssueDateTime.HasValue) then
+        begin
+            Writer.WriteStartElement('ram:FormattedIssueDateTime');
+            Writer.WriteStartElement('qdt:DateTimeString');
+            Writer.WriteAttributeString('format', '102');
+            Writer.WriteValue(_formatDate(document.IssueDateTime.Value));
+            Writer.WriteEndElement(); // !udt:DateTimeString
+            Writer.WriteEndElement(); // !ram:IssueDateTime
+        end;
+
+        Writer.WriteElementString('ram:LineID', Format('%s',[tradeLineItem.AssociatedDocument.LineID]));
+        Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
+        Writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
+
+        Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
+      end; // !foreach(document)
+
+      Writer.WriteStartElement('ram:GrossPriceProductTradePrice');
+      _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 4, false);
+      if (tradeLineItem.UnitQuantity.HasValue) then
+      begin
+        _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
+      end;
+
+      for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.TradeAllowanceCharges do
+      begin
+        Writer.WriteStartElement('ram:AppliedTradeAllowanceCharge');
+
+        //#region ChargeIndicator
+        Writer.WriteStartElement('ram:ChargeIndicator');
+        Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
+        Writer.WriteEndElement(); // !ram:ChargeIndicator
+        //#endregion
+
+        //#region BasisAmount
+        Writer.WriteStartElement('ram:BasisAmount');
+        Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount, 2));
+        Writer.WriteEndElement();
+        //#endregion
+
+        //#region ActualAmount
+        Writer.WriteStartElement('ram:ActualAmount');
+        Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
+        Writer.WriteEndElement();
+        //#endregion
+
+        if tradeAllowanceCharge.ChargeIndicator then
+        begin
+          Writer.WriteOptionalElementString('ram:ReasonCode',
+             TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
+                                       tradeAllowanceCharge.ReasonCodeCharge));
+        end else
+        begin
+          Writer.WriteOptionalElementString('ram:ReasonCode',
+             TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
+                                       tradeAllowanceCharge.ReasonCodeAllowance));
+        end;
+
+        Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
+
+        Writer.WriteEndElement(); // !AppliedTradeAllowanceCharge
+      end;
+
+      Writer.WriteEndElement(); // ram:GrossPriceProductTradePrice
+
+      Writer.WriteStartElement('ram:NetPriceProductTradePrice');
+      _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 4, false);
+
+      if (tradeLineItem.UnitQuantity.HasValue) then
+      begin
+        _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
+      end;
+      Writer.WriteEndElement(); // ram:NetPriceProductTradePrice
+
+      Writer.WriteEndElement(); // !ram:SpecifiedLineTradeAgreement
+
+      if (Descriptor.Profile <> TZUGFeRDProfile.Basic) then
+      begin
+        Writer.WriteStartElement('ram:SpecifiedLineTradeDelivery');
+        _writeElementWithAttribute(Writer, 'ram:BilledQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.BilledQuantity, 4));
+        if tradeLineItem.PackageQuantity.HasValue then
+          _writeElementWithAttribute(Writer, 'ram:PackageQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.PackageUnitCode), _formatDecimal(tradeLineItem.PackageQuantity, 4));
+        if tradeLineItem.ChargeFreeQuantity.HasValue then
+          _writeElementWithAttribute(Writer, 'ram:ChargeFreeQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.ChargeFreeUnitCode), _formatDecimal(tradeLineItem.ChargeFreeQuantity, 4));
+
+        if (tradeLineItem.DeliveryNoteReferencedDocument <> nil) then
+        begin
+            Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
+
+            if (tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
+            begin
+              //Old path of Version 1.0
+              //Writer.WriteStartElement('ram:IssueDateTime');
+              //Writer.WriteValue(_formatDate(tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.Value));
+              //Writer.WriteEndElement(); // !ram:IssueDateTime
+
+              Writer.WriteStartElement('ram:FormattedIssueDateTime');
+              Writer.WriteStartElement('qdt:DateTimeString');
+              Writer.WriteAttributeString('format', '102');
+              Writer.WriteValue(_formatDate(Descriptor.OrderDate.Value));
+              Writer.WriteEndElement(); // 'qdt:DateTimeString
+              Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
+            end;
+
+            Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.DeliveryNoteReferencedDocument.ID);
+            Writer.WriteEndElement(); // !ram:DeliveryNoteReferencedDocument
+        end;
+
+        if (tradeLineItem.ActualDeliveryDate.HasValue) then
+        begin
+          Writer.WriteStartElement('ram:ActualDeliverySupplyChainEvent');
+          Writer.WriteStartElement('ram:OccurrenceDateTime');
+          Writer.WriteStartElement('udt:DateTimeString');
+          Writer.WriteAttributeString('format', '102');
+          Writer.WriteValue(_formatDate(tradeLineItem.ActualDeliveryDate.Value));
+          Writer.WriteEndElement(); // 'udt:DateTimeString
+          Writer.WriteEndElement(); // !OccurrenceDateTime()
+          Writer.WriteEndElement(); // !ActualDeliverySupplyChainEvent
+        end;
+
+        Writer.WriteEndElement(); // !ram:SpecifiedLineTradeDelivery
       end
-    end;
+      else
+      begin
+        Writer.WriteStartElement('ram:SpecifiedLineTradeDelivery');
+        _writeElementWithAttribute(Writer, 'ram:BilledQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.BilledQuantity, 4));
+        Writer.WriteEndElement(); // !ram:SpecifiedLineTradeDelivery
+      end;
 
-    Writer.WriteEndElement(); // !ram:SpecifiedTradeProduct
+      Writer.WriteStartElement('ram:SpecifiedLineTradeSettlement');
 
-    Writer.WriteStartElement('ram:SpecifiedLineTradeAgreement', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+      Writer.WriteStartElement('ram:ApplicableTradeTax', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+      Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(tradeLineItem.TaxType));
+      Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tradeLineItem.TaxCategoryCode)); // BT-151
+      Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeLineItem.TaxPercent));
+      Writer.WriteEndElement(); // !ram:ApplicableTradeTax
 
-    if (tradeLineItem.BuyerOrderReferencedDocument <> nil) then
+      if (tradeLineItem.BillingPeriodStart.HasValue or tradeLineItem.BillingPeriodEnd.HasValue) then
+      begin
+        Writer.WriteStartElement('ram:BillingSpecifiedPeriod', [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
+        if (tradeLineItem.BillingPeriodStart.HasValue) then
+        begin
+          Writer.WriteStartElement('ram:StartDateTime');
+          _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(tradeLineItem.BillingPeriodStart.Value));
+          Writer.WriteEndElement(); // !StartDateTime
+        end;
+
+        if (tradeLineItem.BillingPeriodEnd.HasValue) then
+        begin
+          Writer.WriteStartElement('ram:EndDateTime');
+          _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(tradeLineItem.BillingPeriodEnd.Value));
+          Writer.WriteEndElement(); // !EndDateTime
+        end;
+        Writer.WriteEndElement(); // !BillingSpecifiedPeriod
+      end;
+
+      Writer.WriteStartElement('ram:SpecifiedTradeSettlementLineMonetarySummation');
+
+      var _total : double := 0;
+
+      if (tradeLineItem.LineTotalAmount.HasValue) then
+      begin
+        _total := tradeLineItem.LineTotalAmount.Value;
+      end
+      else if (tradeLineItem.NetUnitPrice.HasValue) then
+      begin
+        _total := tradeLineItem.NetUnitPrice.Value * tradeLineItem.BilledQuantity;
+        if tradeLineItem.UnitQuantity.HasValue then
+        if (tradeLineItem.UnitQuantity.Value <> 0) then
+        begin
+          _total := _total / tradeLineItem.UnitQuantity.Value;
+        end;
+      end;
+
+      Writer.WriteElementString('ram:LineTotalAmount', _formatDecimal(_total));
+
+      Writer.WriteEndElement(); // ram:SpecifiedTradeSettlementLineMonetarySummation
+      Writer.WriteEndElement(); // !ram:SpecifiedLineTradeSettlement
+
+      Writer.WriteEndElement(); // !ram:IncludedSupplyChainTradeLineItem
+    end; // !foreach(tradeLineItem)
+
+    Writer.WriteStartElement('ram:ApplicableHeaderTradeAgreement');
+    Writer.WriteOptionalElementString('ram:BuyerReference', Descriptor.ReferenceOrderNo);
+    _writeOptionalParty(Writer, 'ram:SellerTradeParty', Descriptor.Seller, Descriptor.SellerContact, Descriptor.SellerTaxRegistration);
+    _writeOptionalParty(Writer, 'ram:BuyerTradeParty', Descriptor.Buyer, Descriptor.BuyerContact, Descriptor.BuyerTaxRegistration);
+
+    //#region SellerOrderReferencedDocument (BT-14: Comfort, Extended)
+    if (Descriptor.SellerOrderReferencedDocument <> nil) then
+    if (Descriptor.SellerOrderReferencedDocument.ID <> '') then
     begin
-      Writer.WriteStartElement('ram:BuyerOrderReferencedDocument', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
+      Writer.WriteStartElement('ram:SellerOrderReferencedDocument', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
+      Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.SellerOrderReferencedDocument.ID);
+      if (Descriptor.SellerOrderReferencedDocument.IssueDateTime.HasValue) then
+      begin
+        Writer.WriteStartElement('ram:FormattedIssueDateTime', [TZUGFeRDProfile.Extended]);
+        Writer.WriteStartElement('qdt:DateTimeString');
+        Writer.WriteAttributeString('format', '102');
+        Writer.WriteValue(_formatDate(Descriptor.SellerOrderReferencedDocument.IssueDateTime.Value));
+        Writer.WriteEndElement(); // !qdt:DateTimeString
+        Writer.WriteEndElement(); // !IssueDateTime()
+      end;
 
-      //#region IssuerAssignedID
-      //Bestellnummer
-      Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.BuyerOrderReferencedDocument.ID);
-      //#endregion
+      Writer.WriteEndElement(); // !SellerOrderReferencedDocument
+    end;
+    //#endregion
 
-      //#region LineID
-      //Referenz zur Bestellposition
-      //ToDo: fehlt ganz
-      //#endregion
-
-      //#region IssueDateTime
-      if (tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.HasValue) then
+    if (Descriptor.OrderNo<>'') then
+    begin
+      Writer.WriteStartElement('ram:BuyerOrderReferencedDocument');
+      Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.OrderNo);
+      if (Descriptor.OrderDate.HasValue) then
       begin
         Writer.WriteStartElement('ram:FormattedIssueDateTime');
         Writer.WriteStartElement('qdt:DateTimeString');
         Writer.WriteAttributeString('format', '102');
-        Writer.WriteValue(_formatDate(tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.Value));
+        Writer.WriteValue(_formatDate(Descriptor.OrderDate.Value));
         Writer.WriteEndElement(); // !qdt:DateTimeString
         Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
       end;
-      //#endregion
-
-      Writer.WriteEndElement(); // !ram:BuyerOrderReferencedDocument
+      Writer.WriteEndElement(); // !BuyerOrderReferencedDocument
     end;
 
-    if (tradeLineItem.ContractReferencedDocument <> nil) then
+    if (Descriptor.AdditionalReferencedDocuments <> nil) then
     begin
-      Writer.WriteStartElement('ram:ContractReferencedDocument', [TZUGFeRDProfile.Extended]);
-      if (tradeLineItem.ContractReferencedDocument.IssueDateTime.HasValue) then
+      for var document : TZUGFeRDAdditionalReferencedDocument in Descriptor.AdditionalReferencedDocuments do
       begin
-        Writer.WriteStartElement('ram:FormattedIssueDateTime');
-        Writer.WriteStartElement('qdt:DateTimeString');
-        Writer.WriteAttributeString('format', '102');
-        Writer.WriteValue(_formatDate(tradeLineItem.ContractReferencedDocument.IssueDateTime.Value));
-        Writer.WriteEndElement(); // !udt:DateTimeString
-        Writer.WriteEndElement(); // !ram:IssueDateTime
-      end;
-      Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.ContractReferencedDocument.ID);
-      Writer.WriteEndElement(); // !ram:ContractReferencedDocument(Extended)
-    end;
+        Writer.WriteStartElement('ram:AdditionalReferencedDocument');
 
-    for var document : TZUGFeRDAdditionalReferencedDocument in tradeLineItem.AdditionalReferencedDocuments do
-    begin
-      Writer.WriteStartElement('ram:AdditionalReferencedDocument', [TZUGFeRDProfile.Extended]);
-      if (document.IssueDateTime.HasValue) then
-      begin
+        Writer.WriteOptionalElementString('ram:Name', document.Name);
+
+        if (document.AttachmentBinaryObject <> nil) then
+        begin
+          Writer.WriteStartElement('ram:AttachmentBinaryObject');
+          Writer.WriteAttributeString('filename', document.Filename);
+          Writer.WriteAttributeString('mimeCode', TZUGFeRDMimeTypeMapper.GetMimeType(document.Filename));
+          Writer.WriteValue(TZUGFeRDHelper.GetDataAsBase64(document.AttachmentBinaryObject));
+          Writer.WriteEndElement(); // !AttachmentBinaryObject()
+        end;
+
+        if (document.IssueDateTime.HasValue) then
+        begin
           Writer.WriteStartElement('ram:FormattedIssueDateTime');
           Writer.WriteStartElement('qdt:DateTimeString');
           Writer.WriteAttributeString('format', '102');
           Writer.WriteValue(_formatDate(document.IssueDateTime.Value));
           Writer.WriteEndElement(); // !udt:DateTimeString
-          Writer.WriteEndElement(); // !ram:IssueDateTime
-      end;
+          Writer.WriteEndElement(); // !FormattedIssueDateTime
+        end;
 
-      Writer.WriteElementString('ram:LineID', Format('%s',[tradeLineItem.AssociatedDocument.LineID]));
-      Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
-      Writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
+        if (document.ReferenceTypeCode <> TZUGFeRDReferenceTypeCodes.Unknown) then
+        begin
+          Writer.WriteElementString('ram:TypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
+        end;
 
-      Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
-    end; // !foreach(document)
-
-    Writer.WriteStartElement('ram:GrossPriceProductTradePrice');
-    _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 4, false);
-    if (tradeLineItem.UnitQuantity.HasValue) then
-    begin
-      _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
+        Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
+        Writer.WriteElementString('ram:ID', document.ID);
+        Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
+      end; // !foreach(document)
     end;
 
-    for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.TradeAllowanceCharges do
-    begin
-      Writer.WriteStartElement('ram:AppliedTradeAllowanceCharge');
+    Writer.WriteEndElement(); // !ApplicableHeaderTradeAgreement
 
-      //#region ChargeIndicator
+    Writer.WriteStartElement('ram:ApplicableHeaderTradeDelivery'); // Pflichteintrag
+
+    if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
+    begin
+      _writeOptionalParty(Writer, 'ram:ShipToTradeParty', Descriptor.ShipTo);
+      _writeOptionalParty(Writer, 'ram:ShipFromTradeParty', Descriptor.ShipFrom);
+    end;
+
+    if (Descriptor.ActualDeliveryDate.HasValue) then
+    begin
+      Writer.WriteStartElement('ram:ActualDeliverySupplyChainEvent');
+      Writer.WriteStartElement('ram:OccurrenceDateTime');
+      Writer.WriteStartElement('udt:DateTimeString');
+      Writer.WriteAttributeString('format', '102');
+      Writer.WriteValue(_formatDate(Descriptor.ActualDeliveryDate.Value));
+      Writer.WriteEndElement(); // 'udt:DateTimeString
+      Writer.WriteEndElement(); // !OccurrenceDateTime()
+      Writer.WriteEndElement(); // !ActualDeliverySupplyChainEvent
+    end;
+
+    if (Descriptor.DeliveryNoteReferencedDocument <> nil) then
+    begin
+      Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
+
+      if (Descriptor.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
+      begin
+        Writer.WriteStartElement('ram:FormattedIssueDateTime');
+        Writer.WriteValue(_formatDate(Descriptor.DeliveryNoteReferencedDocument.IssueDateTime.Value,false));
+        Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
+      end;
+
+      Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.DeliveryNoteReferencedDocument.ID);
+      Writer.WriteEndElement(); // !DeliveryNoteReferencedDocument
+    end;
+
+    Writer.WriteEndElement(); // !ApplicableHeaderTradeDelivery
+
+    Writer.WriteStartElement('ram:ApplicableHeaderTradeSettlement');
+    // order of sub-elements of ApplicableHeaderTradeSettlement:
+    //   1. CreditorReferenceID (optional)
+    //   2. PaymentReference (optional)
+    //   3. TaxCurrencyCode (optional)
+    //   4. InvoiceCurrencyCode (optional)
+    //   5. InvoiceIssuerReference (optional)
+    //   6. InvoicerTradeParty (optional)
+    //   7. InvoiceeTradeParty (optional)
+    //   8. PayeeTradeParty (optional)
+    //   9. TaxApplicableTradeCurrencyExchange (optional)
+    //  10. SpecifiedTradeSettlementPaymentMeans (optional)
+    //  11. ApplicableTradeTax (optional)
+    //  12. BillingSpecifiedPeriod (optional)
+    //  13. SpecifiedTradeAllowanceCharge (optional)
+    //  14. SpecifiedLogisticsServiceCharge (optional)
+    //  15. SpecifiedTradePaymentTerms (optional)
+    //  16. SpecifiedTradeSettlementHeaderMonetarySummation
+    //  17. InvoiceReferencedDocument (optional)
+    //  18. ReceivableSpecifiedTradeAccountingAccount (optional)
+    //  19. SpecifiedAdvancePayment (optional)
+
+    //   1. CreditorReferenceID (optional)
+    if Descriptor.PaymentMeans <> nil then
+    if (Descriptor.PaymentMeans.SEPACreditorIdentifier<>'') then
+    begin
+      Writer.WriteOptionalElementString('ram:CreditorReferenceID', Descriptor.PaymentMeans.SEPACreditorIdentifier, [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
+    end;
+
+    //   2. PaymentReference (optional)
+    Writer.WriteOptionalElementString('ram:PaymentReference', Descriptor.PaymentReference);
+
+    //   4. InvoiceCurrencyCode (optional)
+    Writer.WriteElementString('ram:InvoiceCurrencyCode', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+
+    //   7. InvoiceeTradeParty (optional)
+    if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
+      _writeOptionalParty(Writer, 'ram:InvoiceeTradeParty', Descriptor.Invoicee);
+
+    //   8. PayeeTradeParty (optional)
+    if (Descriptor.Profile <> TZUGFeRDProfile.Minimum) then
+    _writeOptionalParty(Writer, 'ram:PayeeTradeParty', Descriptor.Payee);
+
+    //  10. SpecifiedTradeSettlementPaymentMeans (optional)
+    if (Descriptor.CreditorBankAccounts.Count = 0) and (Descriptor.DebitorBankAccounts.Count = 0) then
+    begin
+      if (Descriptor.PaymentMeans <> nil) then
+      if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
+      begin
+        Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
+        Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
+        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
+
+        if (Descriptor.PaymentMeans.FinancialCard <> nil) then
+        begin
+          Writer.WriteStartElement('ram:ApplicableTradeSettlementFinancialCard', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
+          Writer.WriteOptionalElementString('ram:ID', Descriptor.PaymentMeans.FinancialCard.Id);
+          Writer.WriteOptionalElementString('ram:CardholderName', Descriptor.PaymentMeans.FinancialCard.CardholderName);
+          Writer.WriteEndElement(); // !ram:ApplicableTradeSettlementFinancialCard
+        end;
+        Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
+      end;
+    end
+    else
+    begin
+      for var creditorAccount : TZUGFeRDBankAccount in Descriptor.CreditorBankAccounts do
+      begin
+        Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
+
+        if (Descriptor.PaymentMeans <> nil) then
+        if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
+        begin
+          Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
+          Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
+
+          if (Descriptor.PaymentMeans.FinancialCard <> nil) then
+          begin
+              Writer.WriteStartElement('ram:ApplicableTradeSettlementFinancialCard', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
+              Writer.WriteOptionalElementString('ram:ID', Descriptor.PaymentMeans.FinancialCard.Id);
+              Writer.WriteOptionalElementString('ram:CardholderName', Descriptor.PaymentMeans.FinancialCard.CardholderName);
+              Writer.WriteEndElement(); // !ram:ApplicableTradeSettlementFinancialCard
+          end;
+        end;
+
+        Writer.WriteStartElement('ram:PayeePartyCreditorFinancialAccount');
+        Writer.WriteElementString('ram:IBANID', creditorAccount.IBAN);
+        Writer.WriteOptionalElementString('ram:AccountName', creditorAccount.Name);
+        Writer.WriteOptionalElementString('ram:ProprietaryID', creditorAccount.ID);
+        Writer.WriteEndElement(); // !PayeePartyCreditorFinancialAccount
+
+        //if (creditorAccount.BIC<>'') then
+        //begin
+          Writer.WriteStartElement('ram:PayeeSpecifiedCreditorFinancialInstitution');
+          Writer.WriteElementString('ram:BICID', creditorAccount.BIC);
+          Writer.WriteOptionalElementString('ram:GermanBankleitzahlID', creditorAccount.Bankleitzahl);
+          Writer.WriteEndElement(); // !PayeeSpecifiedCreditorFinancialInstitution
+        //end;
+
+        Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
+      end;
+
+      for var debitorAccount : TZUGFeRDBankAccount in Descriptor.DebitorBankAccounts do
+      begin
+        Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
+
+        if (Descriptor.PaymentMeans <> nil) then
+        if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
+        begin
+          Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
+          Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
+        end;
+
+        Writer.WriteStartElement('ram:PayerPartyDebtorFinancialAccount');
+        Writer.WriteElementString('ram:IBANID', debitorAccount.IBAN);
+        Writer.WriteOptionalElementString('ram:ProprietaryID', debitorAccount.ID);
+        Writer.WriteEndElement(); // !PayerPartyDebtorFinancialAccount
+
+        if (debitorAccount.BIC<>'') or
+           (debitorAccount.Bankleitzahl<>'') or
+           (debitorAccount.BankName<>'') then
+        begin
+          Writer.WriteStartElement('ram:PayerSpecifiedDebtorFinancialInstitution');
+          Writer.WriteElementString('ram:BICID', debitorAccount.BIC);
+          Writer.WriteOptionalElementString('ram:GermanBankleitzahlID', debitorAccount.Bankleitzahl);
+          Writer.WriteOptionalElementString('ram:Name', debitorAccount.BankName);
+          Writer.WriteEndElement(); // !PayerSpecifiedDebtorFinancialInstitution
+        end;
+
+        Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
+      end;
+    end;
+
+
+    //            /*
+    //             * @todo add writer for this:
+    //             * <SpecifiedTradeSettlementPaymentMeans>
+    //            * <TypeCode>42</TypeCode>
+    //          * 	<Information>Überweisung</Information>
+    //           * <PayeePartyCreditorFinancialAccount>
+    //          * 		<IBANID>DE08700901001234567890</IBANID>
+    //          * 		<ProprietaryID>1234567890</ProprietaryID>
+    //          * 	</PayeePartyCreditorFinancialAccount>
+    //          * 	<PayeeSpecifiedCreditorFinancialInstitution>
+    //          * 		<BICID>GENODEF1M04</BICID>
+    //          * 		<GermanBankleitzahlID>70090100</GermanBankleitzahlID>
+    //          * 		<Name>Hausbank München</Name>
+    //          * 	</PayeeSpecifiedCreditorFinancialInstitution>
+    //          * </SpecifiedTradeSettlementPaymentMeans>
+    //             */
+
+    //  11. ApplicableTradeTax (optional)
+    _writeOptionalTaxes(Writer);
+
+    //#region BillingSpecifiedPeriod
+    //  12. BillingSpecifiedPeriod (optional)
+    if (Descriptor.BillingPeriodStart>100) or (Descriptor.BillingPeriodEnd>100) then
+    begin
+      Writer.WriteStartElement('ram:BillingSpecifiedPeriod', [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
+      if (Descriptor.BillingPeriodStart>100) then
+      begin
+          Writer.WriteStartElement('ram:StartDateTime');
+          _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodStart));
+          Writer.WriteEndElement(); // !StartDateTime
+      end;
+
+      if (Descriptor.BillingPeriodEnd>100) then
+      begin
+          Writer.WriteStartElement('ram:EndDateTime');
+          _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodEnd));
+          Writer.WriteEndElement(); // !EndDateTime
+      end;
+      Writer.WriteEndElement(); // !BillingSpecifiedPeriod
+    end;
+    //#endregion
+
+    //  13. SpecifiedTradeAllowanceCharge (optional)
+    for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in Descriptor.TradeAllowanceCharges do
+    begin
+      Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge');
       Writer.WriteStartElement('ram:ChargeIndicator');
       Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
       Writer.WriteEndElement(); // !ram:ChargeIndicator
-      //#endregion
 
-      //#region BasisAmount
-      Writer.WriteStartElement('ram:BasisAmount');
-      Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount, 2));
-      Writer.WriteEndElement();
-      //#endregion
+      if tradeAllowanceCharge.BasisAmount <> 0.0 then
+      begin
+        Writer.WriteStartElement('ram:BasisAmount');
+        Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount));
+        Writer.WriteEndElement();
+      end;
 
-      //#region ActualAmount
       Writer.WriteStartElement('ram:ActualAmount');
-      Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
+      Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount));
       Writer.WriteEndElement();
-      //#endregion
 
       if tradeAllowanceCharge.ChargeIndicator then
       begin
@@ -317,581 +766,136 @@ begin
 
       Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
 
-      Writer.WriteEndElement(); // !AppliedTradeAllowanceCharge
-    end;
-
-    Writer.WriteEndElement(); // ram:GrossPriceProductTradePrice
-
-    Writer.WriteStartElement('ram:NetPriceProductTradePrice');
-    _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.NetUnitPrice, 4, false);
-
-    if (tradeLineItem.UnitQuantity.HasValue) then
-    begin
-      _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
-    end;
-    Writer.WriteEndElement(); // ram:NetPriceProductTradePrice
-
-    Writer.WriteEndElement(); // !ram:SpecifiedLineTradeAgreement
-
-    if (Descriptor.Profile <> TZUGFeRDProfile.Basic) then
-    begin
-      Writer.WriteStartElement('ram:SpecifiedLineTradeDelivery');
-      _writeElementWithAttribute(Writer, 'ram:BilledQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.BilledQuantity, 4));
-      if tradeLineItem.PackageQuantity.HasValue then
-        _writeElementWithAttribute(Writer, 'ram:PackageQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.PackageUnitCode), _formatDecimal(tradeLineItem.PackageQuantity, 4));
-      if tradeLineItem.ChargeFreeQuantity.HasValue then
-        _writeElementWithAttribute(Writer, 'ram:ChargeFreeQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.ChargeFreeUnitCode), _formatDecimal(tradeLineItem.ChargeFreeQuantity, 4));
-
-      if (tradeLineItem.DeliveryNoteReferencedDocument <> nil) then
+      if (tradeAllowanceCharge.Tax <> nil) then
       begin
-          Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
-
-          if (tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
-          begin
-            //Old path of Version 1.0
-            //Writer.WriteStartElement('ram:IssueDateTime');
-            //Writer.WriteValue(_formatDate(tradeLineItem.DeliveryNoteReferencedDocument.IssueDateTime.Value));
-            //Writer.WriteEndElement(); // !ram:IssueDateTime
-
-            Writer.WriteStartElement('ram:FormattedIssueDateTime');
-            Writer.WriteStartElement('qdt:DateTimeString');
-            Writer.WriteAttributeString('format', '102');
-            Writer.WriteValue(_formatDate(Descriptor.OrderDate.Value));
-            Writer.WriteEndElement(); // 'qdt:DateTimeString
-            Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
-          end;
-
-          Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.DeliveryNoteReferencedDocument.ID);
-          Writer.WriteEndElement(); // !ram:DeliveryNoteReferencedDocument
+        Writer.WriteStartElement('ram:CategoryTradeTax');
+        Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(tradeAllowanceCharge.Tax.TypeCode));
+        if (tradeAllowanceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
+          Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tradeAllowanceCharge.Tax.CategoryCode));
+        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent));
+        Writer.WriteEndElement();
       end;
-
-      if (tradeLineItem.ActualDeliveryDate.HasValue) then
-      begin
-        Writer.WriteStartElement('ram:ActualDeliverySupplyChainEvent');
-        Writer.WriteStartElement('ram:OccurrenceDateTime');
-        Writer.WriteStartElement('udt:DateTimeString');
-        Writer.WriteAttributeString('format', '102');
-        Writer.WriteValue(_formatDate(tradeLineItem.ActualDeliveryDate.Value));
-        Writer.WriteEndElement(); // 'udt:DateTimeString
-        Writer.WriteEndElement(); // !OccurrenceDateTime()
-        Writer.WriteEndElement(); // !ActualDeliverySupplyChainEvent
-      end;
-
-      Writer.WriteEndElement(); // !ram:SpecifiedLineTradeDelivery
-    end
-    else
-    begin
-      Writer.WriteStartElement('ram:SpecifiedLineTradeDelivery');
-      _writeElementWithAttribute(Writer, 'ram:BilledQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.BilledQuantity, 4));
-      Writer.WriteEndElement(); // !ram:SpecifiedLineTradeDelivery
+      Writer.WriteEndElement();
     end;
 
-    Writer.WriteStartElement('ram:SpecifiedLineTradeSettlement');
-
-    Writer.WriteStartElement('ram:ApplicableTradeTax', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
-    Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(tradeLineItem.TaxType));
-    Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tradeLineItem.TaxCategoryCode)); // BT-151
-    Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeLineItem.TaxPercent));
-    Writer.WriteEndElement(); // !ram:ApplicableTradeTax
-
-    if (tradeLineItem.BillingPeriodStart.HasValue or tradeLineItem.BillingPeriodEnd.HasValue) then
+    //  14. SpecifiedLogisticsServiceCharge (optional)
+    for var serviceCharge : TZUGFeRDServiceCharge in Descriptor.ServiceCharges do
     begin
-      Writer.WriteStartElement('ram:BillingSpecifiedPeriod', [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-      if (tradeLineItem.BillingPeriodStart.HasValue) then
+      Writer.WriteStartElement('ram:SpecifiedLogisticsServiceCharge');
+      if serviceCharge.Description <> '' then
+        Writer.WriteElementString('ram:Description', serviceCharge.Description);
+      Writer.WriteElementString('ram:AppliedAmount', _formatDecimal(serviceCharge.Amount));
+      if (serviceCharge.Tax <> nil) then
       begin
-        Writer.WriteStartElement('ram:StartDateTime');
-        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(tradeLineItem.BillingPeriodStart.Value));
-        Writer.WriteEndElement(); // !StartDateTime
+        Writer.WriteStartElement('ram:AppliedTradeTax');
+        Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(serviceCharge.Tax.TypeCode));
+        if (serviceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
+          Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(serviceCharge.Tax.CategoryCode));
+        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(serviceCharge.Tax.Percent));
+        Writer.WriteEndElement();
       end;
-
-      if (tradeLineItem.BillingPeriodEnd.HasValue) then
-      begin
-        Writer.WriteStartElement('ram:EndDateTime');
-        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(tradeLineItem.BillingPeriodEnd.Value));
-        Writer.WriteEndElement(); // !EndDateTime
-      end;
-      Writer.WriteEndElement(); // !BillingSpecifiedPeriod
+      Writer.WriteEndElement();
     end;
 
-    Writer.WriteStartElement('ram:SpecifiedTradeSettlementLineMonetarySummation');
+  (*
+              //  15. SpecifiedTradePaymentTerms (optional)
+              if (this.Descriptor.PaymentTerms != null || !string.IsNullOrWhiteSpace(Descriptor.PaymentMeans?.SEPAMandateReference))
+              {
+                  Writer.WriteStartElement("ram:SpecifiedTradePaymentTerms");
+                  Writer.WriteOptionalElementString("ram:Description", this.Descriptor.PaymentTerms?.Description);
+                  if (this.Descriptor.PaymentTerms?.DueDate.HasValue ?? false)
+                  {
+                      Writer.WriteStartElement("ram:DueDateDateTime");
+                      _writeElementWithAttribute(Writer, "udt:DateTimeString", "format", "102", _formatDate(this.Descriptor.PaymentTerms.DueDate.Value));
+                      Writer.WriteEndElement(); // !ram:DueDateDateTime
+                  }
+                  Writer.WriteOptionalElementString("ram:DirectDebitMandateID", Descriptor.PaymentMeans?.SEPAMandateReference);
+                  Writer.WriteEndElement();
+              }
 
-    var _total : double := 0;
 
-    if (tradeLineItem.LineTotalAmount.HasValue) then
+  *)
+
+    //  15. SpecifiedTradePaymentTerms (optional)
+    for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
     begin
-      _total := tradeLineItem.LineTotalAmount.Value;
-    end
-    else if (tradeLineItem.NetUnitPrice.HasValue) then
-    begin
-      _total := tradeLineItem.NetUnitPrice.Value * tradeLineItem.BilledQuantity;
-      if tradeLineItem.UnitQuantity.HasValue then
-      if (tradeLineItem.UnitQuantity.Value <> 0) then
+      Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+      Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
+      if (PaymentTerms.DueDate.HasValue) then
       begin
-        _total := _total / tradeLineItem.UnitQuantity.Value;
+        Writer.WriteStartElement('ram:DueDateDateTime');
+        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
+        Writer.WriteEndElement(); // !ram:DueDateDateTime
       end;
-    end;
-
-    Writer.WriteElementString('ram:LineTotalAmount', _formatDecimal(_total));
-
-    Writer.WriteEndElement(); // ram:SpecifiedTradeSettlementLineMonetarySummation
-    Writer.WriteEndElement(); // !ram:SpecifiedLineTradeSettlement
-
-    Writer.WriteEndElement(); // !ram:IncludedSupplyChainTradeLineItem
-  end; // !foreach(tradeLineItem)
-
-  Writer.WriteStartElement('ram:ApplicableHeaderTradeAgreement');
-  Writer.WriteOptionalElementString('ram:BuyerReference', Descriptor.ReferenceOrderNo);
-  _writeOptionalParty(Writer, 'ram:SellerTradeParty', Descriptor.Seller, Descriptor.SellerContact, Descriptor.SellerTaxRegistration);
-  _writeOptionalParty(Writer, 'ram:BuyerTradeParty', Descriptor.Buyer, Descriptor.BuyerContact, Descriptor.BuyerTaxRegistration);
-
-  //#region SellerOrderReferencedDocument (BT-14: Comfort, Extended)
-  if (Descriptor.SellerOrderReferencedDocument <> nil) then
-  if (Descriptor.SellerOrderReferencedDocument.ID <> '') then
-  begin
-    Writer.WriteStartElement('ram:SellerOrderReferencedDocument', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
-    Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.SellerOrderReferencedDocument.ID);
-    if (Descriptor.SellerOrderReferencedDocument.IssueDateTime.HasValue) then
-    begin
-      Writer.WriteStartElement('ram:FormattedIssueDateTime', [TZUGFeRDProfile.Extended]);
-      Writer.WriteStartElement('qdt:DateTimeString');
-      Writer.WriteAttributeString('format', '102');
-      Writer.WriteValue(_formatDate(Descriptor.SellerOrderReferencedDocument.IssueDateTime.Value));
-      Writer.WriteEndElement(); // !qdt:DateTimeString
-      Writer.WriteEndElement(); // !IssueDateTime()
-    end;
-
-    Writer.WriteEndElement(); // !SellerOrderReferencedDocument
-  end;
-  //#endregion
-
-  if (Descriptor.OrderNo<>'') then
-  begin
-    Writer.WriteStartElement('ram:BuyerOrderReferencedDocument');
-    Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.OrderNo);
-    if (Descriptor.OrderDate.HasValue) then
-    begin
-      Writer.WriteStartElement('ram:FormattedIssueDateTime');
-      Writer.WriteStartElement('qdt:DateTimeString');
-      Writer.WriteAttributeString('format', '102');
-      Writer.WriteValue(_formatDate(Descriptor.OrderDate.Value));
-      Writer.WriteEndElement(); // !qdt:DateTimeString
-      Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
-    end;
-    Writer.WriteEndElement(); // !BuyerOrderReferencedDocument
-  end;
-
-  if (Descriptor.AdditionalReferencedDocuments <> nil) then
-  begin
-    for var document : TZUGFeRDAdditionalReferencedDocument in Descriptor.AdditionalReferencedDocuments do
-    begin
-      Writer.WriteStartElement('ram:AdditionalReferencedDocument');
-
-      Writer.WriteOptionalElementString('ram:Name', document.Name);
-
-      if (document.AttachmentBinaryObject <> nil) then
+      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SepaMandateReference);
+  (*    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
+      //TODO PaymentTerms.PartialPaymentAmount
+      //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
+      if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) or
+         (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) or
+         PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
       begin
-        Writer.WriteStartElement('ram:AttachmentBinaryObject');
-        Writer.WriteAttributeString('filename', document.Filename);
-        Writer.WriteAttributeString('mimeCode', TZUGFeRDMimeTypeMapper.GetMimeType(document.Filename));
-        Writer.WriteValue(TZUGFeRDHelper.GetDataAsBase64(document.AttachmentBinaryObject));
-        Writer.WriteEndElement(); // !AttachmentBinaryObject()
+        Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
+        if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
+          _writeElementWithAttribute(Writer, 'ram:BasisPeriodMeasure', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(PaymentTerms.ApplicableTradePaymentDiscountTerms.UnitCode), _formatDecimal(paymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure, 4));
+        if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0 then
+          _writeOptionalAmount(Writer, 'ram:BasisAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount);
+        if PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0 then
+          _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
+        Writer.WriteEndElement();
+        //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
       end;
+  *)
+      Writer.WriteEndElement();
+    end;
 
-      if (document.IssueDateTime.HasValue) then
+    //  16. SpecifiedTradeSettlementHeaderMonetarySummation
+    Writer.WriteStartElement('ram:SpecifiedTradeSettlementHeaderMonetarySummation');
+    _writeOptionalAmount(Writer, 'ram:LineTotalAmount', Descriptor.LineTotalAmount);
+    _writeOptionalAmount(Writer, 'ram:ChargeTotalAmount', Descriptor.ChargeTotalAmount);
+    _writeOptionalAmount(Writer, 'ram:AllowanceTotalAmount', Descriptor.AllowanceTotalAmount);
+    _writeOptionalAmount(Writer, 'ram:TaxBasisTotalAmount', Descriptor.TaxBasisAmount);
+    _writeOptionalAmount(Writer, 'ram:TaxTotalAmount', Descriptor.TaxTotalAmount, 2, true);
+    _writeOptionalAmount(Writer, 'ram:RoundingAmount', Descriptor.RoundingAmount, 2, false, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);  // RoundingAmount  //Rundungsbetrag
+    _writeOptionalAmount(Writer, 'ram:GrandTotalAmount', Descriptor.GrandTotalAmount);
+
+    if (Descriptor.TotalPrepaidAmount.HasValue) then
+    begin
+      _writeOptionalAmount(Writer, 'ram:TotalPrepaidAmount', Descriptor.TotalPrepaidAmount);
+    end;
+
+    _writeOptionalAmount(Writer, 'ram:DuePayableAmount', Descriptor.DuePayableAmount);
+    Writer.WriteEndElement(); // !ram:SpecifiedTradeSettlementHeaderMonetarySummation
+
+    //#region InvoiceReferencedDocument
+    //  17. InvoiceReferencedDocument (optional)
+    if (Descriptor.InvoiceReferencedDocument <> nil) then
+    begin
+      Writer.WriteStartElement('ram:InvoiceReferencedDocument');
+      Writer.WriteOptionalElementString('ram:IssuerAssignedID', Descriptor.InvoiceReferencedDocument.ID);
+      if (Descriptor.InvoiceReferencedDocument.IssueDateTime.HasValue) then
       begin
         Writer.WriteStartElement('ram:FormattedIssueDateTime');
-        Writer.WriteStartElement('qdt:DateTimeString');
-        Writer.WriteAttributeString('format', '102');
-        Writer.WriteValue(_formatDate(document.IssueDateTime.Value));
-        Writer.WriteEndElement(); // !udt:DateTimeString
-        Writer.WriteEndElement(); // !FormattedIssueDateTime
+        _writeElementWithAttribute(Writer, 'qdt:DateTimeString', 'format', '102', _formatDate(Descriptor.InvoiceReferencedDocument.IssueDateTime.Value));
+        Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
       end;
+      Writer.WriteEndElement(); // !ram:InvoiceReferencedDocument
+    end;
+    //#endregion
 
-      if (document.ReferenceTypeCode <> TZUGFeRDReferenceTypeCodes.Unknown) then
-      begin
-        Writer.WriteElementString('ram:TypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
-      end;
+    Writer.WriteEndElement(); // !ram:ApplicableHeaderTradeSettlement
 
-      Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
-      Writer.WriteElementString('ram:ID', document.ID);
-      Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
-    end; // !foreach(document)
+    Writer.WriteEndElement(); // !ram:SupplyChainTradeTransaction
+    //#endregion
+
+    Writer.WriteEndElement(); // !ram:Invoice
+    Writer.WriteEndDocument();
+    Writer.Flush();
+
+    _stream.Seek(streamPosition, soFromBeginning);
+  finally
+    Writer.Free;
   end;
-
-  Writer.WriteEndElement(); // !ApplicableHeaderTradeAgreement
-
-  Writer.WriteStartElement('ram:ApplicableHeaderTradeDelivery'); // Pflichteintrag
-
-  if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
-  begin
-    _writeOptionalParty(Writer, 'ram:ShipToTradeParty', Descriptor.ShipTo);
-    _writeOptionalParty(Writer, 'ram:ShipFromTradeParty', Descriptor.ShipFrom);
-  end;
-
-  if (Descriptor.ActualDeliveryDate.HasValue) then
-  begin
-    Writer.WriteStartElement('ram:ActualDeliverySupplyChainEvent');
-    Writer.WriteStartElement('ram:OccurrenceDateTime');
-    Writer.WriteStartElement('udt:DateTimeString');
-    Writer.WriteAttributeString('format', '102');
-    Writer.WriteValue(_formatDate(Descriptor.ActualDeliveryDate.Value));
-    Writer.WriteEndElement(); // 'udt:DateTimeString
-    Writer.WriteEndElement(); // !OccurrenceDateTime()
-    Writer.WriteEndElement(); // !ActualDeliverySupplyChainEvent
-  end;
-
-  if (Descriptor.DeliveryNoteReferencedDocument <> nil) then
-  begin
-    Writer.WriteStartElement('ram:DeliveryNoteReferencedDocument');
-
-    if (Descriptor.DeliveryNoteReferencedDocument.IssueDateTime.HasValue) then
-    begin
-      Writer.WriteStartElement('ram:FormattedIssueDateTime');
-      Writer.WriteValue(_formatDate(Descriptor.DeliveryNoteReferencedDocument.IssueDateTime.Value,false));
-      Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
-    end;
-
-    Writer.WriteElementString('ram:IssuerAssignedID', Descriptor.DeliveryNoteReferencedDocument.ID);
-    Writer.WriteEndElement(); // !DeliveryNoteReferencedDocument
-  end;
-
-  Writer.WriteEndElement(); // !ApplicableHeaderTradeDelivery
-
-  Writer.WriteStartElement('ram:ApplicableHeaderTradeSettlement');
-  // order of sub-elements of ApplicableHeaderTradeSettlement:
-  //   1. CreditorReferenceID (optional)
-  //   2. PaymentReference (optional)
-  //   3. TaxCurrencyCode (optional)
-  //   4. InvoiceCurrencyCode (optional)
-  //   5. InvoiceIssuerReference (optional)
-  //   6. InvoicerTradeParty (optional)
-  //   7. InvoiceeTradeParty (optional)
-  //   8. PayeeTradeParty (optional)
-  //   9. TaxApplicableTradeCurrencyExchange (optional)
-  //  10. SpecifiedTradeSettlementPaymentMeans (optional)
-  //  11. ApplicableTradeTax (optional)
-  //  12. BillingSpecifiedPeriod (optional)
-  //  13. SpecifiedTradeAllowanceCharge (optional)
-  //  14. SpecifiedLogisticsServiceCharge (optional)
-  //  15. SpecifiedTradePaymentTerms (optional)
-  //  16. SpecifiedTradeSettlementHeaderMonetarySummation
-  //  17. InvoiceReferencedDocument (optional)
-  //  18. ReceivableSpecifiedTradeAccountingAccount (optional)
-  //  19. SpecifiedAdvancePayment (optional)
-
-  //   1. CreditorReferenceID (optional)
-  if Descriptor.PaymentMeans <> nil then
-  if (Descriptor.PaymentMeans.SEPACreditorIdentifier<>'') then
-  begin
-    Writer.WriteOptionalElementString('ram:CreditorReferenceID', Descriptor.PaymentMeans.SEPACreditorIdentifier, [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-  end;
-
-  //   2. PaymentReference (optional)
-  Writer.WriteOptionalElementString('ram:PaymentReference', Descriptor.PaymentReference);
-
-  //   4. InvoiceCurrencyCode (optional)
-  Writer.WriteElementString('ram:InvoiceCurrencyCode', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
-
-  //   7. InvoiceeTradeParty (optional)
-  if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
-    _writeOptionalParty(Writer, 'ram:InvoiceeTradeParty', Descriptor.Invoicee);
-
-  //   8. PayeeTradeParty (optional)
-  if (Descriptor.Profile <> TZUGFeRDProfile.Minimum) then
-  _writeOptionalParty(Writer, 'ram:PayeeTradeParty', Descriptor.Payee);
-
-  //  10. SpecifiedTradeSettlementPaymentMeans (optional)
-  if (Descriptor.CreditorBankAccounts.Count = 0) and (Descriptor.DebitorBankAccounts.Count = 0) then
-  begin
-    if (Descriptor.PaymentMeans <> nil) then
-    if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
-    begin
-      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
-      Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-      Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
-
-      if (Descriptor.PaymentMeans.FinancialCard <> nil) then
-      begin
-        Writer.WriteStartElement('ram:ApplicableTradeSettlementFinancialCard', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
-        Writer.WriteOptionalElementString('ram:ID', Descriptor.PaymentMeans.FinancialCard.Id);
-        Writer.WriteOptionalElementString('ram:CardholderName', Descriptor.PaymentMeans.FinancialCard.CardholderName);
-        Writer.WriteEndElement(); // !ram:ApplicableTradeSettlementFinancialCard
-      end;
-      Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
-    end;
-  end
-  else
-  begin
-    for var creditorAccount : TZUGFeRDBankAccount in Descriptor.CreditorBankAccounts do
-    begin
-      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
-
-      if (Descriptor.PaymentMeans <> nil) then
-      if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
-      begin
-        Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
-
-        if (Descriptor.PaymentMeans.FinancialCard <> nil) then
-        begin
-            Writer.WriteStartElement('ram:ApplicableTradeSettlementFinancialCard', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
-            Writer.WriteOptionalElementString('ram:ID', Descriptor.PaymentMeans.FinancialCard.Id);
-            Writer.WriteOptionalElementString('ram:CardholderName', Descriptor.PaymentMeans.FinancialCard.CardholderName);
-            Writer.WriteEndElement(); // !ram:ApplicableTradeSettlementFinancialCard
-        end;
-      end;
-
-      Writer.WriteStartElement('ram:PayeePartyCreditorFinancialAccount');
-      Writer.WriteElementString('ram:IBANID', creditorAccount.IBAN);
-      Writer.WriteOptionalElementString('ram:AccountName', creditorAccount.Name);
-      Writer.WriteOptionalElementString('ram:ProprietaryID', creditorAccount.ID);
-      Writer.WriteEndElement(); // !PayeePartyCreditorFinancialAccount
-
-      //if (creditorAccount.BIC<>'') then
-      //begin
-        Writer.WriteStartElement('ram:PayeeSpecifiedCreditorFinancialInstitution');
-        Writer.WriteElementString('ram:BICID', creditorAccount.BIC);
-        Writer.WriteOptionalElementString('ram:GermanBankleitzahlID', creditorAccount.Bankleitzahl);
-        Writer.WriteEndElement(); // !PayeeSpecifiedCreditorFinancialInstitution
-      //end;
-
-      Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
-    end;
-
-    for var debitorAccount : TZUGFeRDBankAccount in Descriptor.DebitorBankAccounts do
-    begin
-      Writer.WriteStartElement('ram:SpecifiedTradeSettlementPaymentMeans');
-
-      if (Descriptor.PaymentMeans <> nil) then
-      if (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown) then
-      begin
-        Writer.WriteElementString('ram:TypeCode', TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
-        Writer.WriteOptionalElementString('ram:Information', Descriptor.PaymentMeans.Information);
-      end;
-
-      Writer.WriteStartElement('ram:PayerPartyDebtorFinancialAccount');
-      Writer.WriteElementString('ram:IBANID', debitorAccount.IBAN);
-      Writer.WriteOptionalElementString('ram:ProprietaryID', debitorAccount.ID);
-      Writer.WriteEndElement(); // !PayerPartyDebtorFinancialAccount
-
-      if (debitorAccount.BIC<>'') or
-         (debitorAccount.Bankleitzahl<>'') or
-         (debitorAccount.BankName<>'') then
-      begin
-        Writer.WriteStartElement('ram:PayerSpecifiedDebtorFinancialInstitution');
-        Writer.WriteElementString('ram:BICID', debitorAccount.BIC);
-        Writer.WriteOptionalElementString('ram:GermanBankleitzahlID', debitorAccount.Bankleitzahl);
-        Writer.WriteOptionalElementString('ram:Name', debitorAccount.BankName);
-        Writer.WriteEndElement(); // !PayerSpecifiedDebtorFinancialInstitution
-      end;
-
-      Writer.WriteEndElement(); // !SpecifiedTradeSettlementPaymentMeans
-    end;
-  end;
-
-
-  //            /*
-  //             * @todo add writer for this:
-  //             * <SpecifiedTradeSettlementPaymentMeans>
-  //            * <TypeCode>42</TypeCode>
-  //          * 	<Information>Überweisung</Information>
-  //           * <PayeePartyCreditorFinancialAccount>
-  //          * 		<IBANID>DE08700901001234567890</IBANID>
-  //          * 		<ProprietaryID>1234567890</ProprietaryID>
-  //          * 	</PayeePartyCreditorFinancialAccount>
-  //          * 	<PayeeSpecifiedCreditorFinancialInstitution>
-  //          * 		<BICID>GENODEF1M04</BICID>
-  //          * 		<GermanBankleitzahlID>70090100</GermanBankleitzahlID>
-  //          * 		<Name>Hausbank München</Name>
-  //          * 	</PayeeSpecifiedCreditorFinancialInstitution>
-  //          * </SpecifiedTradeSettlementPaymentMeans>
-  //             */
-
-  //  11. ApplicableTradeTax (optional)
-  _writeOptionalTaxes(Writer);
-
-  //#region BillingSpecifiedPeriod
-  //  12. BillingSpecifiedPeriod (optional)
-  if (Descriptor.BillingPeriodStart>100) or (Descriptor.BillingPeriodEnd>100) then
-  begin
-    Writer.WriteStartElement('ram:BillingSpecifiedPeriod', [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-    if (Descriptor.BillingPeriodStart>100) then
-    begin
-        Writer.WriteStartElement('ram:StartDateTime');
-        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodStart));
-        Writer.WriteEndElement(); // !StartDateTime
-    end;
-
-    if (Descriptor.BillingPeriodEnd>100) then
-    begin
-        Writer.WriteStartElement('ram:EndDateTime');
-        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodEnd));
-        Writer.WriteEndElement(); // !EndDateTime
-    end;
-    Writer.WriteEndElement(); // !BillingSpecifiedPeriod
-  end;
-  //#endregion
-
-  //  13. SpecifiedTradeAllowanceCharge (optional)
-  for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in Descriptor.TradeAllowanceCharges do
-  begin
-    Writer.WriteStartElement('ram:SpecifiedTradeAllowanceCharge');
-    Writer.WriteStartElement('ram:ChargeIndicator');
-    Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
-    Writer.WriteEndElement(); // !ram:ChargeIndicator
-
-    if tradeAllowanceCharge.BasisAmount <> 0.0 then
-    begin
-      Writer.WriteStartElement('ram:BasisAmount');
-      Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount));
-      Writer.WriteEndElement();
-    end;
-
-    Writer.WriteStartElement('ram:ActualAmount');
-    Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount));
-    Writer.WriteEndElement();
-
-    if tradeAllowanceCharge.ChargeIndicator then
-    begin
-      Writer.WriteOptionalElementString('ram:ReasonCode',
-         TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
-                                   tradeAllowanceCharge.ReasonCodeCharge));
-    end else
-    begin
-      Writer.WriteOptionalElementString('ram:ReasonCode',
-         TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
-                                   tradeAllowanceCharge.ReasonCodeAllowance));
-    end;
-
-    Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason);
-
-    if (tradeAllowanceCharge.Tax <> nil) then
-    begin
-      Writer.WriteStartElement('ram:CategoryTradeTax');
-      Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(tradeAllowanceCharge.Tax.TypeCode));
-      if (tradeAllowanceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
-        Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tradeAllowanceCharge.Tax.CategoryCode));
-      Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent));
-      Writer.WriteEndElement();
-    end;
-    Writer.WriteEndElement();
-  end;
-
-  //  14. SpecifiedLogisticsServiceCharge (optional)
-  for var serviceCharge : TZUGFeRDServiceCharge in Descriptor.ServiceCharges do
-  begin
-    Writer.WriteStartElement('ram:SpecifiedLogisticsServiceCharge');
-    if serviceCharge.Description <> '' then
-      Writer.WriteElementString('ram:Description', serviceCharge.Description);
-    Writer.WriteElementString('ram:AppliedAmount', _formatDecimal(serviceCharge.Amount));
-    if (serviceCharge.Tax <> nil) then
-    begin
-      Writer.WriteStartElement('ram:AppliedTradeTax');
-      Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(serviceCharge.Tax.TypeCode));
-      if (serviceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
-        Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(serviceCharge.Tax.CategoryCode));
-      Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(serviceCharge.Tax.Percent));
-      Writer.WriteEndElement();
-    end;
-    Writer.WriteEndElement();
-  end;
-
-(*
-            //  15. SpecifiedTradePaymentTerms (optional)
-            if (this.Descriptor.PaymentTerms != null || !string.IsNullOrWhiteSpace(Descriptor.PaymentMeans?.SEPAMandateReference))
-            {
-                Writer.WriteStartElement("ram:SpecifiedTradePaymentTerms");
-                Writer.WriteOptionalElementString("ram:Description", this.Descriptor.PaymentTerms?.Description);
-                if (this.Descriptor.PaymentTerms?.DueDate.HasValue ?? false)
-                {
-                    Writer.WriteStartElement("ram:DueDateDateTime");
-                    _writeElementWithAttribute(Writer, "udt:DateTimeString", "format", "102", _formatDate(this.Descriptor.PaymentTerms.DueDate.Value));
-                    Writer.WriteEndElement(); // !ram:DueDateDateTime
-                }
-                Writer.WriteOptionalElementString("ram:DirectDebitMandateID", Descriptor.PaymentMeans?.SEPAMandateReference);
-                Writer.WriteEndElement();
-            }
-
-
-*)
-
-  //  15. SpecifiedTradePaymentTerms (optional)
-  for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
-  begin
-    Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-    Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
-    if (PaymentTerms.DueDate.HasValue) then
-    begin
-      Writer.WriteStartElement('ram:DueDateDateTime');
-      _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
-      Writer.WriteEndElement(); // !ram:DueDateDateTime
-    end;
-    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SepaMandateReference);
-(*    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
-    //TODO PaymentTerms.PartialPaymentAmount
-    //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
-    if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) or
-       (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) or
-       PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
-    begin
-      Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
-      if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
-        _writeElementWithAttribute(Writer, 'ram:BasisPeriodMeasure', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(PaymentTerms.ApplicableTradePaymentDiscountTerms.UnitCode), _formatDecimal(paymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure, 4));
-      if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0 then
-        _writeOptionalAmount(Writer, 'ram:BasisAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount);
-      if PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0 then
-        _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
-      Writer.WriteEndElement();
-      //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
-    end;
-*)
-    Writer.WriteEndElement();
-  end;
-
-  //  16. SpecifiedTradeSettlementHeaderMonetarySummation
-  Writer.WriteStartElement('ram:SpecifiedTradeSettlementHeaderMonetarySummation');
-  _writeOptionalAmount(Writer, 'ram:LineTotalAmount', Descriptor.LineTotalAmount);
-  _writeOptionalAmount(Writer, 'ram:ChargeTotalAmount', Descriptor.ChargeTotalAmount);
-  _writeOptionalAmount(Writer, 'ram:AllowanceTotalAmount', Descriptor.AllowanceTotalAmount);
-  _writeOptionalAmount(Writer, 'ram:TaxBasisTotalAmount', Descriptor.TaxBasisAmount);
-  _writeOptionalAmount(Writer, 'ram:TaxTotalAmount', Descriptor.TaxTotalAmount, 2, true);
-  _writeOptionalAmount(Writer, 'ram:RoundingAmount', Descriptor.RoundingAmount, 2, false, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);  // RoundingAmount  //Rundungsbetrag
-  _writeOptionalAmount(Writer, 'ram:GrandTotalAmount', Descriptor.GrandTotalAmount);
-
-  if (Descriptor.TotalPrepaidAmount.HasValue) then
-  begin
-    _writeOptionalAmount(Writer, 'ram:TotalPrepaidAmount', Descriptor.TotalPrepaidAmount);
-  end;
-
-  _writeOptionalAmount(Writer, 'ram:DuePayableAmount', Descriptor.DuePayableAmount);
-  Writer.WriteEndElement(); // !ram:SpecifiedTradeSettlementHeaderMonetarySummation
-
-  //#region InvoiceReferencedDocument
-  //  17. InvoiceReferencedDocument (optional)
-  if (Descriptor.InvoiceReferencedDocument <> nil) then
-  begin
-    Writer.WriteStartElement('ram:InvoiceReferencedDocument');
-    Writer.WriteOptionalElementString('ram:IssuerAssignedID', Descriptor.InvoiceReferencedDocument.ID);
-    if (Descriptor.InvoiceReferencedDocument.IssueDateTime.HasValue) then
-    begin
-      Writer.WriteStartElement('ram:FormattedIssueDateTime');
-      _writeElementWithAttribute(Writer, 'qdt:DateTimeString', 'format', '102', _formatDate(Descriptor.InvoiceReferencedDocument.IssueDateTime.Value));
-      Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
-    end;
-    Writer.WriteEndElement(); // !ram:InvoiceReferencedDocument
-  end;
-  //#endregion
-
-  Writer.WriteEndElement(); // !ram:ApplicableHeaderTradeSettlement
-
-  Writer.WriteEndElement(); // !ram:SupplyChainTradeTransaction
-  //#endregion
-
-  Writer.WriteEndElement(); // !ram:Invoice
-  Writer.WriteEndDocument();
-  Writer.Flush();
-
-  _stream.Seek(streamPosition, soFromBeginning);
 end;
 
 procedure TZUGFeRDInvoiceDescriptor20Writer._writeElementWithAttribute(

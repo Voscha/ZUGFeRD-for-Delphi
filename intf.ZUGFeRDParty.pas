@@ -42,6 +42,8 @@ type
     FAddressLine3: string;
     FCountrySubdivisionName: string;
     FSpecifiedLegalOrganization: TZUGFeRDLegalOrganization;
+    procedure SetGlobalID(const Value: TZUGFeRDGlobalID);
+    procedure SetSpecifiedLegalOrganization(const Value: TZUGFeRDLegalOrganization);
   public
     constructor Create;
     destructor Destroy; override;
@@ -84,7 +86,7 @@ type
     /// <summary>
     /// Global identifier
     /// </summary>
-    property GlobalID: TZUGFeRDGlobalID read FGlobalID write FGlobalID;
+    property GlobalID: TZUGFeRDGlobalID read FGlobalID write SetGlobalID;
 
     /// <summary>
     /// Address line 3
@@ -104,7 +106,7 @@ type
     /// <summary>
     /// Legal organization
     /// </summary>
-    property SpecifiedLegalOrganization: TZUGFeRDLegalOrganization read FSpecifiedLegalOrganization write FSpecifiedLegalOrganization;
+    property SpecifiedLegalOrganization: TZUGFeRDLegalOrganization read FSpecifiedLegalOrganization write SetSpecifiedLegalOrganization;
   end;
 
 implementation
@@ -119,9 +121,27 @@ end;
 destructor TZUGFeRDParty.Destroy;
 begin
   if Assigned(FID) then begin FID.Free; FID := nil; end;
-  if Assigned(FGlobalID) then begin FGlobalID.Free; FGlobalID := nil; end;
+  if Assigned(FGlobalID) then
+  begin
+    FGlobalID.Free;
+    FGlobalID := nil;
+  end;
   if Assigned(FSpecifiedLegalOrganization) then begin FSpecifiedLegalOrganization.Free; FSpecifiedLegalOrganization := nil; end;
   inherited;
+end;
+
+procedure TZUGFeRDParty.SetGlobalID(const Value: TZUGFeRDGlobalID);
+begin
+  if assigned(FGlobalID) then
+    FGlobalID.Free;
+  FGlobalID := Value;
+end;
+
+procedure TZUGFeRDParty.SetSpecifiedLegalOrganization(const Value: TZUGFeRDLegalOrganization);
+begin
+  if assigned(FSpecifiedLegalOrganization) then
+    FSpecifiedLegalOrganization.Free;
+  FSpecifiedLegalOrganization := Value;
 end;
 
 end.

@@ -28,14 +28,14 @@ type
   TZUGFeRDApplicableTradePaymentTerms = class
   private
     FCalculationPercent: double;
-    FBasisPeriodMeasure: ZUGFeRDNullable<double>;
+    FBasisPeriodMeasure: ZUGFeRDNullableDouble;
     FBasisAmount: Currency;
     FActualPenaltyAmount: Currency;
     FUnitCode: TZUGFeRDQuantityCodes;
 
-    //TODO FBasisDateTime: ZUGFeRDNullable<TDateTime>;
+    //TODO FBasisDateTime: ZUGFeRDNullableTDateTime;
   public
-    //TODO property BasisDateTime: ZUGFeRDNullable<TDateTime> read FBasisDateTime write FBasisDateTime;
+    //TODO property BasisDateTime: ZUGFeRDNullableTDateTime read FBasisDateTime write FBasisDateTime;
     property BasisPeriodMeasure : ZUGFeRDNullable<double> read FBasisPeriodMeasure write FBasisPeriodMeasure;
     property BasisAmount : Currency read FBasisAmount write FBasisAmount;
     property CalculationPercent : double read FCalculationPercent write FCalculationPercent;
@@ -49,7 +49,7 @@ type
   TZUGFeRDPaymentTerms = class
   private
     FDescription: string;
-    FDueDate: ZUGFeRDNullable<TDateTime>;
+    FDueDate: ZUGFeRDNullableDateTime;
     FDirectDebitMandateID: string;
     FApplicableTradePaymentDiscountTerms: TZUGFeRDApplicableTradePaymentTerms;
     FApplicableTradePaymentPenaltyTerms: TZUGFeRDApplicableTradePaymentTerms;
@@ -62,7 +62,7 @@ type
     /// <summary>
     /// The date when the payment is due
     /// </summary>
-    property DueDate: ZUGFeRDNullable<TDateTime> read FDueDate write FDueDate;
+    property DueDate: ZUGFeRDNullableDateTime read FDueDate write FDueDate;
 
     /// SEPA Mandatsreferenz
     ///

@@ -36,6 +36,7 @@ type
     class function GetDataAsBase64(_Stream : TStream) : String;
     class function FindFirstMatchingItem<T:class>(List: TObjectList<T>; Predicate: TFunc<T, Boolean>): T;
     class function Any<T:class>(const List: TObjectList<T>; Predicate: TFunc<T, Boolean>): Boolean;
+    class function TrueForAll<T: class>(const List: TObjectList<T>; Predicate: TFunc<T, Boolean>): Boolean;
   end;
 
   IZUGFeRDPdfHelper = interface
@@ -507,6 +508,23 @@ begin
     base64.Free;
     str.Free;
   end;
+end;
+
+class function TZUGFeRDHelper.TrueForAll<T>(const List: TObjectList<T>;
+  Predicate: TFunc<T, Boolean>): Boolean;
+var
+  Item: T;
+begin
+  result := True;
+  for Item in List do
+  begin
+    if not Predicate(Item) then
+    begin
+      Result := False;
+      Break;
+    end;
+  end;
+
 end;
 
 { ZUGFeRDNullable<T> }
