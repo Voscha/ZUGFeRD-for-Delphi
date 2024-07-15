@@ -375,6 +375,8 @@ begin
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
   FApplicableProductCharacteristics := TObjectList<TZUGFeRDApplicableProductCharacteristic>.Create;
   FDesignatedProductClassifications := TObjectList<TZUGFeRDDesignatedProductClassification>.Create;
+  //Setdefault:
+  FTaxType := TZUGFeRDTaxTypes.VAT;
 end;
 
 destructor TZUGFeRDTradeLineItem.Destroy;
