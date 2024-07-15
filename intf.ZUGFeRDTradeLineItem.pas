@@ -38,7 +38,9 @@ uses
   intf.ZUGFeRDBuyerOrderReferencedDocument,
   intf.ZUGFeRDAccountingAccountTypeCodes,
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
-  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
+  intf.ZUGFeRDDesignatedProductClassification,
+  intf.ZUGFeRDDesignatedProductClassificationCodes
   ;
 
 type
@@ -62,6 +64,7 @@ type
     FPackageUnitCode: TZUGFeRDQuantityCodes;
     FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
     FApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic>;
+    FDesignatedProductClassifications: TObjectList<TZUGFeRDDesignatedProductClassification>;
     FSellerAssignedID: string;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
     FSpecifiedTradeAllowanceCharges : TObjectList<TZUGFeRDTradeAllowanceCharge>;
@@ -174,6 +177,16 @@ type
 		/// </summary>
     procedure SetOrderReferencedDocument(orderReferencedId: string;
       orderReferencedDate: IZUGFeRDNullableParam<TDateTime>);
+
+    /// <summary>
+    /// Adds a product classification
+    /// </summary>
+    /// <param name="classCode">Identifier of the item classification</param>
+    /// <param name="className">Classification name</param>
+    /// <param name="listID">Product classification name</param>
+    /// <param name="listVersionID">Version of product classification</param>
+    procedure AddDesignatedProductClassification(classCode: TZUGFeRDDesignatedProductClassicficationCodes;
+      const className: string; const listID: string = ''; const listVersionID: string = '');
   public
     /// <summary>
     /// The identification of articles based on a registered scheme
@@ -336,6 +349,12 @@ type
     /// Additional product information
     /// </summary>
     property ApplicableProductCharacteristics: TObjectList<TZUGFeRDApplicableProductCharacteristic> read FApplicableProductCharacteristics write FApplicableProductCharacteristics;
+
+    /// <summary>
+    /// Returns all existing designated product classifications
+    /// </summary>
+    /// <returns></returns>
+    property DesignatedProductClassifications: TObjectlist<TZUGFeRDDesignatedProductClassification> read FDesignatedProductClassifications;
   end;
 
 implementation
@@ -355,6 +374,7 @@ begin
   FSpecifiedTradeAllowanceCharges := TObjectList<TZUGFeRDTradeAllowanceCharge>.Create;
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
   FApplicableProductCharacteristics := TObjectList<TZUGFeRDApplicableProductCharacteristic>.Create;
+  FDesignatedProductClassifications := TObjectList<TZUGFeRDDesignatedProductClassification>.Create;
 end;
 
 destructor TZUGFeRDTradeLineItem.Destroy;
@@ -369,6 +389,7 @@ begin
   if Assigned(FSpecifiedTradeAllowanceCharges) then begin FSpecifiedTradeAllowanceCharges.Free; FSpecifiedTradeAllowanceCharges := nil; end;
   if Assigned(FReceivableSpecifiedTradeAccountingAccounts) then begin FReceivableSpecifiedTradeAccountingAccounts.Free; FReceivableSpecifiedTradeAccountingAccounts := nil; end;
   if Assigned(FApplicableProductCharacteristics) then begin FApplicableProductCharacteristics.Free; FApplicableProductCharacteristics := nil; end;
+  if Assigned(FDesignatedProductClassifications) then begin FDesignatedProductClassifications.Free; FDesignatedProductClassifications := nil; end;
   inherited;
 end;
 
@@ -462,6 +483,18 @@ end;
 procedure TZUGFeRDTradeLineItem.AddReceivableSpecifiedTradeAccountingAccount(AccountID: string);
 begin
   AddReceivableSpecifiedTradeAccountingAccount(AccountID, TZUGFeRDAccountingAccountTypeCodes.Unknown);
+end;
+
+procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(
+  classCode: TZUGFeRDDesignatedProductClassicficationCodes; const className, listID,
+  listVersionID: string);
+begin
+  var dpc := TZUGFeRDDesignatedProductClassification.Create;
+  dpc.ClassCode := Integer(classCode);
+  dpc.ClassName := className;
+  dpc.ListID := listID;
+  dpc.ListVersionID := listVersionID;
+  FDesignatedProductClassifications.Add(dpc);
 end;
 
 procedure TZUGFeRDTradeLineItem.AddReceivableSpecifiedTradeAccountingAccount(

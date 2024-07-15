@@ -236,6 +236,28 @@ begin
         end
       end;
 
+      if tradeLineItem.DesignatedProductClassifications.Count > 0 then
+      begin
+        for var designatedProductClassification in tradeLineItem.DesignatedProductClassifications do
+        begin
+          Writer.WriteStartElement('ram:DesignatedProductClassification');
+          Writer.WriteOptionalElementString('ram:ClassName', designatedProductClassification.ClassName);
+
+          if (designatedProductClassification.ClassCode.HasValue) then
+          begin
+            Writer.WriteStartElement('ram::ClassCode');
+            if not String.IsNullOrWhiteSpace(designatedProductClassification.ListID) then
+            begin
+              Writer.WriteAttributeString('listID', designatedProductClassification.ListID);
+              Writer.WriteAttributeString('listVersionID', designatedProductClassification.ListVersionID);
+            end;
+            Writer.WriteValue(designatedProductClassification.ClassCode.Value.ToString());
+            Writer.WriteEndElement(); // !ram::ClassCode
+          end;
+          Writer.WriteEndElement(); // !ram:DesignatedProductClassification
+        end;
+      end;
+
       Writer.WriteEndElement(); // !ram:SpecifiedTradeProduct(Basic|Comfort|Extended|XRechnung)
       //#endregion
       //#region SpecifiedLineTradeAgreement (Basic, Comfort, Extended, XRechnung)

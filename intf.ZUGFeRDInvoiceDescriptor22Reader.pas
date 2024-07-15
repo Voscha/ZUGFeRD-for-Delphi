@@ -63,6 +63,7 @@ uses
   ,intf.ZUGFeRDDespatchAdviceReferencedDocument
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  ,intf.ZUGFeRDDesignatedProductClassificationCodes
   ;
 
 type
@@ -769,6 +770,16 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
+  end;
+
+  nodes := TradeLineItem.SelectNodes('.//ram:DesignatedProductClassification');
+  for i := 0 to nodes.length - 1 do
+  begin
+    var className := _nodeAsString(nodes[i], './/ram:ClassName');
+    var classCode := TZUGFeRDDesignatedProductClassicficationCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:ClassCode'));
+    var listID := _nodeAsString(nodes[i], './/ram:ClassCode/@listID');
+    var listVersionID := _nodeAsString(nodes[i], './/ram:ClassCode/@listVersionID');
+    result.AddDesignatedProductClassification(classCode, className, listID, listVersionID);
   end;
 end;
 
