@@ -1091,7 +1091,7 @@ begin
         _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
         Writer.WriteEndElement(); // !ram:DueDateDateTime
       end;
-      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
+      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SEPAMandateReference);
       //TODO PaymentTerms.PartialPaymentAmount
       //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
       if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) or
