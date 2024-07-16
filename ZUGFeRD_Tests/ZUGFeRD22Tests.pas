@@ -4,7 +4,7 @@ interface
 
 uses
   DUnitX.TestFramework,  System.Classes, System.SysUtils, System.Generics.Collections, TestBase,
-  InvoiceProvider, System.DateUtils;
+  InvoiceProvider, System.DateUtils, XML.XMLDoc;
 
 type
   [TestFixture]
@@ -96,10 +96,19 @@ type
     procedure TestSellerOrderReferencedDocument;
     [Test]
     procedure TestWriteAndReadBusinessProcess;
+    /// <summary>
+    /// This test ensure that Writer and Reader uses the same path and namespace for elements
+    /// </summary>
     [Test]
     procedure TestWriteAndReadExtended;
+    /// <summary>
+    /// This test ensure that BIC won't be written if empty
+    /// </summary>
     [Test]
     procedure TestFinancialInstitutionBICEmpty;
+    /// <summary>
+    /// This test ensure that BIC won't be written if empty
+    /// </summary>
     [Test]
     procedure TestAltteilSteuer;
     [Test]
@@ -129,7 +138,10 @@ uses intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDProfile, intf.ZUGFeRDInvoiceType
   intf.ZUGFeRDApplicableProductCharacteristic, intf.ZUGFeRDGlobalIDSchemeIdentifiers,
   intf.ZUGFeRDQuantityCodes, intf.ZUGFeRDCountryCodes, intf.ZUGFeRDPaymentTerms,
   intf.ZUGFeRDTaxRegistration, intf.ZUGFeRDTaxRegistrationSchemeID,
-  intf.ZUGFeRDSellerOrderreferencedDocument;
+  intf.ZUGFeRDSellerOrderreferencedDocument, intf.ZUGFeRDPaymentMeansTypeCodes,
+  intf.ZUGFeRDSpecifiedProcuringProject, intf.ZUGFeRDFinancialCard, intf.ZUGFeRDNote,
+  intf.ZUGFeRDBankAccount, intf.ZUGFeRDTax, intf.ZUGFeRDServiceCharge, intf.ZUGFeRDSubjectCodes,
+  intf.ZUGFeRDContentCodes, intf.ZUGFeRDXmlHelper;
 
 procedure TZUGFeRD22Tests.Setup;
 begin
@@ -170,17 +182,166 @@ end;
 
 procedure TZUGFeRD22Tests.TestAltteilSteuer;
 begin
+  var desc := TZUGFeRDInvoiceDescriptor.CreateInvoice('112233', EncodeDate(2021, 04, 23), TZUGFerDCurrencyCodes.EUR);
+  desc.Notes.Clear();
+  desc.Notes.Add(TZUGFeRDNote.Create(
+    'Rechnung enthält 100 EUR (Umsatz)Steuer auf Altteile gem. Abschn. 10.5 Abs. 3 UStAE',
+    TZUGFeRDSubjectCodes.ADU,
+    TZUGFeRDContentCodes.Unknown)
+  );
 
+  desc.TradeLineItems.Clear();
+  desc.AddTradeLineItem('Neumotor', '',
+    TZUGFeRDQuantityCodes.C62,
+    TZUGFeRDNullableParam<Double>.Create(1),
+    nil,
+    TZUGFeRDNullableParam<Currency>.Create(1000),
+    1,
+    0,
+    TZUGFeRDTaxTypes.VAT,
+    TZUGFeRDTaxCategoryCodes.S,
+    19);
+(*
+const name: string;
+  const description: string;
+  const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
+  const unitQuantity: IZUGFeRDNullableParam<Double> = nil;
+  const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
+  const netUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
+  const billedQuantity: Double = 0;
+  const lineTotalAmount: Currency = 0;
+  const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown;
+  const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
+  const taxPercent: Double = 0;
+*)
+  desc.AddTradeLineItem('Bemessungsgrundlage und Umsatzsteuer auf Altteil', '',
+    TZUGFeRDQuantityCodes.C62,
+    TZUGFeRDNullableParam<Double>.Create(1),
+    nil,
+    TZUGFeRDNullableParam<Currency>.Create(100),
+    1,
+    0,
+    TZUGFeRDTaxTypes.VAT,
+    TZUGFeRDTaxCategoryCodes.S,
+    19);
+
+  desc.AddTradeLineItem('Korrektur/Stornierung Bemessungsgrundlage der Umsatzsteuer auf Altteil', '',
+    TZUGFeRDQuantityCodes.C62,
+    TZUGFeRDNullableParam<Double>.Create(1),
+    nil,
+    TZUGFeRDNullableParam<Currency>.Create(-100),
+    1,
+    0,
+    TZUGFeRDTaxTypes.VAT,
+    TZUGFeRDTaxCategoryCodes.Z,
+    0);
+
+  desc.AddApplicableTradeTax(1000, 19, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
+
+  desc.SetTotals(
+    TZUGFeRDNullableParam<Currency>.create(1500),
+    nil,
+    nil,
+    TZUGFeRDNullableParam<Currency>.create(1500),
+    TZUGFeRDNullableParam<Currency>.create(304),
+    TZUGFeRDNullableParam<Currency>.create(1804),
+    nil,
+    TZUGFeRDNullableParam<Currency>.create(1804)
+    );
+
+  var ms := TMemoryStream.Create;
+
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Free;
+  ms.Seek(0, soBeginning);
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.isNull(loadedInvoice.Invoicee);
+  loadedInvoice.Free;
 end;
 
 procedure TZUGFeRD22Tests.TestBasisQuantityMultiple;
 begin
+  var desc := FInvoiceProvider.CreateInvoice();
 
+  desc.TradeLineItems.Clear();
+  var tli := desc.AddTradeLineItem('Joghurt Banane', '',
+    TZUGFeRDQuantityCodes.H87,
+    TZUGFeRDNullableParam<Double>.Create(10),
+    TZUGFeRDNullableParam<Currency>.Create(5.5),
+    TZUGFeRDNullableParam<Currency>.Create(5.5),
+    50,
+    0,
+    TZUGFeRDTaxTypes.VAT,
+    TZUGFeRDTaxCategoryCodes.S,
+    7,
+    '',
+    TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, '4000050986428'),
+    'ARNR2'
+  );
+
+  var ms := TMemoryStream.Create;
+
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Free;
+  ms.Seek(0, soBeginning);
+
+  var XmlDoc := NewXmlDocument();
+  XMLDoc.LoadFromStream(ms);
+  ms.Free;
+
+  var doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(XMLDoc);
+  var node := doc.SelectSingleNode('//ram:SpecifiedTradeSettlementLineMonetarySummation//ram:LineTotalAmount');
+  Assert.AreEqual('27.50', node.Text);
+
+  XMLDoc := nil;
 end;
 
 procedure TZUGFeRD22Tests.TestBasisQuantityStandard;
 begin
+  var desc := FInvoiceProvider.CreateInvoice();
 
+  desc.TradeLineItems.Clear();
+  desc.AddTradeLineItem('Joghurt Banane', '',
+    TZUGFeRDQuantityCodes.H87,
+    nil,
+    TZUGFeRDNullableParam<Currency>.Create(5.5),
+    TZUGFeRDNullableParam<Currency>.Create(5.5),
+    50,
+    0,
+    TZUGFeRDTaxTypes.VAT,
+    TZUGFeRDTaxCategoryCodes.S,
+    7,
+    '',
+    TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, '4000050986428'),
+    'ARNR2'
+  );
+
+  var ms := TMemoryStream.Create;
+
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Free;
+
+  ms.Seek(0, soBeginning);
+
+  var XMLdoc := NewXMLDocument;
+  XMLdoc.LoadFromStream(ms);
+  ms.Free;
+(*
+  XmlNamespaceManager nsmgr = new XmlNamespaceManager(doc.DocumentElement.OwnerDocument.NameTable);
+  nsmgr.AddNamespace("qdt", "urn:un:unece:uncefact:data:standard:QualifiedDataType:100");
+  nsmgr.AddNamespace("a", "urn:un:unece:uncefact:data:standard:QualifiedDataType:100");
+  nsmgr.AddNamespace("rsm", "urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100");
+  nsmgr.AddNamespace("ram", "urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100");
+  nsmgr.AddNamespace("udt", "urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100");
+*)
+  var doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldoc);
+  var node := doc.SelectSingleNode('//ram:SpecifiedTradeSettlementLineMonetarySummation//ram:LineTotalAmount');
+  Assert.AreEqual('275.00', node.Text);
+
+  XMLDoc := nil;
 end;
 
 procedure TZUGFeRD22Tests.TestContractReferencedDocumentWithExtended;
@@ -294,7 +455,37 @@ end;
 
 procedure TZUGFeRD22Tests.TestFinancialInstitutionBICEmpty;
 begin
+  var uuid := TZUGFerdHelper.CreateUuid;
+  var issueDateTime: TDateTime := Date;
 
+  var desc := FInvoiceProvider.CreateInvoice();
+  //PayeeSpecifiedCreditorFinancialInstitution
+  desc.CreditorBankAccounts[0].BIC := '';
+  //PayerSpecifiedDebtorFinancialInstitution
+  desc.AddDebitorFinancialAccount('DE02120300000000202051', '');
+
+  var ms := TMemoryStream.Create;
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
+  desc.Free;
+
+  ms.Seek(0, soBeginning);
+  var reader := TStreamReader.Create(ms);
+  var text := reader.ReadToEnd();
+  reader.Free;
+
+  ms.Seek(0, soBeginning);
+  var XmlDoc := NewXmlDocument();
+  XMLDoc.LoadFromStream(ms);
+  ms.Free;
+
+  var doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldoc);
+  var creditorFinancialInstitutions := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:PayeeSpecifiedCreditorFinancialInstitution');
+  var debitorFinancialInstitutions := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:PayerSpecifiedDebtorFinancialInstitution');
+
+  Assert.AreEqual(creditorFinancialInstitutions.Length, 0);
+  Assert.AreEqual(debitorFinancialInstitutions.Length, 0);
+
+  XMLDoc := nil;
 end;
 
 procedure TZUGFeRD22Tests.TestInvalidTaxTypes;
@@ -969,7 +1160,83 @@ end;
 
 procedure TZUGFeRD22Tests.TestReferenceXRechnung21UBL;
 begin
+  var path := '..\..\..\demodata\xRechnung\xRechnung UBL.xml';
+  path := makeSurePathIsCrossPlatformCompatible(path);
 
+  var desc := TZUGFeRDInvoiceDescriptor.Load(path);
+
+  Assert.AreEqual(desc.Profile, TZUGFeRDProfile.XRechnung);
+  Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
+
+  Assert.AreEqual(desc.InvoiceNo, '0815-99-1-a');
+  Assert.AreEqual(desc.InvoiceDate, EncodeDate(2020, 6, 21));
+  Assert.AreEqual(desc.PaymentReference, '0815-99-1-a');
+  Assert.AreEqual(desc.OrderNo, '0815-99-1');
+  Assert.AreEqual(desc.Currency, TZUGFeRDCurrencyCodes.EUR);
+
+  Assert.AreEqual(desc.Buyer.Name, 'Rechnungs Roulette GmbH & Co KG');
+  Assert.AreEqual(desc.Buyer.City, 'Klein Schlappstadt a.d. Lusche');
+  Assert.AreEqual(desc.Buyer.Postcode, '12345');
+  Assert.AreEqual(desc.Buyer.Country, TZUGFeRDCountryCodes(276));
+  Assert.AreEqual(desc.Buyer.Street, 'Beispielgasse 17b');
+  Assert.AreEqual(desc.Buyer.SpecifiedLegalOrganization.TradingBusinessName, 'Rechnungs Roulette GmbH & Co KG');
+
+  Assert.AreEqual(desc.BuyerContact.Name, 'Manfred Mustermann');
+  Assert.AreEqual(desc.BuyerContact.EmailAddress, 'manfred.mustermann@rr.de');
+  Assert.AreEqual(desc.BuyerContact.PhoneNo, '012345 98 765 - 44');
+
+  Assert.AreEqual(desc.Seller.Name, 'Harry Hirsch Holz- und Trockenbau');
+  Assert.AreEqual(desc.Seller.City, 'Klein Schlappstadt a.d. Lusche');
+  Assert.AreEqual(desc.Seller.Postcode, '12345');
+  Assert.AreEqual(desc.Seller.Country, TZUGFeRDCountryCodes(276));
+  Assert.AreEqual(desc.Seller.Street, 'Beispielgasse 17a');
+  Assert.AreEqual(desc.Seller.SpecifiedLegalOrganization.TradingBusinessName, 'Harry Hirsch Holz- und Trockenbau');
+
+  Assert.AreEqual(desc.SellerContact.Name, 'Harry Hirsch');
+  Assert.AreEqual(desc.SellerContact.EmailAddress, 'harry.hirsch@hhhtb.de');
+  Assert.AreEqual(desc.SellerContact.PhoneNo, '012345 78 657 - 8');
+
+  Assert.AreEqual(desc.TradeLineItems.Count, 2);
+
+  Assert.AreEqual(desc.TradeLineItems[0].SellerAssignedID, '0815');
+  Assert.AreEqual(desc.TradeLineItems[0].Name, 'Leimbinder');
+  Assert.AreEqual(desc.TradeLineItems[0].Description, 'Leimbinder 2x18m; Birke');
+  Assert.AreEqual(desc.TradeLineItems[0].BilledQuantity, Double(1));
+  Assert.AreEqual(desc.TradeLineItems[0].LineTotalAmount.Value, Double(1245.98));
+  Assert.AreEqual(desc.TradeLineItems[0].TaxPercent, Double(19));
+
+  Assert.AreEqual(desc.TradeLineItems[1].SellerAssignedID, 'MON');
+  Assert.AreEqual(desc.TradeLineItems[1].Name, 'Montage');
+  Assert.AreEqual(desc.TradeLineItems[1].Description, 'Montage durch Fachpersonal');
+  Assert.AreEqual(desc.TradeLineItems[1].BilledQuantity, Double(1));
+  Assert.AreEqual(desc.TradeLineItems[1].LineTotalAmount.Value, Double(200.00));
+  Assert.AreEqual(desc.TradeLineItems[1].TaxPercent, Double(7));
+
+  Assert.AreEqual(desc.LineTotalAmount.Value, Currency(1445.98));
+  Assert.AreEqual(desc.TaxTotalAmount.Value, Currency(250.74));
+  Assert.AreEqual(desc.GrandTotalAmount.Value, Currency(1696.72));
+  Assert.AreEqual(desc.DuePayableAmount.Value, Currency(1696.72));
+
+  Assert.AreEqual(desc.Taxes[0].TaxAmount, Currency(236.74));
+  Assert.AreEqual(desc.Taxes[0].BasisAmount, Currency(1245.98));
+  Assert.AreEqual(desc.Taxes[0].Percent, Currency(19));
+  Assert.AreEqual(desc.Taxes[0].TypeCode, TZUGFeRDTaxTypes(53));
+  Assert.AreEqual(desc.Taxes[0].CategoryCode, TZUGFeRDTaxCategoryCodes(19));
+
+  Assert.AreEqual(desc.Taxes[1].TaxAmount, Currency(14.0000));
+  Assert.AreEqual(desc.Taxes[1].BasisAmount, Currency(200.00));
+  Assert.AreEqual(desc.Taxes[1].Percent, Currency(7));
+  Assert.AreEqual(desc.Taxes[1].TypeCode, TZUGFeRDTaxTypes(53));
+  Assert.AreEqual(desc.Taxes[1].CategoryCode, TZUGFeRDTaxCategoryCodes(19));
+
+  Assert.AreEqual(desc.PaymentTermsList[0].DueDate.Value, EncodeDate(2020, 6, 21));
+
+  Assert.AreEqual(desc.CreditorBankAccounts[0].IBAN, 'DE12500105170648489890');
+  Assert.AreEqual(desc.CreditorBankAccounts[0].BIC, 'INGDDEFFXXX');
+  Assert.AreEqual(desc.CreditorBankAccounts[0].Name, 'Harry Hirsch');
+
+  Assert.AreEqual(desc.PaymentMeans.TypeCode, TZUGFeRDPaymentMeansTypeCodes(30));
+  desc.Free;
 end;
 
 procedure TZUGFeRD22Tests.TestSellerOrderReferencedDocument;
@@ -1001,7 +1268,6 @@ begin
 end;
 
 procedure TZUGFeRD22Tests.TestSpecifiedTradeAllowanceCharge;
-
 begin
   var invoice := FInvoiceProvider.CreateInvoice();
   try
@@ -1279,12 +1545,52 @@ end;
 
 procedure TZUGFeRD22Tests.TestTradeAllowanceChargeWithExplicitPercentage;
 begin
+  var invoice := FInvoiceProvider.CreateInvoice();
 
+  // fake values, does not matter for our test case
+  invoice.AddTradeAllowanceCharge(true, 100,
+    TZUGFeRDCurrencyCodes.EUR, 10, 12,
+    '', TZUGFeRDTaxTypes.VAT,
+    TZUGFeRDTaxCategoryCodes.S, 19);
+
+  var ms := TMemoryStream.Create;
+  invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGfeRDProfile.Extended);
+  invoice.Free;
+  ms.Position := 0;
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+  var allowanceCharges := loadedInvoice.TradeAllowanceCharges;
+
+  Assert.IsTrue(allowanceCharges.Count = 1);
+  Assert.AreEqual(allowanceCharges[0].BasisAmount, Currency(100));
+  Assert.AreEqual(allowanceCharges[0].Amount, Currency(10));
+  Assert.AreEqual(allowanceCharges[0].ChargePercentage, Currency(12));
+  loadedInvoice.Free;
 end;
 
 procedure TZUGFeRD22Tests.TestTradeAllowanceChargeWithoutExplicitPercentage;
 begin
+  var invoice := FInvoiceProvider.CreateInvoice();
 
+  // fake values, does not matter for our test case
+  invoice.AddTradeAllowanceCharge(true, 100, TZUGFeRDCurrencyCodes.EUR, 10, '',
+    TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S, 19);
+
+  var ms := TMemoryStream.Create;
+  invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  invoice.Free;
+  ms.Position := 0;
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  var allowanceCharges := loadedInvoice.TradeAllowanceCharges;
+
+  Assert.IsTrue(allowanceCharges.Count = 1);
+  Assert.AreEqual(allowanceCharges[0].BasisAmount, Currency(100));
+  Assert.AreEqual(allowanceCharges[0].Amount, Currency(10));
+  Assert.AreEqual(allowanceCharges[0].ChargePercentage, Currency(0));
+  loadedInvoice.Free;
 end;
 
 procedure TZUGFeRD22Tests.TestValidTaxTypes;
@@ -1366,12 +1672,405 @@ end;
 
 procedure TZUGFeRD22Tests.TestWriteAndReadDespatchAdviceDocumentReferenceXRechnung;
 begin
+  var desc := FInvoiceProvider.CreateInvoice();
+  var despatchAdviceNo := '421567982';
+  var despatchAdviceDate: TDateTime := EncodeDate(2024, 5, 14);
+  desc.SetDespatchAdviceReferencedDocument(despatchAdviceNo, despatchAdviceDate);
 
+  var ms := TMemoryStream.Create;
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Free;
+
+  ms.Seek(0, soBeginning);
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(despatchAdviceNo, loadedInvoice.DespatchAdviceReferencedDocument.ID);
+  Assert.AreEqual(despatchAdviceDate, loadedInvoice.DespatchAdviceReferencedDocument.IssueDateTime.Value);
+  loadedInvoice.Free;
 end;
 
 procedure TZUGFeRD22Tests.TestWriteAndReadExtended;
+var
+  data: TBytes;
 begin
+(*
+  var desc := FInvoiceProvider.CreateInvoice();
+  var filename2 := 'myrandomdata.bin';
+  var timestamp: TDateTime := Date;
 
+  SetLength(data, 32768);
+  RandomizeByteArray(data);
+
+  var msref1 := TMemoryStream.Create;
+  msref1.WriteBuffer(data[0], Length(data));
+  msref1.Position := 0;
+
+  desc.AddAdditionalReferencedDocument(
+      'My-File-BIN',
+      TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
+      timestamp.IncDay(-2),
+      'EmbeddedPdf',
+      TZUGFeRDReferenceTypeCodes.Unknown,
+      msref1,
+      filename2);
+
+  desc.OrderNo := '12345';
+  desc.OrderDate := timestamp;
+
+  desc.SetContractReferencedDocument('12345', timestamp);
+
+  desc.SpecifiedProcuringProject := TZUGFeRDSpecifiedProcuringProject.CreateWithParams('123', 'Project 123');
+
+  var _ShipTo := TZUGFeRDParty.Create;
+  _shipTo.ID := TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.Unknown, '123');
+  _ShipTo.GlobalID := TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.DUNS, '789');
+  _ShipTo.Name := 'Ship To';
+  _ShipTo.ContactName := 'Max Mustermann';
+  _ShipTo.Street := 'Münchnerstr. 55';
+  _ShipTo.Postcode := '83022';
+  _ShipTo.City := 'Rosenheim';
+  _ShipTo.Country := TZUGFeRDCountryCodes.DE;
+
+  desc.ShipTo := _ShipTo;
+
+  var _ShipFrom := TZUGFeRDParty.create;
+  _ShipFrom.ID := TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.Unknown, '123');
+  _ShipFrom.GlobalID := TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.DUNS, '789');
+  _ShipFrom.Name := 'Ship From';
+  _ShipFrom.ContactName := 'Eva Musterfrau';
+  _ShipFrom.Street := 'Alpenweg 5';
+  _ShipFrom.Postcode := '83022';
+  _ShipFrom.City := 'Rosenheim';
+  _ShipFrom.Country := TZUGFeRDCountryCodes.DE;
+
+  desc.ShipFrom := _ShipFrom;
+
+  desc.PaymentMeans.SEPACreditorIdentifier := 'SepaID';
+  desc.PaymentMeans.SEPAMandateReference := 'SepaMandat';
+  desc.PaymentMeans.FinancialCard := TZUGFeRDFinancialCard.CreateWithParams('123', 'Mustermann');
+
+  desc.PaymentReference := 'PaymentReference';
+
+  var _Invoicee := TZUGFeRDParty.Create;
+  _Invoicee.Name := 'Test';
+  _Invoicee.ContactName := 'Max Mustermann';
+  _Invoicee.Postcode := '83022';
+  _Invoicee.City := 'Rosenheim';
+  _Invoicee.Street := 'Münchnerstraße 123';
+  _Invoicee.AddressLine3 := 'EG links';
+  _Invoicee.CountrySubdivisionName := 'Bayern';
+  _Invoicee.Country := TZUGFeRDCountryCodes.DE;
+
+  desc.Invoicee := _Invoicee;
+
+  var _Payee := TZUGFeRDParty.Create;
+  _Payee.Name := 'Test';
+  _Payee.ContactName := 'Max Mustermann';
+  _Payee.Postcode := '83022';
+  _Payee.City := 'Rosenheim';
+  _Payee.Street := 'Münchnerstraße 123';
+  _Payee.AddressLine3 := 'EG links';
+  _Payee.CountrySubdivisionName := 'Bayern';
+  _Payee.Country := TZUGFeRDCountryCodes.DE;
+
+  desc.Payee := _Payee; // this information will not be stored in the output file since it is available in Extended profile only
+
+  desc.AddDebitorFinancialAccount('DE02120300000000202052', 'BYLADEM1001', '', '', 'Musterbank');
+  desc.BillingPeriodStart := timestamp;
+  desc.BillingPeriodEnd := timestamp.IncDay(14);
+
+  desc.AddTradeAllowanceCharge(false, 5, TZUGFeRDCurrencyCodes.EUR, 15, 'Reason for charge',
+    TZUGFeRDTaxTypes.AAB, TZUGFeRDTaxCategoryCodes.AB, 19);
+  desc.AddLogisticsServiceCharge(10, 'Logistics service charge', TZUGFeRDTaxTypes.AAC, TZUGFeRDTaxCategoryCodes.AC, 7);
+
+  desc.PaymentTermsList[0].DueDate := timestamp.IncDay(14);
+  desc.SetInvoiceReferencedDocument('RE-12345', timestamp);
+
+
+  //set additional LineItem data
+  var lineItem := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFerdTradeLineItem>(desc.TradeLineItems,
+    function(Item: TZUGFeRDTradeLineItem): Boolean
+    begin
+      result := Item.SellerAssignedID = 'TB100A4';
+    end);
+  Assert.IsNotNull(lineItem);
+  lineItem.Description := 'This is line item TB100A4';
+  lineItem.BuyerAssignedID := '0815';
+  lineItem.SetOrderReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.Create(timestamp));
+  lineItem.SetDeliveryNoteReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.Create(timestamp));
+  lineItem.SetContractReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.Create(timestamp));
+
+  lineItem.AddAdditionalReferencedDocument('xyz', timestamp, TZUGFeRDReferenceTypeCodes.AAB);
+
+  lineItem.UnitQuantity := 3;
+  lineItem.ActualDeliveryDate := timestamp;
+
+  lineItem.ApplicableProductCharacteristics.Add(
+    TZUGFeRDApplicableProductCharacteristic.CreateWithParams('Product characteristics', 'Product value'));
+
+  lineItem.BillingPeriodStart := timestamp;
+  lineItem.BillingPeriodEnd := timestamp.IncDay(10);
+
+  lineItem.AddReceivableSpecifiedTradeAccountingAccount('987654');
+  lineItem.AddTradeAllowanceCharge(false, TZUGFeRDCurrencyCodes.EUR, 10, 50, 'UnitTest');
+
+
+  var ms := TMemoryStream.create;
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  desc.Free;
+
+  ms.Seek(0, soBeginning);
+  var reader := TStreamReader.Create(ms);
+  var text := reader.ReadToEnd();
+  reader.Free;
+
+  ms.Seek(0, soBeginning);
+  Assert.AreEqual(TZUGFeRDInvoiceDescriptor.GetVersion(ms), TZUGFeRDVersion.Version22);
+
+  ms.Seek(0, soBeginning);
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual('471102', loadedInvoice.InvoiceNo);
+  Assert.AreEqual(EncodeDate(2018, 03, 05), loadedInvoice.InvoiceDate);
+  Assert.AreEqual(TZUGFeRDCurrencyCodes.EUR, loadedInvoice.Currency);
+  Assert.IsTrue(TZUGFeRDHelper.Any<TZUGFeRDNote>(loadedInvoice.Notes,
+    function(Item: TZUGFeRDNote): Boolean
+    begin
+      result := Item.Content = 'Rechnung gemäß Bestellung vom 01.03.2018.';
+    end));
+  Assert.AreEqual('04011000-12345-34', loadedInvoice.ReferenceOrderNo);
+  Assert.AreEqual('Lieferant GmbH', loadedInvoice.Seller.Name);
+  Assert.AreEqual('80333', loadedInvoice.Seller.Postcode);
+  Assert.AreEqual('München', loadedInvoice.Seller.City);
+
+  Assert.AreEqual('Lieferantenstraße 20', loadedInvoice.Seller.Street);
+  Assert.AreEqual(TZUGFeRDCountryCodes.DE, loadedInvoice.Seller.Country);
+  Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, loadedInvoice.Seller.GlobalID.SchemeID);
+  Assert.AreEqual('4000001123452', loadedInvoice.Seller.GlobalID.ID);
+  Assert.AreEqual('Max Mustermann', loadedInvoice.SellerContact.Name);
+  Assert.AreEqual('Muster-Einkauf', loadedInvoice.SellerContact.OrgUnit);
+  Assert.AreEqual('Max@Mustermann.de', loadedInvoice.SellerContact.EmailAddress);
+  Assert.AreEqual('+49891234567', loadedInvoice.SellerContact.PhoneNo);
+
+  Assert.AreEqual('Kunden AG Mitte', loadedInvoice.Buyer.Name);
+  Assert.AreEqual('69876', loadedInvoice.Buyer.Postcode);
+  Assert.AreEqual('Frankfurt', loadedInvoice.Buyer.City);
+  Assert.AreEqual('Kundenstraße 15', loadedInvoice.Buyer.Street);
+  Assert.AreEqual(TZUGFeRDCountryCodes.DE, loadedInvoice.Buyer.Country);
+  Assert.AreEqual<string>('GE2020211', loadedInvoice.Buyer.ID.ID);
+
+  Assert.AreEqual('12345', loadedInvoice.OrderNo);
+  Assert.AreEqual(timestamp, loadedInvoice.OrderDate.Value);
+
+  Assert.AreEqual('12345', loadedInvoice.ContractReferencedDocument.ID);
+  Assert.AreEqual(timestamp, loadedInvoice.ContractReferencedDocument.IssueDateTime.Value);
+
+  Assert.AreEqual('123', loadedInvoice.SpecifiedProcuringProject.ID);
+  Assert.AreEqual('Project 123', loadedInvoice.SpecifiedProcuringProject.Name);
+
+  Assert.AreEqual<string>('123', loadedInvoice.ShipTo.ID.ID);
+  Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.DUNS, loadedInvoice.ShipTo.GlobalID.SchemeID);
+  Assert.AreEqual('789', loadedInvoice.ShipTo.GlobalID.ID);
+  Assert.AreEqual('Ship To', loadedInvoice.ShipTo.Name);
+  Assert.AreEqual('Max Mustermann', loadedInvoice.ShipTo.ContactName);
+  Assert.AreEqual('Münchnerstr. 55', loadedInvoice.ShipTo.Street);
+  Assert.AreEqual('83022', loadedInvoice.ShipTo.Postcode);
+  Assert.AreEqual('Rosenheim', loadedInvoice.ShipTo.City);
+  Assert.AreEqual(TZUGFeRDCountryCodes.DE, loadedInvoice.ShipTo.Country);
+
+  Assert.AreEqual<string>('123', loadedInvoice.ShipFrom.ID.ID);
+  Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.DUNS, loadedInvoice.ShipFrom.GlobalID.SchemeID);
+  Assert.AreEqual('789', loadedInvoice.ShipFrom.GlobalID.ID);
+  Assert.AreEqual('Ship From', loadedInvoice.ShipFrom.Name);
+  Assert.AreEqual('Eva Musterfrau', loadedInvoice.ShipFrom.ContactName);
+  Assert.AreEqual('Alpenweg 5', loadedInvoice.ShipFrom.Street);
+  Assert.AreEqual('83022', loadedInvoice.ShipFrom.Postcode);
+  Assert.AreEqual('Rosenheim', loadedInvoice.ShipFrom.City);
+  Assert.AreEqual(TZUGFeRDCountryCodes.DE, loadedInvoice.ShipFrom.Country);
+
+  Assert.AreEqual(EncodeDate(2018, 03, 05), loadedInvoice.ActualDeliveryDate.Value);
+  Assert.AreEqual(TZUGFeRDPaymentMeansTypeCodes.SEPACreditTransfer, loadedInvoice.PaymentMeans.TypeCode);
+  Assert.AreEqual('Zahlung per SEPA Überweisung.', loadedInvoice.PaymentMeans.Information);
+
+  Assert.AreEqual('PaymentReference', loadedInvoice.PaymentReference);
+
+  Assert.AreEqual('SepaID', loadedInvoice.PaymentMeans.SEPACreditorIdentifier);
+  Assert.AreEqual('SepaMandat', loadedInvoice.PaymentMeans.SEPAMandateReference);
+  Assert.AreEqual('123', loadedInvoice.PaymentMeans.FinancialCard.Id);
+  Assert.AreEqual('Mustermann', loadedInvoice.PaymentMeans.FinancialCard.CardholderName);
+
+  var bankAccount := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDBankAccount>(loadedInvoice.CreditorBankAccounts,
+    function(Item: TZUGFeRDBankAccount): Boolean
+    begin
+      result := Item.IBAN = 'DE02120300000000202051';
+    end);
+  Assert.IsNotNull(bankAccount);
+  Assert.AreEqual('Kunden AG', bankAccount.Name);
+  Assert.AreEqual('DE02120300000000202051', bankAccount.IBAN);
+  Assert.AreEqual('BYLADEM1001', bankAccount.BIC);
+
+  var debitorBankAccount := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDBankAccount>(loadedInvoice.DebitorBankAccounts,
+    function(Item: TZUGFeRDBankAccount): Boolean
+    begin
+      result := Item.IBAN = 'DE02120300000000202052';
+    end);
+  Assert.IsNotNull(debitorBankAccount);
+  Assert.AreEqual('DE02120300000000202052', debitorBankAccount.IBAN);
+
+
+  Assert.AreEqual('Test', loadedInvoice.Invoicee.Name);
+  Assert.AreEqual('Max Mustermann', loadedInvoice.Invoicee.ContactName);
+  Assert.AreEqual('83022', loadedInvoice.Invoicee.Postcode);
+  Assert.AreEqual('Rosenheim', loadedInvoice.Invoicee.City);
+  Assert.AreEqual('Münchnerstraße 123', loadedInvoice.Invoicee.Street);
+  Assert.AreEqual('EG links', loadedInvoice.Invoicee.AddressLine3);
+  Assert.AreEqual('Bayern', loadedInvoice.Invoicee.CountrySubdivisionName);
+  Assert.AreEqual(TZUGFeRDCountryCodes.DE, loadedInvoice.Invoicee.Country);
+
+  Assert.AreEqual('Test', loadedInvoice.Payee.Name);
+  Assert.AreEqual('Max Mustermann', loadedInvoice.Payee.ContactName);
+  Assert.AreEqual('83022', loadedInvoice.Payee.Postcode);
+  Assert.AreEqual('Rosenheim', loadedInvoice.Payee.City);
+  Assert.AreEqual('Münchnerstraße 123', loadedInvoice.Payee.Street);
+  Assert.AreEqual('EG links', loadedInvoice.Payee.AddressLine3);
+  Assert.AreEqual('Bayern', loadedInvoice.Payee.CountrySubdivisionName);
+  Assert.AreEqual(TZUGFeRDCountryCodes.DE, loadedInvoice.Payee.Country);
+
+
+  var tax := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDTax>(loadedInvoice.Taxes,
+    function(Item: TZUGFeRDTax): Boolean
+    begin
+      result := Item.BasisAmount = 275;
+    end);
+  Assert.IsNotNull(tax);
+  Assert.AreEqual(Currency(275), tax.BasisAmount);
+  Assert.AreEqual(Currency(7), tax.Percent);
+  Assert.AreEqual(TZUGFeRDTaxTypes.VAT, tax.TypeCode);
+  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.S, tax.CategoryCode);
+
+  Assert.AreEqual(timestamp, loadedInvoice.BillingPeriodStart);
+  Assert.AreEqual(timestamp.IncDay(14), loadedInvoice.BillingPeriodEnd);
+
+  //TradeAllowanceCharges
+  var tradeAllowanceCharge := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDTradeAllowanceCharge>(
+    loadedInvoice.TradeAllowanceCharges, function(Item: TZUGFeRDTradeAllowanceCharge): Boolean
+    begin
+      result := Item.Reason = 'Reason for charge';
+    end);
+  Assert.IsNotNull(tradeAllowanceCharge);
+  Assert.IsTrue(tradeAllowanceCharge.ChargeIndicator);
+  Assert.AreEqual('Reason for charge', tradeAllowanceCharge.Reason);
+  Assert.AreEqual(Currency(5), tradeAllowanceCharge.BasisAmount);
+  Assert.AreEqual(Currency(15), tradeAllowanceCharge.ActualAmount);
+  Assert.AreEqual(TZUGFeRDCurrencyCodes.EUR, tradeAllowanceCharge.Currency);
+  Assert.AreEqual(Currency(19), tradeAllowanceCharge.Tax.Percent);
+  Assert.AreEqual(TZUGFeRDTaxTypes.AAB, tradeAllowanceCharge.Tax.TypeCode);
+  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.AB, tradeAllowanceCharge.Tax.CategoryCode);
+
+  //ServiceCharges
+  var serviceCharge := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDServiceCharge>(
+    loadedInvoice.ServiceCharges, function(Item: TZUGFeRDServiceCharge): Boolean
+    begin
+      result := Item.Description = 'Logistics service charge';
+    end);
+  Assert.IsNotNull(serviceCharge);
+  Assert.AreEqual('Logistics service charge', serviceCharge.Description);
+  Assert.AreEqual(Currency(10), serviceCharge.Amount);
+  Assert.AreEqual(Currency(7), serviceCharge.Tax.Percent);
+  Assert.AreEqual(TZUGFeRDTaxTypes.AAC, serviceCharge.Tax.TypeCode);
+  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.AC, serviceCharge.Tax.CategoryCode);
+
+  Assert.AreEqual('Zahlbar innerhalb 30 Tagen netto bis 04.04.2018, 3% Skonto innerhalb 10 Tagen bis 15.03.2018',
+    loadedInvoice.PaymentTermsList[0].Description);
+  Assert.AreEqual(timestamp.IncDay(14), loadedInvoice.PaymentTermsList[0].DueDate.Value);
+
+
+  Assert.AreEqual(Currency(473.0), loadedInvoice.LineTotalAmount.Value);
+  Assert.IsNull(loadedInvoice.ChargeTotalAmount); // optional
+  Assert.IsNull(loadedInvoice.AllowanceTotalAmount); // optional
+  Assert.AreEqual(Currency(473.0), loadedInvoice.TaxBasisAmount.Value);
+  Assert.AreEqual(Currency(56.87), loadedInvoice.TaxTotalAmount.Value);
+  Assert.AreEqual(Currency(529.87), loadedInvoice.GrandTotalAmount.Value);
+  Assert.IsNull(loadedInvoice.TotalPrepaidAmount); // optional
+  Assert.AreEqual(Currency(529.87), loadedInvoice.DuePayableAmount.Value);
+
+  //InvoiceReferencedDocument
+  Assert.AreEqual('RE-12345', loadedInvoice.InvoiceReferencedDocument.ID);
+  Assert.AreEqual(timestamp, loadedInvoice.InvoiceReferencedDocument.IssueDateTime.Value);
+
+
+  //Line items
+  var loadedLineItem := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDTradeLineItem>(loadedInvoice.TradeLineItems,
+    function(Item: TZUGFeRDTradeLineItem): Boolean
+    begin
+      result := Item.SellerAssignedID = 'TB100A4';
+    end);
+  Assert.IsNotNull(loadedLineItem);
+  Assert.IsTrue(not string.IsNullOrEmpty(loadedLineItem.AssociatedDocument.LineID));
+  Assert.AreEqual('This is line item TB100A4', loadedLineItem.Description);
+
+  Assert.AreEqual('Trennblätter A4', loadedLineItem.Name);
+
+  Assert.AreEqual('TB100A4', loadedLineItem.SellerAssignedID);
+  Assert.AreEqual('0815', loadedLineItem.BuyerAssignedID);
+  Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, loadedLineItem.GlobalID.SchemeID);
+  Assert.AreEqual('4012345001235', loadedLineItem.GlobalID.ID);
+
+  //GrossPriceProductTradePrice
+  Assert.AreEqual(Currency(9.9), loadedLineItem.GrossUnitPrice.Value);
+  Assert.AreEqual(TZUGFeRDQuantityCodes.H87, loadedLineItem.UnitCode);
+  Assert.AreEqual(Double(3), loadedLineItem.UnitQuantity.Value);
+
+  //NetPriceProductTradePrice
+  Assert.AreEqual(Currency(9.9), loadedLineItem.NetUnitPrice.Value);
+  Assert.AreEqual(Double(20), loadedLineItem.BilledQuantity);
+
+  Assert.AreEqual(TZUGFeRDTaxTypes.VAT, loadedLineItem.TaxType);
+  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.S, loadedLineItem.TaxCategoryCode);
+  Assert.AreEqual(Double(19), loadedLineItem.TaxPercent);
+
+  Assert.AreEqual('12345', loadedLineItem.BuyerOrderReferencedDocument.ID);
+  Assert.AreEqual(timestamp, loadedLineItem.BuyerOrderReferencedDocument.IssueDateTime.Value);
+  Assert.AreEqual('12345', loadedLineItem.DeliveryNoteReferencedDocument.ID);
+  Assert.AreEqual(timestamp, loadedLineItem.DeliveryNoteReferencedDocument.IssueDateTime.Value);
+  Assert.AreEqual('12345', loadedLineItem.ContractReferencedDocument.ID);
+  Assert.AreEqual(timestamp, loadedLineItem.ContractReferencedDocument.IssueDateTime.Value);
+
+  var lineItemReferencedDoc := loadedLineItem.AdditionalReferencedDocuments.First();
+  Assert.IsNotNull(lineItemReferencedDoc);
+  Assert.AreEqual('xyz', lineItemReferencedDoc.ID);
+  Assert.AreEqual(timestamp, lineItemReferencedDoc.IssueDateTime.Value);
+  Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAB, lineItemReferencedDoc.ReferenceTypeCode);
+
+
+  var productCharacteristics := loadedLineItem.ApplicableProductCharacteristics.First();
+  Assert.IsNotNull(productCharacteristics);
+  Assert.AreEqual('Product characteristics', productCharacteristics.Description);
+  Assert.AreEqual('Product value', productCharacteristics.Value);
+
+  Assert.AreEqual(timestamp, loadedLineItem.ActualDeliveryDate.Value);
+  Assert.AreEqual(timestamp, loadedLineItem.BillingPeriodStart.Value);
+  Assert.AreEqual(timestamp.IncDay(10), loadedLineItem.BillingPeriodEnd.Value);
+
+  var accountingAccount := loadedLineItem.ReceivableSpecifiedTradeAccountingAccounts.First();
+  Assert.IsNotNull(accountingAccount);
+  Assert.AreEqual('987654', accountingAccount.TradeAccountID);
+
+
+  var lineItemTradeAllowanceCharge := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDTradeAllowanceCharge>(
+    loadedLineItem.TradeAllowanceCharges, function(Item: TZUGFeRDTradeAllowanceCharge): Boolean
+    begin
+      result := Item.Reason = 'Reason: UnitTest';
+    end);
+  Assert.IsNotNull(lineItemTradeAllowanceCharge);
+  Assert.IsTrue(lineItemTradeAllowanceCharge.ChargeIndicator);
+  Assert.AreEqual(Currency(10), lineItemTradeAllowanceCharge.BasisAmount);
+  Assert.AreEqual(Currency(50), lineItemTradeAllowanceCharge.ActualAmount);
+  Assert.AreEqual('Reason: UnitTest', lineItemTradeAllowanceCharge.Reason);
+  loadedInvoice.Free;
+*)
 end;
 
 procedure TZUGFeRD22Tests.TestWriteTradeLineBilledQuantity;
