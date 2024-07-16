@@ -54,6 +54,7 @@ uses
   ,intf.ZUGFeRDQuantityCodes
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  ,intf.ZUGFerDFormats
   ;
 
 type
@@ -75,9 +76,11 @@ type
     /// Saves the given invoice to the given stream.
     /// Make sure that the stream is open and writeable. Otherwise, an IllegalStreamException will be thron.
     /// </summary>
-    /// <param name="descriptor"></param>
-    /// <param name="stream"></param>
-    procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream); override;
+    /// <param name="_descriptor">The invoice object that should be saved</param>
+    /// <param name="_stream">The target stream for saving the invoice</param>
+    /// <param name="_format">Format of the target file</param>
+    procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
+      _format: TZUGFeRDFormats = TZUGFeRDFormats.CII); override;
   end;
 
 implementation
@@ -85,12 +88,15 @@ implementation
 { TZUGFeRDInvoiceDescriptor1Writer }
 
 procedure TZUGFeRDInvoiceDescriptor1Writer.Save(
-  _descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream);
+  _descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format: TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   streamPosition : Int64;
 begin
   if (_stream = nil) then
     raise TZUGFeRDIllegalStreamException.Create('Cannot write to stream');
+
+  if (_format = TZUGFeRDFormats.UBL) then
+    raise TZUGFeRDUnsupportedException.create('UBL format is not supported for ZUGFeRD 1');
 
   // validate data
   if ((_descriptor.Profile = TZUGFeRDProfile.BasicWL) or (_descriptor.Profile = TZUGFeRDProfile.Minimum)) then

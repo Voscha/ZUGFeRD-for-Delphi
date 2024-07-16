@@ -56,6 +56,7 @@ uses
   ,intf.ZUGFeRDApplicableProductCharacteristic
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  ,intf.ZUGFeRDFormats
   ;
 
 type
@@ -77,9 +78,11 @@ type
     /// Saves the given invoice to the given stream.
     /// Make sure that the stream is open and writeable. Otherwise, an IllegalStreamException will be thron.
     /// </summary>
-    /// <param name="descriptor"></param>
-    /// <param name="stream"></param>
-    procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream); override;
+    /// <param name="_descriptor">The invoice object that should be saved</param>
+    /// <param name="_stream">The target stream for saving the invoice</param>
+    /// <param name="_format">Format of the target file</param>
+    procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
+      _format: TZUGFeRDFormats = TZUGFeRDFormats.CII); override;
   end;
 
 implementation
@@ -89,12 +92,16 @@ uses intf.ZUGFeRDMimeTypeMapper;
 { TZUGFeRDInvoiceDescriptor20Writer }
 
 procedure TZUGFeRDInvoiceDescriptor20Writer.Save(
-  _descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream);
+  _descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format: TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   streamPosition : Int64;
 begin
   if (_stream = nil) then
     raise TZUGFeRDIllegalStreamException.Create('Cannot write to stream');
+
+  if (_format = TZUGFeRDFormats.UBL) then
+    raise TZUGFeRDUnsupportedException.create('UBL format is not supported for ZUGFeRD 2.0');
+
 
   // write data
   streamPosition := _stream.Position;

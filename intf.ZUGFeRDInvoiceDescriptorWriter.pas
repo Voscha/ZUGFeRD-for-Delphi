@@ -23,13 +23,15 @@ uses
   System.Classes, System.SysUtils, System.DateUtils, System.StrUtils
   , System.Math
   ,intf.ZUGFeRDInvoiceDescriptor,intf.ZUGFeRDProfileAwareXmlTextWriter
-  ,intf.ZUGFeRDProfile;
+  ,intf.ZUGFeRDProfile, intf.ZUGFeRDFormats;
 
 type
   TZUGFeRDInvoiceDescriptorWriter = class abstract
   public
-    procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; stream: TStream); overload; virtual; abstract;
-    procedure Save(descriptor: TZUGFeRDInvoiceDescriptor; const filename: string); overload;
+    procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
+      _format: TZUGFeRDFormats = TZUGFeRDFormats.CII); overload; virtual; abstract;
+    procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; const _filename: string;
+      _format: TZUGFeRDFormats = TZUGFeRDFormats.CII); overload;
     function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; virtual; abstract;
   public
     procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
@@ -39,17 +41,16 @@ type
 
 implementation
 
-procedure TZUGFeRDInvoiceDescriptorWriter.Save(
-  descriptor: TZUGFeRDInvoiceDescriptor;
-  const filename: string);
+procedure TZUGFeRDInvoiceDescriptorWriter.Save(_descriptor: TZUGFeRDInvoiceDescriptor;
+  const _filename: string; _format: TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   fs: TFileStream;
 begin
-  if Validate(descriptor, True) then
+  if Validate(_descriptor, True) then
   begin
-    fs := TFileStream.Create(filename, fmCreate or fmOpenWrite);
+    fs := TFileStream.Create(_filename, fmCreate or fmOpenWrite);
     try
-      Save(descriptor, fs);
+      Save(_descriptor, fs, _format);
       //fs.Flush;
       //fs.Close;
     finally
