@@ -64,7 +64,10 @@ begin
   FTradingBusinessName := '';
 end;
 
-constructor TZUGFeRDLegalOrganization.CreateWithParams(schemeID: TZUGFeRDGlobalIDSchemeIdentifiers = Unknown; id: string = ''; tradingBusinessName: string = '');
+constructor TZUGFeRDLegalOrganization.CreateWithParams(
+  schemeID: TZUGFeRDGlobalIDSchemeIdentifiers = Unknown;
+  id: string = '';
+  tradingBusinessName: string = '');
 begin
   FID := TZUGFeRDGlobalID.CreateWithParams(schemeID, id);
   FTradingBusinessName := tradingBusinessName;

@@ -44,6 +44,7 @@ type
     FSpecifiedLegalOrganization: TZUGFeRDLegalOrganization;
     procedure SetGlobalID(const Value: TZUGFeRDGlobalID);
     procedure SetSpecifiedLegalOrganization(const Value: TZUGFeRDLegalOrganization);
+    procedure SetID(const Value: TZUGFeRDGlobalID);
   public
     constructor Create;
     destructor Destroy; override;
@@ -51,7 +52,7 @@ type
     /// <summary>
     /// Party identifier
     /// </summary>
-    property ID: TZUGFeRDGlobalID read FID write FID;
+    property ID: TZUGFeRDGlobalID read FID write SetID;
 
     /// <summary>
     /// Party name, e.g. company name
@@ -135,6 +136,13 @@ begin
   if assigned(FGlobalID) then
     FGlobalID.Free;
   FGlobalID := Value;
+end;
+
+procedure TZUGFeRDParty.SetID(const Value: TZUGFeRDGlobalID);
+begin
+  if assigned(FID) then
+    FID.Free;
+  FID := Value;
 end;
 
 procedure TZUGFeRDParty.SetSpecifiedLegalOrganization(const Value: TZUGFeRDLegalOrganization);

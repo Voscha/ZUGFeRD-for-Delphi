@@ -408,8 +408,6 @@ begin
                                    _nodeAsDecimal(nodes[i], './/ram:ActualAmount', 0),
                                    _nodeAsDecimal(nodes[i], './/ram:CalculationPercent', 0),
                                    _nodeAsString(nodes[i], './/ram:Reason'),
-                                   TZUGFeRDSpecialServiceDescriptionCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
-                                   TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.FromString(_nodeAsString(nodes[i], './ram:ReasonCode')),
                                    TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:TypeCode')),
                                    TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryTradeTax/ram:CategoryCode')),
                                    _nodeAsDecimal(nodes[i], './/ram:CategoryTradeTax/ram:RateApplicablePercent', 0));
@@ -733,9 +731,7 @@ begin
                                     basisAmount,
                                     actualAmount,
                                     chargePercentage,
-                                    reason,
-                                    reasonCodeCharge,
-                                    reasonCodeAllowance);
+                                    reason);
   end;
 
   if (Result.UnitCode = TZUGFeRDQuantityCodes.Unknown) then

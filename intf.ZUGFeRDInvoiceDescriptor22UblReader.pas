@@ -73,6 +73,7 @@ type
     function _nodeAsBankAccount(baseNode: IXMLDomNode; const xpath: string): TZUGFeRDBankAccount;
     function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode) : TZUGFeRDAdditionalReferencedDocument;
     function _getUncefactTaxSchemeID(const schemeID: string) : TZUGFeRDTaxRegistrationSchemeID;
+    function _IsReadableByThisReaderVersion(stream: TStream; const validURIs: TArray<string>): Boolean; overload;
   public
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; override;
     function IsReadableByThisReaderVersion(xmldocument: IXMLDocument): Boolean; override;
@@ -108,13 +109,65 @@ end;
 function TZUGFeRDInvoiceDescriptor22UblReader.IsReadableByThisReaderVersion(
   stream: TStream): Boolean;
 begin
-  Result := IsReadableByThisReaderVersion(stream, GetValidURIs);
+  Result := _IsReadableByThisReaderVersion(stream, GetValidURIs);
 end;
 
 function TZUGFeRDInvoiceDescriptor22UblReader.IsReadableByThisReaderVersion(
   xmldocument : IXMLDocument): Boolean;
 begin
   Result := IsReadableByThisReaderVersion(xmldocument, GetValidURIs);
+end;
+
+function TZUGFeRDInvoiceDescriptor22UblReader._IsReadableByThisReaderVersion(stream: TStream;
+  const validURIs: TArray<string>): Boolean;
+var
+  oldStreamPosition: Int64;
+  reader: TStreamReader;
+  data: string;
+  validURI: string;
+begin
+  Result := false;
+
+  oldStreamPosition := stream.Position;
+  stream.Position := 0;
+  reader := TStreamReader.Create(stream, TEncoding.UTF8, True, 1024);
+  try
+    data := reader.ReadToEnd.Replace(' ', '').ToLower;
+    for validURI in validURIs do
+    begin
+      if data.Contains(Format('="%s"', [validURI.ToLower])) then
+      begin
+        stream.Position := oldStreamPosition;
+        Result := true;
+        exit;
+      end;
+    end;
+  finally
+    reader.Free;
+  end;
+
+  stream.Position := oldStreamPosition;
+
+(*
+
+            long _oldStreamPosition = stream.Position;
+            stream.Position = 0;
+            using (StreamReader reader = new StreamReader(stream, Encoding.UTF8, true, 1024, true))
+            {
+                string data = reader.ReadToEnd().Replace(" ", "").ToLower();
+                foreach (string validURI in validURIs)
+                {
+                    if (data.Contains(string.Format("=\"{0}\"", validURI.ToLower())))
+                    {
+                        stream.Position = _oldStreamPosition;
+                        return true;
+                    }
+                }
+            }
+
+            stream.Position = _oldStreamPosition;
+            return false;
+*)
 end;
 
 function TZUGFeRDInvoiceDescriptor22UblReader.Load(stream: TStream): TZUGFeRDInvoiceDescriptor;
@@ -230,7 +283,7 @@ begin
   begin
     Result.BuyerContact := TZUGFeRDContact.Create;
     Result.SetBuyerContact(
-      _nodeAsString(doc.DocumentElement, ''),
+      _nodeAsString(doc.DocumentElement, '//cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:Name'),
       '', //TODO   _nodeAsString(doc.DocumentElement, '//ram:BuyerTradeParty/ram:DefinedTradeContact/ram:DepartmentName'),
       _nodeAsString(doc.DocumentElement, '//cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:ElectronicMail'),
       _nodeAsString(doc.DocumentElement, '//cac:AccountingCustomerParty/cac:Party/cac:Contact/cbc:Telephone'),
@@ -559,9 +612,9 @@ begin
     exit;
 
   Result := TZUGFeRDLegalOrganization.CreateWithParams(
-               TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(
-               _nodeAsString(node, 'cbc:CompanyID/@schemeID')),
-               _nodeAsString(node, 'cbc:RegistrationName'));
+      TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(_nodeAsString(node, 'cbc:CompanyID/@schemeID')),
+      _nodeAsString(node, 'cbc:CompanyID'),
+      _nodeAsString(node, 'cbc:RegistrationName'));
 end;
 
 function TZUGFeRDInvoiceDescriptor22UblReader._nodeAsParty(basenode: IXmlDomNode;
