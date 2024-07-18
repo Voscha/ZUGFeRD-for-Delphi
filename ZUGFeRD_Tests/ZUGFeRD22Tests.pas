@@ -1603,6 +1603,7 @@ begin
   var ms := TMemoryStream.Create;
 
   desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Save('test.xml', TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
   desc.Free;
   ms.Seek(0, soBeginning);
 

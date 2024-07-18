@@ -57,6 +57,14 @@ type
     procedure _writeNotes(_writer : TZUGFeRDProfileAwareXmlTextWriter;notes : TObjectList<TZUGFeRDNote>);
     procedure _writeOptionalParty(_writer: TZUGFeRDProfileAwareXmlTextWriter; partyType : TZUGFeRDPartyTypes; party : TZUGFeRDParty; contact : TZUGFeRDContact = nil; electronicAddress : TZUGFeRDElectronicAddress = nil; taxRegistrations : TObjectList<TZUGFeRDTaxRegistration> = nil);
     function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
+  private const
+    ALL_PROFILES = [TZUGFeRDProfile.Minimum,
+                    TZUGFeRDProfile.BasicWL,
+                    TZUGFeRDProfile.Basic,
+                    TZUGFeRDProfile.Comfort,
+                    TZUGFeRDProfile.Extended,
+                    TZUGFeRDProfile.XRechnung1,
+                    TZUGFeRDProfile.XRechnung];
   public
     /// <summary>
     /// Saves the given invoice to the given stream.
@@ -112,7 +120,238 @@ begin
       Writer.WriteAttributeString('xmlns', 'xs', '', 'http://www.w3.org/2001/XMLSchema');
 {$ENDREGION}
 
+    Writer.WriteElementString('cbc:CustomizationID', 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_3.0');
+    Writer.WriteElementString('cbc:ProfileID', 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0');
 
+    Writer.WriteElementString('cbc:ID', Descriptor.InvoiceNo); //Rechnungsnummer
+    Writer.WriteElementString('cbc:IssueDate', _formatDate(Descriptor.InvoiceDate, false, true));
+
+    Writer.WriteElementString('cbc:InvoiceTypeCode', Format('%d', [_encodeInvoiceType(Descriptor.Type_)])); //Code für den Rechnungstyp
+
+
+    _writeNotes(Writer, Descriptor.Notes);
+
+    Writer.WriteElementString('cbc:DocumentCurrencyCode', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+
+    Writer.WriteOptionalElementString('cbc:BuyerReference', Descriptor.ReferenceOrderNo);
+
+    // OrderReference
+    Writer.WriteStartElement('cac:OrderReference');
+    Writer.WriteElementString('cbc:ID', Descriptor.OrderNo);
+    Writer.WriteEndElement(); // !OrderReference
+
+
+
+    // ContractDocumentReference
+    if (Descriptor.ContractReferencedDocument <> nil) then
+    begin
+      Writer.WriteStartElement('cac:ContractDocumentReference');
+      Writer.WriteOptionalElementString('cbc:ID', Descriptor.ContractReferencedDocument.ID);
+      Writer.WriteEndElement(); // !ContractDocumentReference
+    end;
+
+    // ProjectReference
+    if (Descriptor.SpecifiedProcuringProject <> nil) then
+    begin
+      Writer.WriteStartElement('cac:ProjectReference');
+      Writer.WriteOptionalElementString('cbc:ID', Descriptor.SpecifiedProcuringProject.ID);
+      Writer.WriteEndElement(); // !ProjectReference
+    end;
+
+    {$REGION 'SellerTradeParty'}
+      //AccountingSupplierParty
+      _writeOptionalParty(Writer, TZUGFeRDPartyTypes.SellerTradeParty, Descriptor.Seller,
+        Descriptor.SellerContact, Descriptor.SellerElectronicAddress, Descriptor.SellerTaxRegistration);
+    {$ENDREGION}
+
+    {$REGION 'BuyerTradeParty'}
+      //AccountingCustomerParty
+      _writeOptionalParty(Writer, TZUGFeRDPartyTypes.BuyerTradeParty, Descriptor.Buyer,
+        Descriptor.BuyerContact, Descriptor.BuyerElectronicAddress, Descriptor.BuyerTaxRegistration);
+    {$ENDREGION}
+
+    {$REGION 'PaymentMeans'}
+      if ((Descriptor.PaymentMeans <> nil) and
+        (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown)) then
+      begin
+        Writer.WriteStartElement('cac:PaymentMeans', ALL_PROFILES - [TZUGFeRDProfile.Minimum]);
+        Writer.WriteElementString('cbc:PaymentMeansCode',
+          TZUGFeRDPaymentMeansTypeCodesExtensions.EnumToString(Descriptor.PaymentMeans.TypeCode));
+        Writer.WriteOptionalElementString('cbc:PaymentID', Descriptor.PaymentReference);
+
+        if (Descriptor.PaymentMeans.FinancialCard <> nil) then
+        begin
+          Writer.WriteStartElement('cac:CardAccount', ALL_PROFILES - [TZUGFeRDProfile.Minimum]);
+          Writer.WriteElementString('cbc:PrimaryAccountNumberID', Descriptor.PaymentMeans.FinancialCard.Id);
+          Writer.WriteElementString('cbc:HolderName', Descriptor.PaymentMeans.FinancialCard.CardholderName);
+          Writer.WriteEndElement(); //!CardAccount
+        end;
+
+        if (Descriptor.CreditorBankAccounts.Count > 0) then
+        begin
+          for var account: TZUGFeRDBankAccount in Descriptor.CreditorBankAccounts do
+          begin
+            // PayeeFinancialAccount
+            Writer.WriteStartElement('cac:PayeeFinancialAccount');
+
+            Writer.WriteElementString('cbc:ID', account.IBAN);
+            Writer.WriteElementString('cbc:Name', account.Name);
+
+            Writer.WriteStartElement('cac:FinancialInstitutionBranch');
+            Writer.WriteElementString('cbc:ID', account.BIC);
+
+            Writer.WriteStartElement('cac:FinancialInstitution');
+            Writer.WriteElementString('cbc:Name', account.BankName);
+
+            Writer.WriteEndElement(); // !FinancialInstitution
+            Writer.WriteEndElement(); // !FinancialInstitutionBranch
+
+            Writer.WriteEndElement(); // !PayeeFinancialAccount
+          end;
+        end;
+
+        if (Descriptor.DebitorBankAccounts.Count > 0) then
+        begin
+          // PaymentMandate --> PayerFinancialAccount
+          for var account: TZUGFeRDBankAccount in Descriptor.DebitorBankAccounts do
+          begin
+            Writer.WriteStartElement('cac:PaymentMandate');
+
+            Writer.WriteStartElement('cac:PayerFinancialAccount');
+
+            Writer.WriteElementString('cbc:ID', account.IBAN);
+            Writer.WriteElementString('cbc:Name', account.Name);
+
+            Writer.WriteStartElement('cac:FinancialInstitutionBranch');
+            Writer.WriteElementString('cbc:ID', account.BIC);
+
+            Writer.WriteStartElement('cac:FinancialInstitution');
+            Writer.WriteElementString('cbc:Name', account.BankName);
+
+            Writer.WriteEndElement(); // !FinancialInstitution
+            Writer.WriteEndElement(); // !FinancialInstitutionBranch
+
+            Writer.WriteEndElement(); // !PayerFinancialAccount
+            Writer.WriteEndElement(); // !PaymentMandate
+          end;
+        end;
+
+        Writer.WriteEndElement(); //!PaymentMeans
+      end;
+    {$ENDREGION}
+
+    // PaymentTerms (optional)
+    if (Descriptor.PaymentTermsList.Count > 0) then
+    begin
+      Writer.WriteStartElement('cac:PaymentTerms');
+      Writer.WriteOptionalElementString('cbc:Note', Descriptor.PaymentTermsList[0].Description);
+      Writer.WriteEndElement();
+    end;
+
+
+    // Tax Total
+    Writer.WriteStartElement('cac:TaxTotal');
+    _writeOptionalAmount(Writer, 'cbc:TaxAmount', Descriptor.TaxTotalAmount, 2, true);
+
+    for var tax: TZUGFeRDTax in Descriptor.Taxes do
+    begin
+      Writer.WriteStartElement('cac:TaxSubtotal');
+      _writeOptionalAmount(Writer, 'cbc:TaxableAmount', tax.BasisAmount, 2, true);
+      _writeOptionalAmount(Writer, 'cbc:TaxAmount', tax.TaxAmount, 2, true);
+
+      Writer.WriteStartElement('cac:TaxCategory');
+      Writer.WriteElementString('cbc:ID',
+        TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tax.CategoryCode));
+      Writer.WriteElementString('cbc:Percent', _formatDecimal(tax.Percent));
+
+      Writer.WriteStartElement('cac:TaxScheme');
+      Writer.WriteElementString('cbc:ID', TZUGFeRDTaxTypesExtensions.EnumToString(tax.TypeCode));
+      Writer.WriteEndElement();// !TaxScheme
+
+      Writer.WriteEndElement();// !TaxCategory
+      Writer.WriteEndElement();// !TaxSubtotal
+    end;
+
+    Writer.WriteEndElement();// !TaxTotal
+
+    Writer.WriteStartElement('cac:LegalMonetaryTotal');
+    _writeOptionalAmount(Writer, 'cbc:LineExtensionAmount', Descriptor.LineTotalAmount, 2, true);
+    _writeOptionalAmount(Writer, 'cbc:TaxExclusiveAmount', Descriptor.TaxBasisAmount, 2, true);
+    _writeOptionalAmount(Writer, 'cbc:TaxInclusiveAmount', Descriptor.GrandTotalAmount, 2, true);
+    _writeOptionalAmount(Writer, 'cbc:ChargeTotalAmount', Descriptor.ChargeTotalAmount, 2, true);
+    _writeOptionalAmount(Writer, 'cbc:AllowanceTotalAmount', Descriptor.AllowanceTotalAmount, 2, true);
+    //_writeOptionalAmount(Writer, "cbc:TaxAmount", this.Descriptor.TaxTotalAmount, forceCurrency: true);
+    _writeOptionalAmount(Writer, 'cbc:PrepaidAmount', Descriptor.TotalPrepaidAmount, 2, true);
+    _writeOptionalAmount(Writer, 'cbc:PayableAmount', Descriptor.DuePayableAmount, 2, true);
+    //_writeOptionalAmount(Writer, "cbc:PayableAlternativeAmount", this.Descriptor.RoundingAmount, forceCurrency: true);
+    Writer.WriteEndElement(); //!LegalMonetaryTotal
+
+    for var tradelineitem: TZUGFeRDTradeLineItem in Descriptor.TradeLineItems do
+    begin
+      Writer.WriteStartElement('cac:InvoiceLine');
+      Writer.WriteElementString('cbc:ID', tradeLineItem.AssociatedDocument.LineID);
+
+      //Writer.WriteElementString("cbc:InvoicedQuantity", tradeLineItem.BilledQuantity.ToString());
+      Writer.WriteStartElement('cbc:InvoicedQuantity');
+      Writer.WriteAttributeString('unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode));
+      Writer.WriteValue(_formatDecimal(tradeLineItem.BilledQuantity));
+      Writer.WriteEndElement();
+
+
+      //Writer.WriteElementString("cbc:LineExtensionAmount", tradeLineItem.LineTotalAmount.ToString());
+      Writer.WriteStartElement('cbc:LineExtensionAmount');
+      Writer.WriteAttributeString('currencyID',
+        TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+      var Value := '';
+      if tradeLineItem.LineTotalAmount.HasValue then
+        Value := _formatDecimal(tradeLineItem.LineTotalAmount.Value);
+      Writer.WriteValue(Value);
+      Writer.WriteEndElement();
+
+
+      Writer.WriteStartElement('cac:Item');
+
+      Writer.WriteElementString('cbc:Description', tradeLineItem.Description);
+      Writer.WriteElementString('cbc:Name', tradeLineItem.Name);
+
+      Writer.WriteStartElement('cac:SellersItemIdentification');
+      Writer.WriteElementString('cbc:ID', tradeLineItem.SellerAssignedID);
+      Writer.WriteEndElement(); //!SellersItemIdentification
+
+      Writer.WriteStartElement('cac:BuyersItemIdentification');
+      Writer.WriteElementString('cbc:ID', tradeLineItem.BuyerAssignedID);
+      Writer.WriteEndElement(); //!BuyersItemIdentification
+
+      Writer.WriteEndElement(); //!Item
+
+
+      Writer.WriteStartElement('cac:Price');
+
+        //Writer.WriteElementString("cbc:BaseQuantity", tradeLineItem.UnitQuantity.ToString());
+        //Writer.WriteStartElement("cbc:BaseQuantity");
+        //Writer.WriteAttributeString("unitCode", this.Descriptor.Currency.EnumToString());
+        //Writer.WriteValue(tradeLineItem.UnitQuantity.ToString());
+        //Writer.WriteEndElement();
+
+        //Writer.WriteElementString("cbc:PriceAmount", tradeLineItem.NetUnitPrice.ToString());
+        Writer.WriteStartElement('cbc:PriceAmount');
+        Writer.WriteAttributeString('currencyID',
+          TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+        Writer.WriteValue(_formatDecimal(tradeLineItem.NetUnitPrice.Value));
+        Writer.WriteEndElement();
+
+        Writer.WriteEndElement(); //!Price
+
+        // TODO Add Tax Information for the tradeline item
+
+        Writer.WriteEndElement(); //!InvoiceLine
+    end;
+
+
+    Writer.WriteEndDocument();
+    Writer.Flush();
+
+    _stream.Seek(streamPosition, soFromBeginning);
   finally
     Writer.Free;
   end;
