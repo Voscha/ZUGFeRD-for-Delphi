@@ -37,6 +37,8 @@ type
     [Test]
     procedure TestUBLInvoiceCreation;
     [Test]
+    procedure TestUBLTradelineitemProductCharacterstics;
+    [Test]
     procedure TestInvoiceWithAttachmentXRechnung;
     [Test]
     procedure TestInvoiceWithAttachmentExtended;
@@ -1615,6 +1617,37 @@ begin
   Assert.AreEqual(loadedInvoice.Taxes.Count, 2);
   Assert.AreEqual(loadedInvoice.SellerContact.Name, 'Max Mustermann');
   Assert.IsNull(loadedInvoice.BuyerContact);
+  loadedInvoice.Free;
+end;
+
+procedure TZUGFeRD22Tests.TestUBLTradelineitemProductCharacterstics;
+begin
+  var desc := FInvoiceProvider.CreateInvoice();
+
+  desc.TradeLineItems[0].ApplicableProductCharacteristics.Add(
+    TZUGFeRDApplicableProductCharacteristic.CreateWithParams('Test Description', '1.5 kg'));
+  desc.TradeLineItems[0].ApplicableProductCharacteristics.Add(
+    TZUGFeRDApplicableProductCharacteristic.CreateWithParams('UBL Characterstics 2', '3 kg'));
+
+  var ms := TMemoryStream.Create;
+
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFerDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Free;
+  ms.Seek(0, soBeginning);
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.IsNotNull(loadedInvoice.TradeLineItems);
+  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics.Count, 2);
+  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[0].Description,
+    'Test Description');
+  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[0].Value,
+    '1.5 kg');
+
+  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[1].Description,
+    'UBL Characterstics 2');
+  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[1].Value, '3 kg');
   loadedInvoice.Free;
 end;
 

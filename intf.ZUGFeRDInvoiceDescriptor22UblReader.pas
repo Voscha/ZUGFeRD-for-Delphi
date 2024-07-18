@@ -712,16 +712,18 @@ begin
   Result.BillingPeriodStart := _nodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:StartDate');
   Result.BillingPeriodEnd := _nodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:EndDate');
 
- // TODO: Find value //if (tradeLineItem.SelectNodes(".//cac:Item/ram:ApplicableProductCharacteristic", nsmgr) != null)
-//  nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedTradeProduct/ram:ApplicableProductCharacteristic');
-//  for i := 0 to nodes.length-1 do
-//  begin
-//    var apcItem : TZUGFeRDApplicableProductCharacteristic := TZUGFeRDApplicableProductCharacteristic.Create;
-//    apcItem.Description := _nodeAsString(nodes[i], './/ram:Description');
-//    apcItem.Value := _nodeAsString(nodes[i], './/ram:Value');
-//    Result.ApplicableProductCharacteristics.Add(apcItem);
-//  end;
-//
+  // Read ApplicableProductCharacteristic
+  nodes := tradeLineItem.SelectNodes('.//cac:Item/cac:AdditionalItemProperty');
+  for i := 0 to nodes.length-1 do
+  begin
+    Result.ApplicableProductCharacteristics.Add(
+      TZUGFeRDApplicableProductCharacteristic.CreateWithParams(
+        _nodeAsString(nodes[i], './/cbc:Name'),
+        _nodeAsString(nodes[i], './/cbc:Value')
+      ));
+  end;
+
+
 // TODO: Find value //if (tradeLineItem.SelectSingleNode(".//ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument", nsmgr) != null)
 //  if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument') <> nil) then
 //  begin

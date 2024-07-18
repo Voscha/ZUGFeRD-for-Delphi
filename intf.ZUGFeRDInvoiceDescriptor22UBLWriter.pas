@@ -57,6 +57,8 @@ type
     procedure _writeNotes(_writer : TZUGFeRDProfileAwareXmlTextWriter;notes : TObjectList<TZUGFeRDNote>);
     procedure _writeOptionalParty(_writer: TZUGFeRDProfileAwareXmlTextWriter; partyType : TZUGFeRDPartyTypes; party : TZUGFeRDParty; contact : TZUGFeRDContact = nil; electronicAddress : TZUGFeRDElectronicAddress = nil; taxRegistrations : TObjectList<TZUGFeRDTaxRegistration> = nil);
     function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
+    procedure _writeApplicableProductCharacteristics(_writer : TZUGFeRDProfileAwareXmlTextWriter;
+      productCharacteristics: TObjectlist<TZUGFeRDApplicableProductCharacteristic>);
   private const
     ALL_PROFILES = [TZUGFeRDProfile.Minimum,
                     TZUGFeRDProfile.BasicWL,
@@ -322,6 +324,8 @@ begin
       Writer.WriteElementString('cbc:ID', tradeLineItem.BuyerAssignedID);
       Writer.WriteEndElement(); //!BuyersItemIdentification
 
+      _writeApplicableProductCharacteristics(Writer, tradeLineItem.ApplicableProductCharacteristics);
+
       Writer.WriteEndElement(); //!Item
 
 
@@ -374,6 +378,22 @@ begin
     else Result := Integer(type_);
   end;
 end;
+
+procedure TZUGFeRDInvoiceDescriptor22UBLWriter._writeApplicableProductCharacteristics(
+  _writer: TZUGFeRDProfileAwareXmlTextWriter;
+  productCharacteristics: TObjectlist<TZUGFeRDApplicableProductCharacteristic>);
+begin
+  if (productCharacteristics.Count > 0) then
+  begin
+    for var characteristic: TZUGFeRDApplicableProductCharacteristic in productCharacteristics do
+    begin
+      writer.WriteStartElement('cac:AdditionalItemProperty');
+      writer.WriteElementString('cbc:Name', characteristic.Description);
+      writer.WriteElementString('cbc:Value', characteristic.Value);
+      writer.WriteEndElement();
+    end;
+  end;
+end; // !_writeApplicableProductCharacteristics()
 
 procedure TZUGFeRDInvoiceDescriptor22UBLWriter._writeNotes(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; notes: TObjectList<TZUGFeRDNote>);
