@@ -65,7 +65,8 @@ uses
   intf.ZUGFeRDElectronicAddressSchemeIdentifiers,
   intf.ZUGFeRDDespatchAdviceReferencedDocument,
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
-  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
+  intf.ZUGFeRDFormats
   ;
 
 type
@@ -663,7 +664,9 @@ type
     /// <param name="stream">The stream where the data should be saved to.</param>
     /// <param name="version">The ZUGFeRD version you want to use. Defaults to version 1.</param>
     /// <param name="profile">The ZUGFeRD profile you want to use. Defaults to Basic.</param>
-    procedure Save(const stream: TStream; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1; const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic); overload;
+    /// <param name="format">The format of the target file that may be CII or UBL</param>
+    procedure Save(const stream: TStream; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1;
+      const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic; const format: TZUGFeRDFormats = TZUGFeRDFormats.CII); overload;
 
     /// <summary>
     /// Saves the descriptor object into a file with given name.
@@ -671,7 +674,9 @@ type
     /// <param name="filename">The filename where the data should be saved to.</param>
     /// <param name="version">The ZUGFeRD version you want to use. Defaults to version 1.</param>
     /// <param name="profile">The ZUGFeRD profile you want to use. Defaults to Basic.</param>
-    procedure Save(const filename: string; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1; const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic); overload;
+    /// <param name="format">The format of the target file that may be CII or UBL</param>
+    procedure Save(const filename: string; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1;
+      const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic; const format: TZUGFeRDFormats = TZUGFeRDFormats.CII); overload;
 
     /// <summary>
     /// Adds a new comment as a dedicated line of the invoice.
@@ -878,7 +883,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
@@ -930,7 +935,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -981,7 +986,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22UblReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22UBLReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -1426,7 +1431,8 @@ end;
 
 procedure TZUGFeRDInvoiceDescriptor.Save(const stream: TStream;
   const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1;
-  const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic);
+  const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic;
+  const format: TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   writer: TZUGFeRDInvoiceDescriptorWriter;
 begin
@@ -1443,13 +1449,14 @@ begin
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
   end;
   try
-    writer.Save(Self, stream);
+    writer.Save(Self, stream, format);
   finally
     writer.Free;
   end;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.Save(const filename: string; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1; const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic);
+procedure TZUGFeRDInvoiceDescriptor.Save(const filename: string; const version: TZUGFeRDVersion = TZUGFeRDVersion.Version1;
+  const profile: TZUGFeRDProfile = TZUGFeRDProfile.Basic; const format: TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   writer: TZUGFeRDInvoiceDescriptorWriter;
 begin
@@ -1467,7 +1474,7 @@ begin
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
   end;
   try
-    writer.Save(Self, filename);
+    writer.Save(Self, filename, format);
   finally
     writer.Free;
   end;

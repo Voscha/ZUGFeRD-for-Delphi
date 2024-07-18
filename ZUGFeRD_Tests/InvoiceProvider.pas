@@ -86,7 +86,12 @@ begin
     '',
     '',
     'Kunden AG');
-
+  desc.AddDebitorFinancialAccount(
+    'DB02120300000000202051',
+    'DBBYLADEM1001',
+    '',
+    '',
+    'KundenDB AG');
   desc.AddApplicableTradeTax(275.0, 7.0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
   desc.AddApplicableTradeTax(198.0, 19.0,TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
 

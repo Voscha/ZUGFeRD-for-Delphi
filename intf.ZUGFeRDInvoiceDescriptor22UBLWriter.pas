@@ -72,7 +72,7 @@ type
     /// <param name="_stream">The target stream for saving the invoice</param>
     /// <param name="_format">Format of the target file</param>
     procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
-      _format: TZUGFeRDFormats = TZUGFeRDFormats.CII); override;
+      _format: TZUGFeRDFormats = TZUGFeRDFormats.UBL); override;
   end;
 
 implementation

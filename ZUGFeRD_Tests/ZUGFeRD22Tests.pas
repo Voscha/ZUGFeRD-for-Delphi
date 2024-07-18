@@ -35,6 +35,8 @@ type
     [Test]
     procedure TestMinimumInvoice;
     [Test]
+    procedure TestUBLInvoiceCreation;
+    [Test]
     procedure TestInvoiceWithAttachmentXRechnung;
     [Test]
     procedure TestInvoiceWithAttachmentExtended;
@@ -141,7 +143,7 @@ uses intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDProfile, intf.ZUGFeRDInvoiceType
   intf.ZUGFeRDSellerOrderreferencedDocument, intf.ZUGFeRDPaymentMeansTypeCodes,
   intf.ZUGFeRDSpecifiedProcuringProject, intf.ZUGFeRDFinancialCard, intf.ZUGFeRDNote,
   intf.ZUGFeRDBankAccount, intf.ZUGFeRDTax, intf.ZUGFeRDServiceCharge, intf.ZUGFeRDSubjectCodes,
-  intf.ZUGFeRDContentCodes, intf.ZUGFeRDXmlHelper;
+  intf.ZUGFeRDContentCodes, intf.ZUGFeRDXmlHelper, intf.ZUGFeRDFormats;
 
 procedure TZUGFeRD22Tests.Setup;
 begin
@@ -466,6 +468,7 @@ begin
 
   var ms := TMemoryStream.Create;
   desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
+  desc.Save('test.xml', TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
   desc.Free;
 
   ms.Seek(0, soBeginning);
@@ -483,7 +486,7 @@ begin
   var debitorFinancialInstitutions := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:PayerSpecifiedDebtorFinancialInstitution');
 
   Assert.AreEqual(creditorFinancialInstitutions.Length, 0);
-  Assert.AreEqual(debitorFinancialInstitutions.Length, 0);
+  Assert.AreEqual(debitorFinancialInstitutions.Length, 1);
 
   XMLDoc := nil;
 end;
@@ -1590,6 +1593,27 @@ begin
   Assert.AreEqual(allowanceCharges[0].BasisAmount, Currency(100));
   Assert.AreEqual(allowanceCharges[0].Amount, Currency(10));
   Assert.AreEqual(allowanceCharges[0].ChargePercentage, Currency(0));
+  loadedInvoice.Free;
+end;
+
+procedure TZUGFeRD22Tests.TestUBLInvoiceCreation;
+begin
+  var desc := FInvoiceProvider.CreateInvoice();
+
+  var ms := TMemoryStream.Create;
+
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Free;
+  ms.Seek(0, soBeginning);
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.isNull(loadedInvoice.Invoicee);
+  Assert.isNotNull(loadedInvoice.Seller);
+  Assert.AreEqual(loadedInvoice.Taxes.Count, 2);
+  Assert.AreEqual(loadedInvoice.SellerContact.Name, 'Max Mustermann');
+  Assert.IsNull(loadedInvoice.BuyerContact);
   loadedInvoice.Free;
 end;
 

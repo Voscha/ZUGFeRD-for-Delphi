@@ -36,7 +36,7 @@ type
   public
     procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
     function _formatDecimal(value: Currency; numDecimals: Integer = 2): string;
-    function _formatDate(date: TDateTime; formatAs102: Boolean = True): string;
+    function _formatDate(date: TDateTime; formatAs102: Boolean = True; toUBLDate: Boolean = False): string;
   end;
 
 implementation
@@ -84,10 +84,13 @@ begin
   Result := ReplaceText(Result,',','.');
 end;
 
-function TZUGFeRDInvoiceDescriptorWriter._formatDate(date: TDateTime; formatAs102: Boolean): string;
+function TZUGFeRDInvoiceDescriptorWriter._formatDate(date: TDateTime; formatAs102: Boolean;
+  toUBLDate: Boolean): string;
 begin
   if formatAs102 then
     Result := FormatDateTime('yyyymmdd', date)
+  else if toUBLDate then
+    Result := FormatDateTime('yyyy-mm-dd', date)
   else
     Result := FormatDateTime('yyyy-mm-ddThh:nn:ss', date);
 end;
