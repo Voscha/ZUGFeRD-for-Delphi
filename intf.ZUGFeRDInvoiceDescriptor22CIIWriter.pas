@@ -335,7 +335,7 @@ begin
               Writer.WriteEndElement(); // !ram:IssueDateTime
           end;
 
-          Writer.WriteElementString('ram:LineID', Format('%d',[tradeLineItem.AssociatedDocument.LineID]));
+          Writer.WriteElementString('ram:LineID', Format('%s',[tradeLineItem.AssociatedDocument.LineID]));
           Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
           Writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
 

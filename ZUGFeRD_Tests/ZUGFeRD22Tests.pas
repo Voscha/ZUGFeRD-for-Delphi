@@ -1719,7 +1719,6 @@ procedure TZUGFeRD22Tests.TestWriteAndReadExtended;
 var
   data: TBytes;
 begin
-(*
   var desc := FInvoiceProvider.CreateInvoice();
   var filename2 := 'myrandomdata.bin';
   var timestamp: TDateTime := Date;
@@ -1838,7 +1837,7 @@ begin
   lineItem.BillingPeriodEnd := timestamp.IncDay(10);
 
   lineItem.AddReceivableSpecifiedTradeAccountingAccount('987654');
-  lineItem.AddTradeAllowanceCharge(false, TZUGFeRDCurrencyCodes.EUR, 10, 50, 'UnitTest');
+  lineItem.AddTradeAllowanceCharge(false, TZUGFeRDCurrencyCodes.EUR, 10, 50, 'Reason: UnitTest');
 
 
   var ms := TMemoryStream.create;
@@ -2095,7 +2094,7 @@ begin
   Assert.AreEqual(Currency(50), lineItemTradeAllowanceCharge.ActualAmount);
   Assert.AreEqual('Reason: UnitTest', lineItemTradeAllowanceCharge.Reason);
   loadedInvoice.Free;
-*)
+
 end;
 
 procedure TZUGFeRD22Tests.TestWriteTradeLineBilledQuantity;
