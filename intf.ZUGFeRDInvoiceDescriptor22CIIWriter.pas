@@ -1573,7 +1573,8 @@ begin
   writer.WriteOptionalElementString('ram:Name', party.Name);
 
   _writeOptionalLegalOrganization(writer, 'ram:SpecifiedLegalOrganization', party.SpecifiedLegalOrganization, partyType);
-  _writeOptionalContact(writer, 'ram:DefinedTradeContact', contact, [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
+  _writeOptionalContact(writer, 'ram:DefinedTradeContact', contact, [TZUGFeRDProfile.Comfort,
+    TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
 
   writer.WriteStartElement('ram:PostalTradeAddress');
   writer.WriteOptionalElementString('ram:PostcodeCode', party.Postcode); //buyer: BT-53
