@@ -99,6 +99,7 @@ type
     /// <param name="_format">Format of the target file</param>
     procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
       _format: TZUGFeRDFormats = TZUGFeRDFormats.CII); override;
+    function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; override;
   end;
 
 implementation
@@ -1209,6 +1210,12 @@ begin
   finally
     Writer.Free;
   end;
+end;
+
+function TZUGFeRDInvoiceDescriptor22CIIWriter.Validate(descriptor: TZUGFeRDInvoiceDescriptor;
+  throwExceptions: Boolean): Boolean;
+begin
+  result := False;
 end;
 
 function TZUGFeRDInvoiceDescriptor22CIIWriter._encodeInvoiceType(

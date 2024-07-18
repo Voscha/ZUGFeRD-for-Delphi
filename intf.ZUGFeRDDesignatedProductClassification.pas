@@ -58,7 +58,7 @@ type
     /// <summary>
     /// Classification name
     /// </summary>
-    property ClassName: string read FClassName write SetClassName;
+    property ClassName_: string read FClassName write SetClassName;
   end;
 
 implementation

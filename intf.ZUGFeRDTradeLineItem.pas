@@ -493,7 +493,7 @@ procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(
 begin
   var dpc := TZUGFeRDDesignatedProductClassification.Create;
   dpc.ClassCode := Integer(classCode);
-  dpc.ClassName := className;
+  dpc.ClassName_ := className;
   dpc.ListID := listID;
   dpc.ListVersionID := listVersionID;
   FDesignatedProductClassifications.Add(dpc);
