@@ -145,7 +145,7 @@ begin
 
     Writer.WriteStartElement('rsm:ExchangedDocument');
     Writer.WriteElementString('ram:ID', Descriptor.InvoiceNo);
-    Writer.WriteElementString('ram:Name', _translateInvoiceType(Descriptor.Type_), [TZUGFeRDProfile.Extended]);
+    Writer.WriteElementString('ram:Name', Descriptor.Name, [TZUGFeRDProfile.Extended]);
     Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
 
     if (Descriptor.InvoiceDate > 100) then
@@ -597,8 +597,22 @@ begin
     //   2. PaymentReference (optional)
     Writer.WriteOptionalElementString('ram:PaymentReference', Descriptor.PaymentReference);
 
+    //   3. TaxCurrencyCode (optional)
+    //   BT-6
+    if (Descriptor.TaxCurrency <> TZUGFeRDCurrencyCodes.Unknown) then
+      Writer.WriteElementString('ram:TaxCurrencyCode', TZUGFerdCurrencyCodesExtensions.EnumToString(
+        Descriptor.TaxCurrency), [TZUGFeRDProfile.Comfort, TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1,
+          TZUGFeRDProfile.XRechnung]);
+
     //   4. InvoiceCurrencyCode (optional)
     Writer.WriteElementString('ram:InvoiceCurrencyCode', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+
+	  //   5. InvoiceIssuerReference (optional)
+		Writer.WriteElementString('ram:InvoiceIssuerReference', Descriptor.SellerReferebceNo,
+      [TZUGFeRDProfile.Extended]);
+
+	  //   6. InvoicerTradeParty (optional)
+		_writeOptionalParty(Writer, 'ram:InvoicerTradeParty', Descriptor.Invoicer);
 
     //   7. InvoiceeTradeParty (optional)
     if (Descriptor.Profile = TZUGFeRDProfile.Extended) then
@@ -1005,6 +1019,8 @@ begin
   end;
 
   _Writer.WriteOptionalElementString('ram:Name', Party.Name);
+  _Writer.WriteOptionalElementString('ram:Description', Party.Description, [TZUGFeRDProfile.Comfort,
+    TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
   _writeOptionalContact(_writer, 'ram:DefinedTradeContact', Contact);
   _writer.WriteStartElement('ram:PostalTradeAddress');
   _writer.WriteOptionalElementString('ram:PostcodeCode', Party.Postcode);

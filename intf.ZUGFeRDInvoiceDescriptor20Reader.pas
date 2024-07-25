@@ -22,7 +22,7 @@ interface
 uses
   System.SysUtils, System.Classes, System.DateUtils, System.Variants
   ,System.NetEncoding
-  ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf,intf.ZUGFeRDMSXML2_TLB
+  ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf, intf.ZUGFeRDMSXML2_TLB
   ,intf.ZUGFeRDXmlHelper
   ,intf.ZUGFeRDInvoiceDescriptorReader
   ,intf.ZUGFeRDTradeLineItem
@@ -142,6 +142,7 @@ begin
   Result.IsTest := _nodeAsBool(doc.documentElement,'//*[local-name()="ExchangedDocumentContext"]/ram:TestIndicator');
   Result.BusinessProcess := _nodeAsString(doc.DocumentElement, '//*[local-name()="BusinessProcessSpecifiedDocumentContextParameter"]/ram:ID');//, nsmgr),
   Result.Profile := TZUGFeRDProfileExtensions.FromString(_nodeAsString(doc.DocumentElement, '//ram:GuidelineSpecifiedDocumentContextParameter/ram:ID'));//, nsmgr)),
+  Result.Name := _nodeAsString(doc.DocumentElement, '//*[local-name()="ExchangedDocument"]/ram:Name');
   Result.Type_ := TZUGFeRDInvoiceTypeExtensions.FromString(_nodeAsString(doc.DocumentElement, '//*[local-name()="ExchangedDocument"]/ram:TypeCode'));//, nsmgr)),
   Result.InvoiceNo := _nodeAsString(doc.DocumentElement, '//*[local-name()="ExchangedDocument"]/ram:ID');//, nsmgr),
   Result.InvoiceDate := _nodeAsDateTime(doc.DocumentElement, '//*[local-name()="ExchangedDocument"]/ram:IssueDateTime/udt:DateTimeString');//", nsmgr)
@@ -430,6 +431,7 @@ begin
   Result.GlobalID.ID := _nodeAsString(node, 'ram:GlobalID');
   Result.GlobalID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(_nodeAsString(node, 'ram:GlobalID/@schemeID'));
   Result.Name := _nodeAsString(node, 'ram:Name');
+  Result.Description := _nodeAsString(node, 'ram:Description'); // BT-33 Seller only
   Result.Postcode := _nodeAsString(node, 'ram:PostalTradeAddress/ram:PostcodeCode');
   Result.City := _nodeAsString(node, 'ram:PostalTradeAddress/ram:CityName');
   Result.Country := TZUGFeRDCountryCodesExtensions.FromString(_nodeAsString(node, 'ram:PostalTradeAddress/ram:CountryID'));

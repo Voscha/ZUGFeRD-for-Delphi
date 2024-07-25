@@ -142,7 +142,7 @@ begin
 
     Writer.WriteStartElement('rsm:HeaderExchangedDocument');
     Writer.WriteElementString('ram:ID', Descriptor.InvoiceNo);
-    Writer.WriteElementString('ram:Name', _translateInvoiceType(Descriptor.Type_));
+    Writer.WriteElementString('ram:Name', Descriptor.Name);
     Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
 
     if (Trunc(Descriptor.InvoiceDate) > 0) then
@@ -798,6 +798,8 @@ begin
   end;
 
   _Writer.WriteOptionalElementString('ram:Name', Party.Name);
+  _Writer.WriteOptionalElementString('ram:Description', Party.Description, [TZUGFeRDProfile.Comfort,
+    TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
   _writeOptionalContact(_writer, 'ram:DefinedTradeContact', Contact);
   _writer.WriteStartElement('ram:PostalTradeAddress');
   _writer.WriteOptionalElementString('ram:PostcodeCode', Party.Postcode);

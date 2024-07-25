@@ -160,7 +160,7 @@ begin
     //Gruppierung der Eigenschaften, die das gesamte Dokument betreffen.
     Writer.WriteStartElement('rsm:ExchangedDocument');
     Writer.WriteElementString('ram:ID', Descriptor.InvoiceNo); //Rechnungsnummer
-    Writer.WriteElementString('ram:Name', _translateInvoiceType(Descriptor.Type_), [TZUGFeRDProfile.Extended]); //Dokumentenart (Freitext)
+    Writer.WriteElementString('ram:Name', Descriptor.Name, [TZUGFeRDProfile.Extended]); //Dokumentenart (Freitext)
     Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)])); //Code für den Rechnungstyp
                                                                                                                //ToDo: LanguageID      //Sprachkennzeichen
     if (Descriptor.InvoiceDate > 100) then
@@ -888,8 +888,22 @@ begin
     //   2. PaymentReference (optional)
     Writer.WriteOptionalElementString('ram:PaymentReference', Descriptor.PaymentReference);
 
+    //   3. TaxCurrencyCode (optional)
+    //   BT-6
+    if (Descriptor.TaxCurrency <> TZUGFeRDCurrencyCodes.Unknown) then
+      Writer.WriteElementString('ram:TaxCurrencyCode', TZUGFerdCurrencyCodesExtensions.EnumToString(
+        Descriptor.TaxCurrency), [TZUGFeRDProfile.Comfort, TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1,
+          TZUGFeRDProfile.XRechnung]);
+
     //   4. InvoiceCurrencyCode (optional)
     Writer.WriteElementString('ram:InvoiceCurrencyCode', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+
+	  //   5. InvoiceIssuerReference (optional)
+		Writer.WriteElementString('ram:InvoiceIssuerReference', Descriptor.SellerReferebceNo,
+      [TZUGFeRDProfile.Extended]);
+
+	  //   6. InvoicerTradeParty (optional)
+		_writeOptionalParty(Writer, TZUGFeRDPartyTypes.InvoicerTradeParty, Descriptor.Invoicer);
 
     //   7. InvoiceeTradeParty (optional)
     _writeOptionalParty(Writer, TZUGFeRDPartyTypes.InvoiceeTradeParty, Descriptor.Invoicee);
@@ -1571,6 +1585,8 @@ begin
   end;
 
   writer.WriteOptionalElementString('ram:Name', party.Name);
+  writer.WriteOptionalElementString('ram:Description', party.Description, [TZUGFeRDProfile.Comfort,
+    TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
 
   _writeOptionalLegalOrganization(writer, 'ram:SpecifiedLegalOrganization', party.SpecifiedLegalOrganization, partyType);
   _writeOptionalContact(writer, 'ram:DefinedTradeContact', contact, [TZUGFeRDProfile.Comfort,

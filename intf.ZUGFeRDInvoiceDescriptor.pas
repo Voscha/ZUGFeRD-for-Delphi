@@ -128,6 +128,11 @@ type
     FBillingPeriodEnd: TDateTime;
     FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
     FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
+    FName: string;
+    FTaxCurrency: TZUGFeRDCurrencyCodes;
+    FSellerReferebceNo: string;
+    FInvoicer: TZUGFeRDParty;
+    procedure SetInvoicerParty(const Value: TZUGFeRDParty);
     procedure SetSellerParty(const Value: TZUGFeRDParty);
     procedure SetInvoiceeParty(const Value: TZUGFeRDParty);
     procedure SetBuyerParty(const Value: TZUGFeRDParty);
@@ -196,6 +201,24 @@ type
     /// </summary>
     property Currency: TZUGFeRDCurrencyCodes read FCurrency write FCurrency;
 
+		/// <summary>
+		/// The VAT total amount expressed in the accounting currency accepted or
+    /// required in the country of the seller.
+    ///
+    /// Note: Shall be used in combination with the invoice total VAT amount
+    /// in accounting currency (BT-111), if the VAT accounting currency code
+    /// differs from the invoice currency code.
+    ///
+    /// In normal invoicing scenarios, leave this property empty!
+    ///
+    /// The lists of valid currencies are
+    /// registered with the ISO 4217 Maintenance Agency „Codes for the
+    /// representation of currencies and funds”. Please refer to Article 230
+    /// of the Council Directive 2006/112/EC [2] for further information.
+    ///
+    /// BT-6
+		/// </summary>
+		property TaxCurrency: TZUGFeRDCurrencyCodes read FTaxCurrency write FTaxCurrency;
     /// <summary>
     /// Information about the buyer
     /// </summary>
@@ -215,10 +238,24 @@ type
     property SellerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FSellerTaxRegistration;
     property SellerElectronicAddress : TZUGFeRDElectronicAddress read FSellerElectronicAddress;
 
+		/// <summary>
+		/// Given seller reference number for routing purposes after biliteral agreement
+    ///
+    /// This field seems not to be used in common scenarios.
+		/// </summary>
+		property SellerReferebceNo: string read FSellerReferebceNo write FSellerReferebceNo;
+
     /// <summary>
     /// This party is optional and only relevant for Extended profile
     /// </summary>
     property Invoicee: TZUGFeRDParty read FInvoicee write SetInvoiceeParty;
+
+		/// <summary>
+		/// This party is optional and only relevant for Extended profile.
+    ///
+    /// It seems to be used under rate condition only.
+		/// </summary>
+		property Invoicer: TZUGFeRDParty read FInvoicer write SetInvoicerParty;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
@@ -264,6 +301,11 @@ type
     /// the document is saved.
     /// </summary>
     property Profile: TZUGFeRDProfile read FProfile write FProfile default TZUGFeRDProfile.Basic;
+
+    /// <summary>
+    /// Document name (free text)
+    /// </summary>
+    property Name: string read FName write FName;
 
     /// <summary>
     /// Indicates the type of the document, if it represents an invoice, a credit note or one of the available 'sub types'
@@ -790,7 +832,7 @@ uses
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
   intf.ZUGFeRDInvoiceDescriptor1Reader,intf.ZUGFeRDInvoiceDescriptor1Writer,
   intf.ZUGFeRDInvoiceDescriptor20Reader,intf.ZUGFeRDInvoiceDescriptor20Writer,
-  intf.ZUGFeRDInvoiceDescriptor22Reader,intf.ZUGFeRDInvoiceDescriptor22Writer,
+  intf.ZUGFeRDInvoiceDescriptor22CIIReader,intf.ZUGFeRDInvoiceDescriptor22Writer,
   intf.ZUGFeRDInvoiceDescriptor22UblReader
   ;
 
@@ -811,6 +853,7 @@ begin
   FSellerContact                 := nil;//TZUGFeRDContact.Create;
   FSellerTaxRegistration         := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FSellerElectronicAddress       := TZUGFeRDElectronicAddress.Create;
+  FInvoicer                      := nil;
   FInvoicee                      := nil;//TZUGFeRDParty.Create;
   FShipTo                        := nil;//TZUGFeRDParty.Create;
   FPayee                         := nil;//TZUGFeRDParty.Create;
@@ -832,6 +875,7 @@ begin
   //Default values:
   FProfile := TZUGFeRDProfile.Unknown;
   FType := TZUGFeRDInvoiceType.Invoice;
+  FSellerReferebceNo := '';
 end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
@@ -846,6 +890,7 @@ begin
   if Assigned(FBuyerTaxRegistration          ) then begin FBuyerTaxRegistration.Free; FBuyerTaxRegistration           := nil; end;
   if Assigned(FBuyerElectronicAddress        ) then begin FBuyerElectronicAddress        .Free; FBuyerElectronicAddress         := nil; end;
   if Assigned(FSeller                        ) then begin FSeller.Free; FSeller                         := nil; end;
+  if Assigned(FInvoicer                      ) then begin FInvoicer.Free; FInvoicer                     := nil; end;
   if Assigned(FSellerContact                 ) then begin FSellerContact.Free; FSellerContact                  := nil; end;
   if Assigned(FSellerTaxRegistration         ) then begin FSellerTaxRegistration.Free; FSellerTaxRegistration          := nil; end;
   if Assigned(FSellerElectronicAddress       ) then begin FSellerElectronicAddress       .Free; FSellerElectronicAddress        := nil; end;
@@ -894,7 +939,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
@@ -946,7 +991,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -997,7 +1042,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -1048,7 +1093,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
@@ -1099,7 +1144,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22Reader.Create;
+  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(xmldocument) then
     begin
@@ -1391,6 +1436,13 @@ begin
   FInvoiceReferencedDocument.IssueDateTime:= IssueDateTime;
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.SetInvoicerParty(const Value: TZUGFeRDParty);
+begin
+  if assigned(FInvoicer) then
+    FInvoicer.Free;
+  FInvoicer := Value;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.SetTotals(const aLineTotalAmount, aChargeTotalAmount,
       aAllowanceTotalAmount, aTaxBasisAmount, aTaxTotalAmount, aGrandTotalAmount,
       aTotalPrepaidAmount, aDuePayableAmount, aRoundingAmount: IZUGFeRDNullableParam<Currency>);
@@ -1467,7 +1519,6 @@ begin
       writer := TZUGFeRDInvoiceDescriptor1Writer.Create;
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
-    TZUGFeRDVersion.Version21,
     TZUGFeRDVersion.Version22:
       writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
     else

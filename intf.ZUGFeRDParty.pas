@@ -42,6 +42,7 @@ type
     FAddressLine3: string;
     FCountrySubdivisionName: string;
     FSpecifiedLegalOrganization: TZUGFeRDLegalOrganization;
+    FDescription: string;
     procedure SetGlobalID(const Value: TZUGFeRDGlobalID);
     procedure SetSpecifiedLegalOrganization(const Value: TZUGFeRDLegalOrganization);
     procedure SetID(const Value: TZUGFeRDGlobalID);
@@ -58,6 +59,11 @@ type
     /// Party name, e.g. company name
     /// </summary>
     property Name: string read FName write FName;
+
+    /// <summary>
+    /// other legal information (Seller only)
+    /// </summary>
+    property Description: string read FDescription write FDescription;
 
     /// <summary>
     /// Name of the contact at the party

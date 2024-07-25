@@ -21,7 +21,7 @@ interface
 
 uses
   System.Classes, System.SysUtils, System.IOUtils, System.DateUtils, System.Variants
-  ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf,intf.ZUGFeRDMSXML2_TLB
+  ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf, intf.ZUGFeRDMSXML2_TLB
   ,intf.ZUGFeRDInvoiceDescriptor
   ,intf.ZUGFeRDExceptions
   ,intf.ZUGFeRDXmlHelper
@@ -262,13 +262,23 @@ begin
     Result := SafeParseDateTime(year, month, day);
     exit;
   end
-  else if (Length(rawValue) = 10) and (rawValue[5] = '-') and (rawValue[8] = '-') then // yyyy-mm-dd
+  else if (Length(rawValue) = 10) then
   begin
-    year := Copy(rawValue, 1, 4);
-    month := Copy(rawValue, 6, 2);
-    day := Copy(rawValue, 9, 2);
-
-    Result := SafeParseDateTime(year, month, day);
+    year := '';
+    if (rawValue[5] = '-') and (rawValue[8] = '-') then // yyyy-mm-dd
+    begin
+      year := Copy(rawValue, 1, 4);
+      month := Copy(rawValue, 6, 2);
+      day := Copy(rawValue, 9, 2);
+    end
+    else if (rawValue[3] = FormatSettings.DateSeparator) and (rawValue[6] = FormatSettings.DateSeparator) then //dd.mm.yyyy
+    begin
+      year := Copy(rawValue, 7, 4);
+      month := Copy(rawValue, 4, 2);
+      day := Copy(rawValue, 1, 2);
+    end;
+    if year <> '' then
+      Result := SafeParseDateTime(year, month, day);
     exit;
   end
   else if Length(rawValue) = 19 then

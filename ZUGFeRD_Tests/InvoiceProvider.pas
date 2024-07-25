@@ -23,6 +23,7 @@ function TInvoiceProvider.CreateInvoice: TZUGFeRDInvoiceDescriptor;
 begin
   var desc:TZUGFeRDInvoiceDescriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('471102',
     EncodeDate(2018, 03, 05), TZUGFeRDCurrencyCodes.EUR);
+	desc.Name := 'WARENRECHNUNG';
   desc.AddNote('Rechnung gemäß Bestellung vom 01.03.2018.');
   desc.AddNote('Lieferant GmbH\r\nLieferantenstraße 20\r\n80333 München\r\nDeutschland\r\nGeschäftsführer: Hans Muster\r\nHandelsregisternummer: H A 123\r\n',
                 TZUGFeRDSubjectCodes.REG);

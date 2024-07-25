@@ -22,7 +22,7 @@ interface
 uses
   System.SysUtils, System.Classes, System.DateUtils, System.Math
   ,System.NetEncoding
-  ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf,intf.ZUGFeRDMSXML2_TLB
+  ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf, intf.ZUGFeRDMSXML2_TLB
   ,intf.ZUGFeRDXmlHelper
   ,intf.ZUGFeRDInvoiceDescriptorReader
   ,intf.ZUGFeRDTradeLineItem
@@ -207,7 +207,7 @@ begin
   Result.InvoiceNo := _nodeAsString(doc.DocumentElement, '//cbc:ID');
   Result.InvoiceDate := _nodeAsDateTime(doc.DocumentElement, '//cbc:IssueDate');
 
-  nodes := doc.selectNodes('/ubl:Invoice/cbc:Note');
+  nodes := doc.DocumentElement.selectNodes('cbc:Note');
   for i := 0 to nodes.length-1 do
   begin
     var content : String := _nodeAsString(nodes[i], '.');
