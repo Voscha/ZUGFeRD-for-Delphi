@@ -775,18 +775,18 @@ begin
     exit;
   _writer.WriteStartElement(PartyTag);
 
-  if (Party.ID <> nil) then
-  if (Party.ID.ID <> '') and (Party.ID.SchemeID <> TZUGFeRDGlobalIDSchemeIdentifiers.Unknown) then
-  begin
-    _writer.WriteStartElement('ram:ID');
-    _writer.WriteAttributeString('schemeID', TZUGFeRDGlobalIDSchemeIdentifiersExtensions.EnumToString(Party.ID.SchemeID));
-    _writer.WriteValue(Party.ID.ID);
-    _writer.WriteEndElement();
-  end
-  else
-  begin
-    _writer.WriteElementString('ram:ID', Party.ID.ID);
-  end;
+  if (Party.ID <> nil) and not string.IsNullOrWhiteSpace(Party.ID.ID) then
+    if (Party.ID.SchemeID <> TZUGFeRDGlobalIDSchemeIdentifiers.Unknown) then
+    begin
+      _writer.WriteStartElement('ram:ID');
+      _writer.WriteAttributeString('schemeID', TZUGFeRDGlobalIDSchemeIdentifiersExtensions.EnumToString(Party.ID.SchemeID));
+      _writer.WriteValue(Party.ID.ID);
+      _writer.WriteEndElement();
+    end
+    else
+    begin
+      _writer.WriteElementString('ram:ID', Party.ID.ID);
+    end;
 
   if (Party.GlobalID <> nil) then
   if (Party.GlobalID.ID <> '') and (Party.GlobalID.SchemeID <> TZUGFeRDGlobalIDSchemeIdentifiers.Unknown) then

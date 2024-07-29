@@ -1562,17 +1562,17 @@ begin
       writer.WriteStartElement('ram:PayerTradeParty', [Descriptor.Profile]);
   end;
 
-  if party.ID <> nil then
+  if (party.ID <> nil) and not string.IsNullOrWhiteSpace(party.ID.ID) then
   begin
-    if ((party.ID.ID <> '') and (party.ID.SchemeID <> TZUGFeRDGlobalIDSchemeIdentifiers.Unknown)) then
+    if (party.ID.SchemeID <> TZUGFeRDGlobalIDSchemeIdentifiers.Unknown) then
     begin
       writer.WriteStartElement('ram:ID');
       writer.WriteAttributeString('schemeID', TZUGFeRDGlobalIDSchemeIdentifiersExtensions.EnumToString(party.ID.SchemeID));
       writer.WriteValue(party.ID.ID);
       writer.WriteEndElement();
-    end;
-
-    writer.WriteOptionalElementString('ram:ID', party.ID.ID);
+    end
+    else
+      writer.WriteOptionalElementString('ram:ID', party.ID.ID);
   end;
 
   if (party.GlobalID <> nil) then

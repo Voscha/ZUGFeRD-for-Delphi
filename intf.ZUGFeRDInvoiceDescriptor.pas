@@ -526,7 +526,8 @@ type
                      globalID: TZUGFeRDGlobalID = nil; const receiver: string = ''; legalOrganization: TZUGFeRDLegalOrganization = nil);
 
     procedure SetSeller(const name, postcode, city, street: string; country: TZUGFeRDCountryCodes; const id: string = '';
-                     globalID: TZUGFeRDGlobalID = nil; legalOrganization: TZUGFeRDLegalOrganization = nil);
+                     globalID: TZUGFeRDGlobalID = nil; legalOrganization: TZUGFeRDLegalOrganization = nil;
+                     description: string = '');
 
     procedure SetSellerContact(const name: string = ''; const orgunit: string = '';
   const emailAddress: string = ''; const phoneno: string = ''; const faxno: string = '');
@@ -1214,7 +1215,8 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.SetSeller(const name, postcode, city, street: string;
   country: TZUGFeRDCountryCodes; const id: string = '';
   globalID: TZUGFeRDGlobalID = nil;
-  legalOrganization: TZUGFeRDLegalOrganization = nil);
+  legalOrganization: TZUGFeRDLegalOrganization = nil;
+  description: string = '');
 begin
   if Assigned(FSeller) then
     FSeller.Free;
@@ -1228,6 +1230,7 @@ begin
   FSeller.Country := country;
   FSeller.GlobalID := globalID;
   FSeller.SpecifiedLegalOrganization := legalOrganization;
+  FSeller.Description := description;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetSellerContact(const name: string = ''; const orgunit: string = '';

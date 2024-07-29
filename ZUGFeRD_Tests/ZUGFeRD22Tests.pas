@@ -129,6 +129,8 @@ type
     procedure TestWriteAndReadDespatchAdviceDocumentReferenceXRechnung;
     [Test]
     procedure TestSpecifiedTradeAllowanceCharge;
+    [Test]
+    procedure TestSellerDescription;
   end;
 
 implementation
@@ -1242,6 +1244,32 @@ begin
 
   Assert.AreEqual(desc.PaymentMeans.TypeCode, TZUGFeRDPaymentMeansTypeCodes(30));
   desc.Free;
+end;
+
+procedure TZUGFeRD22Tests.TestSellerDescription;
+begin
+  var invoice := FInvoiceProvider.CreateInvoice();
+
+  var description := 'Test description';
+
+  invoice.SetSeller('Lieferant GmbH', '80333', 'München', 'Lieferantenstraße 20',
+      TZUGFeRDCountryCodes.DE, '',
+      TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, '4000001123452'),
+      TZUGFeRDLegalOrganization.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.GLN,
+        '4000001123452', 'Lieferant GmbH'),
+      description
+  );
+
+  var ms := TMemoryStream.Create;
+  invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  invoice.Free;
+
+  ms.Position := 0;
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(loadedInvoice.Seller.Description, description);
+  loadedInvoice.Free;
 end;
 
 procedure TZUGFeRD22Tests.TestSellerOrderReferencedDocument;
