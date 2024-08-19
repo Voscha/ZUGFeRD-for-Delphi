@@ -130,7 +130,7 @@ type
     FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
     FName: string;
     FTaxCurrency: TZUGFeRDCurrencyCodes;
-    FSellerReferebceNo: string;
+    FSellerReferenceNo: string;
     FInvoicer: TZUGFeRDParty;
     procedure SetInvoicerParty(const Value: TZUGFeRDParty);
     procedure SetSellerParty(const Value: TZUGFeRDParty);
@@ -243,7 +243,7 @@ type
     ///
     /// This field seems not to be used in common scenarios.
 		/// </summary>
-		property SellerReferebceNo: string read FSellerReferebceNo write FSellerReferebceNo;
+		property SellerReferenceNo: string read FSellerReferenceNo write FSellerReferenceNo;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
@@ -876,7 +876,7 @@ begin
   //Default values:
   FProfile := TZUGFeRDProfile.Unknown;
   FType := TZUGFeRDInvoiceType.Invoice;
-  FSellerReferebceNo := '';
+  FSellerReferenceNo := '';
 end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
