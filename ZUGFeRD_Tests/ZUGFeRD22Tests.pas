@@ -147,15 +147,17 @@ uses intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDProfile, intf.ZUGFeRDInvoiceType
   intf.ZUGFeRDSellerOrderreferencedDocument, intf.ZUGFeRDPaymentMeansTypeCodes,
   intf.ZUGFeRDSpecifiedProcuringProject, intf.ZUGFeRDFinancialCard, intf.ZUGFeRDNote,
   intf.ZUGFeRDBankAccount, intf.ZUGFeRDTax, intf.ZUGFeRDServiceCharge, intf.ZUGFeRDSubjectCodes,
-  intf.ZUGFeRDContentCodes, intf.ZUGFeRDXmlHelper, intf.ZUGFeRDFormats;
+  intf.ZUGFeRDContentCodes, intf.ZUGFeRDXmlHelper, intf.ZUGFeRDFormats,winapi.ActiveX;
 
 procedure TZUGFeRD22Tests.Setup;
 begin
+  CoInitialize(nil);
   FInvoiceProvider := TInvoiceProvider.create;
 end;
 
 procedure TZUGFeRD22Tests.TearDown;
 begin
+  CoUninitialize;
   FInvoiceProvider.Free;
 end;
 

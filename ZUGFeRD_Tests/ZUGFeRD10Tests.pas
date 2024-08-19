@@ -30,16 +30,18 @@ type
 implementation
 
 uses intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDProfile, intf.ZUGFeRDInvoiceTypes, intf.ZUGFeRDVersion,
-  intf.ZUGFeRDTradeLineItem;
+  intf.ZUGFeRDTradeLineItem, winapi.ActiveX;
 
 procedure TZUGFeRD10Tests.Setup;
 begin
+  CoInitialize(nil);
   FInvoiceProvider := TInvoiceProvider.create;
 end;
 
 procedure TZUGFeRD10Tests.TearDown;
 begin
   FInvoiceProvider.Free;
+  CoUninitialize;
 end;
 
 procedure TZUGFeRD10Tests.TestMissingPropertiesAreNull;

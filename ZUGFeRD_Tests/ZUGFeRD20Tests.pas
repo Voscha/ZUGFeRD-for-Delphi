@@ -59,16 +59,18 @@ uses intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDProfile, intf.ZUGFeRDInvoiceType
   intf.ZUGFeRDFinancialCard, intf.ZUGFeRDTradeLineItem, intf.ZUGFeRDApplicableProductCharacteristic,
   intf.ZUGFeRDBankAccount, intf.ZUGFeRDPaymentMeansTypeCodes, intf.ZUGFeRDNote, intf.ZUGFeRDTax,
   intf.ZUGFeRDTradeAllowanceCharge, intf.ZUGFeRDServiceCharge, intf.ZUGFeRDAdditionalReferencedDocument,
-  System.DateUtils;
+  System.DateUtils, Winapi.ActiveX;
 
 
 procedure TZUGFerd20Tests.Setup;
 begin
+  CoInitialize(nil);
   FInvoiceProvider := TInvoiceProvider.create;
 end;
 
 procedure TZUGFerd20Tests.TearDown;
 begin
+  CoUninitialize;
   FInvoiceProvider.Free;
 end;
 

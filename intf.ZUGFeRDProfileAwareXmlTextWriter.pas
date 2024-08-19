@@ -22,9 +22,9 @@ interface
 uses
   System.Classes, System.SysUtils, System.Generics.Collections,
   System.StrUtils,
-  Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf,Xml.XMLSchema, intf.ZUGFeRDMSXML2_TLB,
-  intf.ZUGFeRDProfile
-  ;
+  Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf,Xml.XMLSchema,
+  Xml.Win.msxmldom, Winapi.MSXMLIntf, Winapi.msxml,
+  intf.ZUGFeRDProfile;
 
 type
   TZUGFeRDStackInfo = record
