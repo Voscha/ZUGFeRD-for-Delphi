@@ -322,7 +322,7 @@ begin
                                  _nodeAsDecimal(nodes[i], './/ram:RateApplicablePercent', 0),
                                  TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(nodes[i], './/ram:TypeCode')),
                                  TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryCode')),
-                                 0,
+                                 nil,
                                  TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:ExemptionReasonCode')),
                                  _nodeAsString(nodes[i], './/ram:ExemptionReason'));
   end;

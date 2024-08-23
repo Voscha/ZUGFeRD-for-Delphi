@@ -23,10 +23,12 @@ uses
   System.Classes, System.SysUtils, System.DateUtils, System.StrUtils
   , System.Math
   ,intf.ZUGFeRDInvoiceDescriptor,intf.ZUGFeRDProfileAwareXmlTextWriter
-  ,intf.ZUGFeRDProfile, intf.ZUGFeRDFormats;
+  ,intf.ZUGFeRDProfile, intf.ZUGFeRDFormats, intf.ZUGFeRDHelper;
 
 type
   TZUGFeRDInvoiceDescriptorWriter = class abstract
+  private
+    function _FloatFormat(cval: Currency; numDecimals: Integer): string;
   public
     procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
       _format: TZUGFeRDFormats = TZUGFeRDFormats.CII); overload; virtual; abstract;
@@ -35,8 +37,10 @@ type
     function Validate(descriptor: TZUGFeRDInvoiceDescriptor; throwExceptions: Boolean = True): Boolean; virtual; abstract;
   public
     procedure WriteOptionalElementString(writer: TZUGFeRDProfileAwareXmlTextWriter; const tagName, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
-    function _formatDecimal(value: Currency; numDecimals: Integer = 2): string;
+    function _formatDecimal(value: IZUGFeRDNullableParam<Currency>; numDecimals: Integer = 2): string; overload;
+    function _formatDecimal(value: IZUGFeRDNullableParam<Double>; numDecimals: Integer = 2): string; overload;
     function _formatDate(date: TDateTime; formatAs102: Boolean = True; toUBLDate: Boolean = False): string;
+    function _asNullableParam<T>(Param: T): IZUGFeRDNullableParam<T>;
   end;
 
 implementation
@@ -69,18 +73,44 @@ begin
 end;
 
 function TZUGFeRDInvoiceDescriptorWriter._formatDecimal(
-  value: Currency; numDecimals: Integer): string;
+  value: IZUGFeRDNullableParam<Currency>; numDecimals: Integer): string;
 var
-  formatString: string;
-  i: Integer;
+  cVal: Currency;
 begin
-  //TODO Testen
-  value := RoundTo(value,-numDecimals);
+  if value = nil then
+    Exit(String.Empty);
+
+  cval := RoundTo(value.Value,-numDecimals);
+  result := _FloatFormat(cval, numDecimals)
+end;
+
+function TZUGFeRDInvoiceDescriptorWriter._formatDecimal(value: IZUGFeRDNullableParam<Double>;
+  numDecimals: Integer): string;
+var
+  dval: Double;
+begin
+  if value = nil then
+    Exit(String.Empty);
+  dval := RoundTo(value.Value,-numDecimals);
+  result := _FloatFormat(dval, numDecimals)
+end;
+
+function TZUGFeRDInvoiceDescriptorWriter._asNullableParam<T>(Param: T): IZUGFeRDNullableParam<T>;
+begin
+  result := TZUGFeRDNullableParam<T>.Create(Param);
+end;
+
+function TZUGFeRDInvoiceDescriptorWriter._FloatFormat(cval: Currency;
+    numDecimals: Integer): string;
+var
+  i: Integer;
+  formatString: string;
+begin
   formatString := '0.';
   for i := 0 to numDecimals - 1 do
     formatString := formatString + '0';
 
-  Result := FormatFloat(formatString, value);
+  Result := FormatFloat(formatString, cval);
   Result := ReplaceText(Result,',','.');
 end;
 
@@ -94,5 +124,7 @@ begin
   else
     Result := FormatDateTime('yyyy-mm-ddThh:nn:ss', date);
 end;
+
+
 
 end.

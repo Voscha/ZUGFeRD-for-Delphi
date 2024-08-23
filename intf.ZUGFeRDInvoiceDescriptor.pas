@@ -696,7 +696,14 @@ type
     /// <param name="allowanceChargeBasisAmount"></param>
     /// <param name="exemptionReasonCode"></param>
     /// <param name="exemptionReason"></param>
-    procedure AddApplicableTradeTax(const basisAmount: Currency; const percent: Currency; const typeCode: TZUGFeRDTaxTypes; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const allowanceChargeBasisAmount: Currency = 0; const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown; const exemptionReason: string = '');
+    procedure AddApplicableTradeTax(
+      const basisAmount: Currency;
+      const percent: Currency;
+      const typeCode: TZUGFeRDTaxTypes;
+      const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
+      const allowanceChargeBasisAmount: IZUGFeRDNullableParam<Currency> = nil;
+      const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown;
+      const exemptionReason: string = '');
 
     /// <summary>
     /// Saves the descriptor object into a stream.
@@ -877,6 +884,7 @@ begin
   FProfile := TZUGFeRDProfile.Unknown;
   FType := TZUGFeRDInvoiceType.Invoice;
   FSellerReferenceNo := '';
+  FTaxCurrency := TZUGFeRDCurrencyCodes.Unknown;
 end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
@@ -1461,10 +1469,11 @@ begin
   RoundingAmount:= aRoundingAmount;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(const basisAmount: Currency;
+procedure TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(
+  const basisAmount: Currency;
   const percent: Currency; const typeCode: TZUGFeRDTaxTypes;
   const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
-  const allowanceChargeBasisAmount: Currency = 0;
+  const allowanceChargeBasisAmount: IZUGFeRDNullableParam<Currency> = nil;
   const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown;
   const exemptionReason: string = '');
 var

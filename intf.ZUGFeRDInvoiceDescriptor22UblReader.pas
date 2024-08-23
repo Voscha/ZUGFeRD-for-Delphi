@@ -94,7 +94,8 @@ type
 
 implementation
 
-uses intf.ZUGFeRDDespatchAdviceReferencedDocument, System.Variants;
+uses intf.ZUGFeRDDespatchAdviceReferencedDocument, System.Variants,
+  intf.ZUGFeRDDesignatedProductClassificationCodes;
 
 { TZUGFeRDInvoiceDescriptor22UBLReader }
 
@@ -372,6 +373,11 @@ begin
   Result.Currency :=  TZUGFeRDCurrencyCodesExtensions.FromString(
     _nodeAsString(doc.DocumentElement, '//cbc:DocumentCurrencyCode'));
 
+  var optionalTaxCurrency := TZUGFeRDCurrencyCodesExtensions.FromString(
+    _nodeAsString(doc.DocumentElement, '//cbc:TaxCurrencyCode')); // BT-6
+  if (optionalTaxCurrency <> TZUGFeRDCurrencyCodes.Unknown) then
+    Result.TaxCurrency := optionalTaxCurrency;
+
 // TODO: Multiple SpecifiedTradeSettlementPaymentMeans can exist for each account/institution (with different SEPA?)
   var _tempPaymentMeans : TZUGFeRDPaymentMeans := TZUGFeRDPaymentMeans.Create;
   _tempPaymentMeans.TypeCode := TZUGFeRDPaymentMeansTypeCodesExtensions.FromString(
@@ -419,7 +425,7 @@ begin
                                   'cac:TaxCategory/cac:TaxScheme/cbc:ID')),
                                  TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(nodes[i],
                                   'cac:TaxCategory/cbc:ID')),
-                                 0,
+                                 nil,
                                  TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(
                                   _nodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReasonCode')),
                                  _nodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReason'));
@@ -512,27 +518,23 @@ end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader._getAdditionalReferencedDocument(
   a_oXmlNode: IXmlDomNode): TZUGFeRDAdditionalReferencedDocument;
-var
-  dt: TDateTime;
 begin
 
-  var strBase64BinaryData : String := _nodeAsString(a_oXmlNode, 'cac:Attachment/cbc:EmbeddedDocumentBinaryObject');
   Result := TZUGFeRDAdditionalReferencedDocument.Create(false);
-  Result.ID := _nodeAsString(a_oXmlNode, 'cbc:ID');
-  Result.TypeCode := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.FromString(_nodeAsString(a_oXmlNode, 'cbc:DocumentTypeCode'));
-  Result.Name := _nodeAsString(a_oXmlNode, 'cbc:DocumentDescription');
-  dt := _nodeAsDateTime(a_oXmlNode, 'cbc:IssueDate');
-  if dt > 0 then
-    Result.IssueDateTime := dt;
+  Result.ID := _nodeAsString(a_oXmlNode, './/cbc:ID');
+  Result.ReferenceTypeCode := TZUGFeRDReferenceTypeCodesExtensions.FromString(_nodeAsString(a_oXmlNode, './/cbc:ID/@schemeID'));
+  Result.TypeCode := TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.FromString(_nodeAsString(a_oXmlNode, './/cbc:DocumentTypeCode'));
+  Result.Name := _nodeAsString(a_oXmlNode, './/cbc:DocumentType');
+
+  var strBase64BinaryData : String := _nodeAsString(a_oXmlNode, './/cac:Attachment/cbc:EmbeddedDocumentBinaryObject');
   if strBase64BinaryData <> '' then
   begin
-    Result.Filename := _nodeAsString(a_oXmlNode, 'cac:Attachment/cbc:EmbeddedDocumentBinaryObject/@filename');
+    Result.Filename := _nodeAsString(a_oXmlNode, './/cac:Attachment/cbc:EmbeddedDocumentBinaryObject/@filename');
     Result.AttachmentBinaryObject := TMemoryStream.Create;
     var strBase64BinaryDataBytes : TBytes := TNetEncoding.Base64String.DecodeStringToBytes(strBase64BinaryData);
     Result.AttachmentBinaryObject.Write(strBase64BinaryDataBytes,Length(strBase64BinaryDataBytes));
+    Result.AttachmentBinaryObject.Position := 0;
   end;
-
-//  Result.ReferenceTypeCode := TZUGFeRDReferenceTypeCodesExtensions.FromString(_nodeAsString(a_oXmlNode, 'ram:ReferenceTypeCode'));
 end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader._getUncefactTaxSchemeID(
@@ -713,6 +715,23 @@ begin
   Result.BillingPeriodStart := _nodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:StartDate');
   Result.BillingPeriodEnd := _nodeAsDateTime(tradeLineItem, './/cac:InvoicePeriod/cbc:EndDate');
 
+  // Read ApplicableProductCharacteristic
+  nodes := tradeLineItem.SelectNodes('.//cac:Item/cac:CommodityClassification');
+  if nodes.Length > 0 then
+  begin
+    nodes := tradeLineItem.SelectNodes('.//cac:Item/cac:CommodityClassification/cac:ItemClassificationCode');
+    for i := 0 to nodes.length - 1 do
+    begin
+      var code: TZUGFeRDDesignatedProductClassicficationCodes :=
+      TZUGFeRDDesignatedProductClassicficationCodesExtensions.FromString(nodes[i].Text);
+      result.AddDesignatedProductClassification(
+              code,
+              '', // no name in Peppol Billing!
+              _nodeAsString(nodes[i], './@listID'),
+              _nodeAsString(nodes[i], './@istVersionID')
+              );
+    end;
+  end;
   // Read ApplicableProductCharacteristic
   nodes := tradeLineItem.SelectNodes('.//cac:Item/cac:AdditionalItemProperty');
   for i := 0 to nodes.length-1 do

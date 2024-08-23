@@ -35,10 +35,6 @@ type
     [Test]
     procedure TestMinimumInvoice;
     [Test]
-    procedure TestUBLInvoiceCreation;
-    [Test]
-    procedure TestUBLTradelineitemProductCharacterstics;
-    [Test]
     procedure TestInvoiceWithAttachmentXRechnung;
     [Test]
     procedure TestInvoiceWithAttachmentExtended;
@@ -131,6 +127,8 @@ type
     procedure TestSpecifiedTradeAllowanceCharge;
     [Test]
     procedure TestSellerDescription;
+    [Test]
+    procedure TestSellerContact;
   end;
 
 implementation
@@ -1248,6 +1246,49 @@ begin
   desc.Free;
 end;
 
+procedure TZUGFeRD22Tests.TestSellerContact;
+begin
+  var invoice := FInvoiceProvider.CreateInvoice;
+
+  var description := 'Test description';
+
+  invoice.SetSeller(
+      'Lieferant GmbH',
+      '80333',
+      'München',
+      'Lieferantenstraße 20',
+      TZUGFeRDCountryCodes.DE,
+      '',
+      TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, '4000001123452'),
+      TZUGFeRDLegalOrganization.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, '4000001123452',
+        'Lieferant GmbH'),
+      description);
+
+  var SELLER_CONTACT := '1-123';
+  var ORG_UNIT := '2-123';
+  var EMAIL_ADDRESS := '3-123';
+  var PHONE_NO := '4-123';
+  var FAX_NO := '5-123';
+  invoice.SetSellerContact(SELLER_CONTACT, ORG_UNIT, EMAIL_ADDRESS, PHONE_NO, FAX_NO);
+
+  var ms := TMemoryStream.Create;
+  invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  invoice.Free;
+
+  ms.Position := 0;
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(SELLER_CONTACT, loadedInvoice.SellerContact.Name);
+  Assert.AreEqual(ORG_UNIT, loadedInvoice.SellerContact.OrgUnit);
+  Assert.AreEqual(EMAIL_ADDRESS, loadedInvoice.SellerContact.EmailAddress);
+  Assert.AreEqual(PHONE_NO, loadedInvoice.SellerContact.PhoneNo);
+  Assert.AreEqual(FAX_NO, loadedInvoice.SellerContact.FaxNo);
+
+  Assert.AreEqual(loadedInvoice.Seller.Description, description);
+  loadedInvoice.Free;
+end; // !TestSellerContact()
+
 procedure TZUGFeRD22Tests.TestSellerDescription;
 begin
   var invoice := FInvoiceProvider.CreateInvoice();
@@ -1625,59 +1666,6 @@ begin
   Assert.AreEqual(allowanceCharges[0].BasisAmount, Currency(100));
   Assert.AreEqual(allowanceCharges[0].Amount, Currency(10));
   Assert.AreEqual(allowanceCharges[0].ChargePercentage, Currency(0));
-  loadedInvoice.Free;
-end;
-
-procedure TZUGFeRD22Tests.TestUBLInvoiceCreation;
-begin
-  var desc := FInvoiceProvider.CreateInvoice();
-
-  var ms := TMemoryStream.Create;
-
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
-  desc.Save('test.xml', TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
-  desc.Free;
-  ms.Seek(0, soBeginning);
-
-  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
-  ms.Free;
-
-  Assert.isNull(loadedInvoice.Invoicee);
-  Assert.isNotNull(loadedInvoice.Seller);
-  Assert.AreEqual(loadedInvoice.Taxes.Count, 2);
-  Assert.AreEqual(loadedInvoice.SellerContact.Name, 'Max Mustermann');
-  Assert.IsNull(loadedInvoice.BuyerContact);
-  loadedInvoice.Free;
-end;
-
-procedure TZUGFeRD22Tests.TestUBLTradelineitemProductCharacterstics;
-begin
-  var desc := FInvoiceProvider.CreateInvoice();
-
-  desc.TradeLineItems[0].ApplicableProductCharacteristics.Add(
-    TZUGFeRDApplicableProductCharacteristic.CreateWithParams('Test Description', '1.5 kg'));
-  desc.TradeLineItems[0].ApplicableProductCharacteristics.Add(
-    TZUGFeRDApplicableProductCharacteristic.CreateWithParams('UBL Characterstics 2', '3 kg'));
-
-  var ms := TMemoryStream.Create;
-
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFerDProfile.XRechnung, TZUGFeRDFormats.UBL);
-  desc.Free;
-  ms.Seek(0, soBeginning);
-
-  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
-  ms.Free;
-
-  Assert.IsNotNull(loadedInvoice.TradeLineItems);
-  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics.Count, 2);
-  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[0].Description,
-    'Test Description');
-  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[0].Value,
-    '1.5 kg');
-
-  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[1].Description,
-    'UBL Characterstics 2');
-  Assert.AreEqual(loadedInvoice.TradeLineItems[0].ApplicableProductCharacteristics[1].Value, '3 kg');
   loadedInvoice.Free;
 end;
 

@@ -1,3 +1,20 @@
+{* Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.}
+
 unit intf.ZUGFeRDInvoiceDescriptor22UBLWriter;
 
 interface
@@ -46,6 +63,7 @@ uses
   ,intf.ZUGFeRDMimeTypeMapper
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
+  , intf.ZUGFeRDDesignatedProductClassification
   ,intf.ZUGFeRDFormats;
 
 type
@@ -59,6 +77,8 @@ type
     function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
     procedure _writeApplicableProductCharacteristics(_writer : TZUGFeRDProfileAwareXmlTextWriter;
       productCharacteristics: TObjectlist<TZUGFeRDApplicableProductCharacteristic>);
+    procedure _writeCommodityClassification(_writer : TZUGFeRDProfileAwareXmlTextWriter;
+       designatedProductClassifications: TObjectlist<TZUGFeRDDesignatedProductClassification>);
   private const
     ALL_PROFILES = [TZUGFeRDProfile.Minimum,
                     TZUGFeRDProfile.BasicWL,
@@ -135,6 +155,11 @@ begin
 
     Writer.WriteElementString('cbc:DocumentCurrencyCode', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
 
+    //   BT-6
+    if (Descriptor.TaxCurrency <> TZUGFeRDCurrencyCodes.Unknown) then
+      Writer.WriteElementString('cbc:TaxCurrencyCode',
+        TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.TaxCurrency));
+
     Writer.WriteOptionalElementString('cbc:BuyerReference', Descriptor.ReferenceOrderNo);
 
     // OrderReference
@@ -151,6 +176,46 @@ begin
       Writer.WriteOptionalElementString('cbc:ID', Descriptor.ContractReferencedDocument.ID);
       Writer.WriteEndElement(); // !ContractDocumentReference
     end;
+
+    if (Descriptor.AdditionalReferencedDocuments.Count > 0) then
+    begin
+      for var document : TZUGFeRDAdditionalReferencedDocument in Descriptor.AdditionalReferencedDocuments do
+      begin
+        Writer.WriteStartElement('cac:AdditionalDocumentReference');
+        Writer.WriteStartElement('cbc:ID'); // BT-18, BT-22
+        Writer.WriteAttributeString('schemeID', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(
+          document.ReferenceTypeCode)); // BT-18-1
+        Writer.WriteValue(document.ID);
+        Writer.WriteEndElement(); // !cbc:ID
+
+        if (document.TypeCode <> TZUGFeRDAdditionalReferencedDocumentTypeCode.Unknown) then
+          Writer.WriteElementString('cbc:DocumentTypeCode',
+            TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(document.TypeCode));
+
+        Writer.WriteOptionalElementString('cbc:DocumentType', document.Name); // BT-123
+
+        Writer.WriteStartElement('cac:Attachment');
+
+        Writer.WriteStartElement('cbc:EmbeddedDocumentBinaryObject'); // BT-125
+        Writer.WriteAttributeString('filename', document.Filename);
+        Writer.WriteAttributeString('mimeCode', TZUGFeRDMimeTypeMapper.GetMimeType(document.Filename));
+        Writer.WriteValue(TZUGFeRDHelper.GetDataAsBase64(document.AttachmentBinaryObject));
+        Writer.WriteEndElement(); // !cbc:EmbeddedDocumentBinaryObject
+
+        {*
+         // not supported yet
+        Writer.WriteStartElement("cac:ExternalReference");
+        Writer.WriteStartElement("cbc:URI"); // BT-124
+        Writer.WriteValue("");
+        Writer.WriteEndElement(); // !cbc:URI
+        Writer.WriteEndElement(); // !cac:ExternalReference
+        *}
+
+        Writer.WriteEndElement(); // !cac:Attachment
+        Writer.WriteEndElement(); // !AdditionalDocumentReference
+      end;
+    end;
+
 
     // ProjectReference
     if (Descriptor.SpecifiedProcuringProject <> nil) then
@@ -264,7 +329,7 @@ begin
       Writer.WriteStartElement('cac:TaxCategory');
       Writer.WriteElementString('cbc:ID',
         TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tax.CategoryCode));
-      Writer.WriteElementString('cbc:Percent', _formatDecimal(tax.Percent));
+      Writer.WriteElementString('cbc:Percent', _formatDecimal(_asNullableParam<Currency>(tax.Percent)));
 
       Writer.WriteStartElement('cac:TaxScheme');
       Writer.WriteElementString('cbc:ID', TZUGFeRDTaxTypesExtensions.EnumToString(tax.TypeCode));
@@ -296,7 +361,7 @@ begin
       //Writer.WriteElementString("cbc:InvoicedQuantity", tradeLineItem.BilledQuantity.ToString());
       Writer.WriteStartElement('cbc:InvoicedQuantity');
       Writer.WriteAttributeString('unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode));
-      Writer.WriteValue(_formatDecimal(tradeLineItem.BilledQuantity));
+      Writer.WriteValue(_formatDecimal(_asNullableParam<Double>(tradeLineItem.BilledQuantity)));
       Writer.WriteEndElement();
 
 
@@ -306,7 +371,7 @@ begin
         TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
       var Value := '';
       if tradeLineItem.LineTotalAmount.HasValue then
-        Value := _formatDecimal(tradeLineItem.LineTotalAmount.Value);
+        Value := _formatDecimal(tradeLineItem.LineTotalAmount);
       Writer.WriteValue(Value);
       Writer.WriteEndElement();
 
@@ -325,6 +390,7 @@ begin
       Writer.WriteEndElement(); //!BuyersItemIdentification
 
       _writeApplicableProductCharacteristics(Writer, tradeLineItem.ApplicableProductCharacteristics);
+      _writeCommodityClassification(Writer, tradeLineItem.DesignatedProductClassifications);
 
       Writer.WriteEndElement(); //!Item
 
@@ -341,7 +407,7 @@ begin
         Writer.WriteStartElement('cbc:PriceAmount');
         Writer.WriteAttributeString('currencyID',
           TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
-        Writer.WriteValue(_formatDecimal(tradeLineItem.NetUnitPrice.Value));
+        Writer.WriteValue(_formatDecimal(tradeLineItem.NetUnitPrice));
         Writer.WriteEndElement();
 
         Writer.WriteEndElement(); //!Price
@@ -387,13 +453,44 @@ begin
   begin
     for var characteristic: TZUGFeRDApplicableProductCharacteristic in productCharacteristics do
     begin
-      writer.WriteStartElement('cac:AdditionalItemProperty');
-      writer.WriteElementString('cbc:Name', characteristic.Description);
-      writer.WriteElementString('cbc:Value', characteristic.Value);
-      writer.WriteEndElement();
+      _writer.WriteStartElement('cac:AdditionalItemProperty');
+      _writer.WriteElementString('cbc:Name', characteristic.Description);
+      _writer.WriteElementString('cbc:Value', characteristic.Value);
+      _writer.WriteEndElement();
     end;
   end;
-end; // !_writeApplicableProductCharacteristics()
+end;
+// !_writeApplicableProductCharacteristics()
+
+procedure TZUGFeRDInvoiceDescriptor22UBLWriter._writeCommodityClassification(
+  _writer: TZUGFeRDProfileAwareXmlTextWriter;
+   designatedProductClassifications: TObjectlist<TZUGFeRDDesignatedProductClassification>);
+begin
+  if ((designatedProductClassifications = nil) or (designatedProductClassifications.Count = 0)) then
+    exit;
+
+  _writer.WriteStartElement('cac:CommodityClassification');
+
+  for var classification: TZUGFeRDDesignatedProductClassification in designatedProductClassifications do
+  begin
+    if not classification.ClassCode.HasValue then
+      continue;
+    _writer.WriteStartElement('cbc:ItemClassificationCode'); // BT-158
+    _writer.WriteValue(classification.ClassCode.Value.ToString, ALL_PROFILES);
+
+    if not String.IsNullOrWhiteSpace(classification.ListID) then
+      _writer.WriteAttributeString('listID', classification.ListID); // BT-158-1
+
+
+    if not String.IsNullOrWhiteSpace(classification.ListVersionID) then
+      _writer.WriteAttributeString('listVersionID', classification.ListVersionID); // BT-158-2
+
+    // no name attribute in Peppol Billing!
+    _writer.WriteEndElement();
+  end;
+  _writer.WriteEndElement();
+end; // !_WriteCommodityClassification()
+
 
 procedure TZUGFeRDInvoiceDescriptor22UBLWriter._writeNotes(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; notes: TObjectList<TZUGFeRDNote>);
@@ -416,7 +513,7 @@ begin
     _writer.WriteStartElement(tagName,profile);
     if forceCurrency then
       _writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
-    _writer.WriteValue(_formatDecimal(value.Value, numDecimals));
+    _writer.WriteValue(_formatDecimal(value, numDecimals));
     _writer.WriteEndElement; // !tagName
   end;
 end;
@@ -432,6 +529,7 @@ begin
     TZUGFeRDPartyTypes.Unknown: exit;
     TZUGFeRDPartyTypes.SellerTradeParty: ;
     TZUGFeRDPartyTypes.BuyerTradeParty: ;
+    TZUGFeRDPartyTypes.ShipFromTradeParty: exit;
     else exit;
   end;
 

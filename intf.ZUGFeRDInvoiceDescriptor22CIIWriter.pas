@@ -277,7 +277,7 @@ begin
 
           //#region IssuerAssignedID
           //Bestellnummer
-          Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.BuyerOrderReferencedDocument.ID);
+          Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.BuyerOrderReferencedDocument.ID, [TZUGFeRDProfile.Extended]);
           //#endregion
 
           //#region LineID
@@ -288,7 +288,7 @@ begin
           //#region IssueDateTime
           if (tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.HasValue) then
           begin
-            Writer.WriteStartElement('ram:FormattedIssueDateTime');
+            Writer.WriteStartElement('ram:FormattedIssueDateTime', [TZUGFeRDProfile.Extended]);
             Writer.WriteStartElement('qdt:DateTimeString');
             Writer.WriteAttributeString('format', '102');
             Writer.WriteValue(_formatDate(tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.Value));
@@ -367,7 +367,7 @@ begin
           _writeOptionalAmount(Writer, 'ram:ChargeAmount', tradeLineItem.GrossUnitPrice, 2); //BT-148
           if (tradeLineItem.UnitQuantity.HasValue) then
           begin
-            _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
+            _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity, 4));
           end;
 
           for var tradeAllowanceCharge : TZUGFeRDTradeAllowanceCharge in tradeLineItem.TradeAllowanceCharges do //BT-147
@@ -384,7 +384,7 @@ begin
             if (tradeAllowanceCharge.ChargePercentage <> 0.0) then
             begin
               Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
-              Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ChargePercentage, 2));
+              Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.ChargePercentage)));
               Writer.WriteEndElement();
             end;
             //#endregion
@@ -393,14 +393,14 @@ begin
             if (tradeAllowanceCharge.BasisAmount <> 0.0) then
             begin
               Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Extended]); // not in XRechnung, according to CII-SR-123
-              Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount, 2));
+              Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.BasisAmount), 2));
               Writer.WriteEndElement();
             end;
             //#endregion
 
             //#region ActualAmount
             Writer.WriteStartElement('ram:ActualAmount');
-            Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
+            Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.ActualAmount)));
             Writer.WriteEndElement();
             //#endregion
 
@@ -434,7 +434,7 @@ begin
 
         if (tradeLineItem.UnitQuantity.HasValue) then
         begin
-          _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity.Value, 4));
+          _writeElementWithAttribute(Writer, 'ram:BasisQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.UnitQuantity, 4));
         end;
         Writer.WriteEndElement(); // ram:NetPriceProductTradePrice(Basic|Comfort|Extended|XRechnung)
         //#endregion // !NetPriceProductTradePrice(Basic|Comfort|Extended|XRechnung)
@@ -448,11 +448,11 @@ begin
 
       //#region SpecifiedLineTradeDelivery (Basic, Comfort, Extended)
       Writer.WriteStartElement('ram:SpecifiedLineTradeDelivery', [TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-      _writeElementWithAttribute(Writer, 'ram:BilledQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(tradeLineItem.BilledQuantity, 4));
+      _writeElementWithAttribute(Writer, 'ram:BilledQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode), _formatDecimal(_asNullableParam<Double>(tradeLineItem.BilledQuantity), 4));
       if tradeLineItem.PackageQuantity.HasValue then
-        _writeElementWithAttribute(Writer, 'ram:PackageQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.PackageUnitCode), _formatDecimal(tradeLineItem.PackageQuantity, 4));
+        _writeElementWithAttribute(Writer, 'ram:PackageQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.PackageUnitCode), _formatDecimal(_asNullableParam<Double>(tradeLineItem.PackageQuantity), 4));
       if tradeLineItem.ChargeFreeQuantity.HasValue then
-        _writeElementWithAttribute(Writer, 'ram:ChargeFreeQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.ChargeFreeUnitCode), _formatDecimal(tradeLineItem.ChargeFreeQuantity, 4));
+        _writeElementWithAttribute(Writer, 'ram:ChargeFreeQuantity', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.ChargeFreeUnitCode), _formatDecimal(_asNullableParam<Double>(tradeLineItem.ChargeFreeQuantity), 4));
 
       if (tradeLineItem.DeliveryNoteReferencedDocument <> nil) then
       begin
@@ -497,7 +497,7 @@ begin
 
       if (tradeLineItem.TaxCategoryCode <> TZUGFeRDTaxCategoryCodes.O) then // notwendig, damit die Validierung klappt
       begin
-        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeLineItem.TaxPercent));
+        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(_asNullableParam<Double>(tradeLineItem.TaxPercent)));
       end;
 
       Writer.WriteEndElement(); // !ram:ApplicableTradeTax(Basic|Comfort|Extended|XRechnung)
@@ -542,7 +542,7 @@ begin
           if (specifiedTradeAllowanceCharge.ChargePercentage <> 0.0) then
           begin
             Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
-            Writer.WriteValue(_formatDecimal(specifiedTradeAllowanceCharge.ChargePercentage, 2));
+            Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(specifiedTradeAllowanceCharge.ChargePercentage)));
             Writer.WriteEndElement();
           end;
           //#endregion
@@ -551,14 +551,14 @@ begin
           if (specifiedTradeAllowanceCharge.BasisAmount <> 0.0) then
           begin
             Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Extended]); // not in XRechnung, according to CII-SR-123
-            Writer.WriteValue(_formatDecimal(specifiedTradeAllowanceCharge.BasisAmount, 2));
+            Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(specifiedTradeAllowanceCharge.BasisAmount)));
             Writer.WriteEndElement();
           end;
           //#endregion
 
           //#region ActualAmount
           Writer.WriteStartElement('ram:ActualAmount');
-          Writer.WriteValue(_formatDecimal(specifiedTradeAllowanceCharge.ActualAmount, 2));
+          Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(specifiedTradeAllowanceCharge.ActualAmount)));
           Writer.WriteEndElement();
           //#endregion
 
@@ -586,7 +586,7 @@ begin
       //Detailinformationen zu Positionssummen
       Writer.WriteStartElement('ram:SpecifiedTradeSettlementLineMonetarySummation');
 
-      var _total : double := 0;
+      var _total : ZUGFErDNullable<double> := 0;
 
       if (tradeLineItem.LineTotalAmount.HasValue) then
       begin
@@ -598,7 +598,7 @@ begin
         if tradeLineItem.UnitQuantity.HasValue then
         if (tradeLineItem.UnitQuantity.Value <> 0) then
         begin
-          _total := _total / tradeLineItem.UnitQuantity.Value;
+          _total := _total.Value / tradeLineItem.UnitQuantity.Value;
         end;
       end;
 
@@ -740,7 +740,7 @@ begin
     //#endregion
 
     //#region AdditionalReferencedDocument
-    if (Descriptor.AdditionalReferencedDocuments <> nil) then
+    if (Descriptor.AdditionalReferencedDocuments.Count > 0) then
     begin
       for var document : TZUGFeRDAdditionalReferencedDocument in Descriptor.AdditionalReferencedDocuments do
       begin
@@ -1037,19 +1037,19 @@ begin
       if (tradeAllowanceCharge.ChargePercentage <> 0.0) then
       begin
         Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-        Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ChargePercentage, 2));
+        Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.ChargePercentage)));
         Writer.WriteEndElement();
       end;
 
       if (tradeAllowanceCharge.BasisAmount <> 0.0) then
       begin
         Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-        Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount));
+        Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.BasisAmount)));
         Writer.WriteEndElement();
       end;
 
       Writer.WriteStartElement('ram:ActualAmount');
-      Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.ActualAmount, 2));
+      Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.ActualAmount)));
       Writer.WriteEndElement();
 
       if tradeAllowanceCharge.ChargeIndicator then
@@ -1072,7 +1072,7 @@ begin
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(tradeAllowanceCharge.Tax.TypeCode));
         if (tradeAllowanceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
           Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tradeAllowanceCharge.Tax.CategoryCode));
-        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tradeAllowanceCharge.Tax.Percent));
+        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.Tax.Percent)));
         Writer.WriteEndElement();
       end;
       Writer.WriteEndElement();
@@ -1083,14 +1083,14 @@ begin
     begin
       Writer.WriteStartElement('ram:SpecifiedLogisticsServiceCharge', ALL_PROFILES  - [TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
       Writer.WriteOptionalElementString('ram:Description', serviceCharge.Description);
-      Writer.WriteElementString('ram:AppliedAmount', _formatDecimal(serviceCharge.Amount));
+      Writer.WriteElementString('ram:AppliedAmount', _formatDecimal(_asNullableParam<Currency>(serviceCharge.Amount)));
       if (serviceCharge.Tax <> nil) then
       begin
         Writer.WriteStartElement('ram:AppliedTradeTax');
         Writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(serviceCharge.Tax.TypeCode));
         if (serviceCharge.Tax.CategoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
           Writer.WriteElementString('ram:CategoryCode', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(serviceCharge.Tax.CategoryCode));
-        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(serviceCharge.Tax.Percent));
+        Writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(_asNullableParam<Currency>(serviceCharge.Tax.Percent)));
         Writer.WriteEndElement();
       end;
       Writer.WriteEndElement();
@@ -1330,7 +1330,7 @@ begin
     _writer.WriteStartElement(tagName,profile);
     if forceCurrency then
       _writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
-    _writer.WriteValue(_formatDecimal(value.Value, numDecimals));
+    _writer.WriteValue(_formatDecimal(value, numDecimals));
     _writer.WriteEndElement; // !tagName
   end;
 end;
@@ -1645,17 +1645,17 @@ begin
     _writer.WriteStartElement('ram:ApplicableTradeTax');
 
     _writer.WriteStartElement('ram:CalculatedAmount');
-    _writer.WriteValue(_formatDecimal(tax.TaxAmount));
+    _writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tax.TaxAmount)));
     _writer.WriteEndElement(); // !CalculatedAmount
 
     _writer.WriteElementString('ram:TypeCode', TZUGFeRDTaxTypesExtensions.EnumToString(tax.TypeCode));
     _writer.WriteOptionalElementString('ram:ExemptionReason', tax.ExemptionReason);
 
     _writer.WriteStartElement('ram:BasisAmount');
-    _writer.WriteValue(_formatDecimal(tax.BasisAmount));
+    _writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tax.BasisAmount)));
     _writer.WriteEndElement(); // !BasisAmount
 
-    if (tax.AllowanceChargeBasisAmount <> 0.0) and ((Descriptor.Profile <> TZUGFeRDProfile.XRechnung1)
+    if (tax.AllowanceChargeBasisAmount <> nil) and ((Descriptor.Profile <> TZUGFeRDProfile.XRechnung1)
       and (Descriptor.Profile <> TZUGFeRDProfile.XRechnung)) then
     begin
       _writer.WriteStartElement('ram:AllowanceChargeBasisAmount');
@@ -1671,7 +1671,7 @@ begin
     begin
       _writer.WriteElementString('ram:ExemptionReasonCode', TZUGFeRDTaxExemptionReasonCodesExtensions.EnumToString(tax.ExemptionReasonCode));
     end;
-    _writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(tax.Percent));
+    _writer.WriteElementString('ram:RateApplicablePercent', _formatDecimal(_asNullableParam<Currency>(tax.Percent)));
     _writer.WriteEndElement(); // !ApplicableTradeTax
   end;
 end;

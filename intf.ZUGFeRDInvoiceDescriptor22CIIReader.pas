@@ -323,11 +323,13 @@ begin
   Result.PaymentReference := _nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:PaymentReference');
   Result.Currency :=  TZUGFeRDCurrencyCodesExtensions.FromString(_nodeAsString(doc.DocumentElement,
     '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceCurrencyCode'));
-  Result.TaxCurrency := TZUGFeRDCurrencyCodesExtensions.FromString(_nodeAsString(doc.DocumentElement,
-    '//ram:ApplicableHeaderTradeSettlement/ram:TaxCurrencyCode')); // BT-6
   Result.SellerReferenceNo := _nodeAsString(doc.DocumentElement,
     '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceIssuerReference');
 
+  var optionalTaxCurrency := TZUGFeRDCurrencyCodesExtensions.FromString(_nodeAsString(doc.DocumentElement,
+    '//ram:ApplicableHeaderTradeSettlement/ram:TaxCurrencyCode')); // BT-6
+  if (optionalTaxCurrency <> TZUGFeRDCurrencyCodes.Unknown) then
+    Result.TaxCurrency := optionalTaxCurrency;
 
   // TODO: Multiple SpecifiedTradeSettlementPaymentMeans can exist for each account/institution (with different SEPA?)
   var _tempPaymentMeans : TZUGFeRDPaymentMeans := TZUGFeRDPaymentMeans.Create;
@@ -403,7 +405,7 @@ begin
                                  _nodeAsDecimal(nodes[i], './/ram:RateApplicablePercent', 0),
                                  TZUGFeRDTaxTypesExtensions.FromString(_nodeAsString(nodes[i], './/ram:TypeCode')),
                                  TZUGFeRDTaxCategoryCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:CategoryCode')),
-                                 0,
+                                 nil,
                                  TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(_nodeAsString(nodes[i], './/ram:ExemptionReasonCode')),
                                  _nodeAsString(nodes[i], './/ram:ExemptionReason'));
   end;
