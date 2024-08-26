@@ -1639,8 +1639,9 @@ begin
     _writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tax.BasisAmount)));
     _writer.WriteEndElement(); // !BasisAmount
 
-    if (tax.AllowanceChargeBasisAmount <> nil) and ((Descriptor.Profile <> TZUGFeRDProfile.XRechnung1)
-      and (Descriptor.Profile <> TZUGFeRDProfile.XRechnung)) then
+    if tax.AllowanceChargeBasisAmount.HasValue and ((tax.AllowanceChargeBasisAmount.Value <> 0) and
+      ((Descriptor.Profile <> TZUGFeRDProfile.XRechnung1)
+      and (Descriptor.Profile <> TZUGFeRDProfile.XRechnung))) then
     begin
       _writer.WriteStartElement('ram:AllowanceChargeBasisAmount');
       _writer.WriteValue(_formatDecimal(tax.AllowanceChargeBasisAmount));

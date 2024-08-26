@@ -721,7 +721,7 @@ begin
     _writer.WriteValue(_formatDecimal(_AsNullableParam<Currency>(tax.BasisAmount)));
     _writer.WriteEndElement(); // !BasisAmount
 
-    if (tax.AllowanceChargeBasisAmount <> nil) then
+    if tax.AllowanceChargeBasisAmount.HasValue and (tax.AllowanceChargeBasisAmount.Value <> 0) then
     begin
       _writer.WriteStartElement('ram:AllowanceChargeBasisAmount');
       _writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
