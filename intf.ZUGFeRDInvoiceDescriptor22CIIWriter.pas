@@ -757,9 +757,9 @@ begin
 
         if (document.AttachmentBinaryObject <> nil) then
         begin
-          Writer.WriteStartElement('ram:AttachmentBinaryObject');
-          Writer.WriteAttributeString('filename', document.Filename);
-          Writer.WriteAttributeString('mimeCode', TZUGFeRDMimeTypeMapper.GetMimeType(document.Filename));
+          Writer.WriteStartElement('ram:AttachmentBinaryObject');  // BT-125
+          Writer.WriteAttributeString('filename', document.Filename); // BT-125-2
+          Writer.WriteAttributeString('mimeCode', TZUGFeRDMimeTypeMapper.GetMimeType(document.Filename)); // BT-125-1
           Writer.WriteValue(TZUGFeRDHelper.GetDataAsBase64(document.AttachmentBinaryObject));
           Writer.WriteEndElement(); // !AttachmentBinaryObject()
         end;

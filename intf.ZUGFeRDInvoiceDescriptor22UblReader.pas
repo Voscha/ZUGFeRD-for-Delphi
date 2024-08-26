@@ -293,13 +293,6 @@ begin
     );
   end;
 
-  //Get all referenced and embedded documents (BG-24)
-  nodes := doc.SelectNodes('//cac:AdditionalDocumentReference');
-  for i := 0 to nodes.length-1 do
-  begin
-    Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
-  end;
-
 //  //-------------------------------------------------
 //  // hzi: With old implementation only the first document has been read instead of all documents
 //  //-------------------------------------------------
@@ -506,6 +499,12 @@ begin
     Result.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
     Result.ContractReferencedDocument.ID := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:ContractDocumentReference/cbc:ID');
     Result.ContractReferencedDocument.IssueDateTime := XMLUtils._nodeAsDateTime(doc.DocumentElement, '//cac:ContractDocumentReference/cbc:IssueDate');
+  end;
+
+  nodes := doc.SelectNodes('//cac:AdditionalDocumentReference');
+  for i := 0 to nodes.length - 1 do
+  begin
+    Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
   end;
 
   Result.SpecifiedProcuringProject := TZUGFeRDSpecifiedProcuringProject.Create;

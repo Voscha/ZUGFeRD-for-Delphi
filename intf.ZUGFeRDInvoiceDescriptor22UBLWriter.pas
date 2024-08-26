@@ -267,10 +267,11 @@ begin
             Writer.WriteStartElement('cac:FinancialInstitutionBranch');
             Writer.WriteElementString('cbc:ID', account.BIC);
 
-            Writer.WriteStartElement('cac:FinancialInstitution');
-            Writer.WriteElementString('cbc:Name', account.BankName);
+            //[UBL - CR - 664] - A UBL invoice should not include the FinancialInstitutionBranch FinancialInstitution
+            //Writer.WriteStartElement("cac:FinancialInstitution");
+            //Writer.WriteElementString("cbc:Name", account.BankName);
 
-            Writer.WriteEndElement(); // !FinancialInstitution
+            //Writer.WriteEndElement(); // !FinancialInstitution
             Writer.WriteEndElement(); // !FinancialInstitutionBranch
 
             Writer.WriteEndElement(); // !PayeeFinancialAccount
@@ -292,10 +293,11 @@ begin
             Writer.WriteStartElement('cac:FinancialInstitutionBranch');
             Writer.WriteElementString('cbc:ID', account.BIC);
 
-            Writer.WriteStartElement('cac:FinancialInstitution');
-            Writer.WriteElementString('cbc:Name', account.BankName);
+            //[UBL - CR - 664] - A UBL invoice should not include the FinancialInstitutionBranch FinancialInstitution
+            //Writer.WriteStartElement("cac:FinancialInstitution");
+            //Writer.WriteElementString("cbc:Name", account.BankName);
 
-            Writer.WriteEndElement(); // !FinancialInstitution
+            //Writer.WriteEndElement(); // !FinancialInstitution
             Writer.WriteEndElement(); // !FinancialInstitutionBranch
 
             Writer.WriteEndElement(); // !PayerFinancialAccount
@@ -369,10 +371,8 @@ begin
       Writer.WriteStartElement('cbc:LineExtensionAmount');
       Writer.WriteAttributeString('currencyID',
         TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
-      var Value := '';
-      if tradeLineItem.LineTotalAmount.HasValue then
-        Value := _formatDecimal(tradeLineItem.LineTotalAmount);
-      Writer.WriteValue(Value);
+      Writer.WriteValue(_formatDecimal(tradeLineItem.LineTotalAmount));
+
       Writer.WriteEndElement();
 
 
@@ -385,12 +385,26 @@ begin
       Writer.WriteElementString('cbc:ID', tradeLineItem.SellerAssignedID);
       Writer.WriteEndElement(); //!SellersItemIdentification
 
-      Writer.WriteStartElement('cac:BuyersItemIdentification');
-      Writer.WriteElementString('cbc:ID', tradeLineItem.BuyerAssignedID);
-      Writer.WriteEndElement(); //!BuyersItemIdentification
+      if not string.IsNullOrWhiteSpace(tradeLineItem.BuyerAssignedID) then
+      begin
+          Writer.WriteStartElement('cac:BuyersItemIdentification');
+          Writer.WriteElementString('cbc:ID', tradeLineItem.BuyerAssignedID);
+          Writer.WriteEndElement(); //!BuyersItemIdentification
+      end;
 
       _writeApplicableProductCharacteristics(Writer, tradeLineItem.ApplicableProductCharacteristics);
       _writeCommodityClassification(Writer, tradeLineItem.DesignatedProductClassifications);
+
+      //[UBL-SR-48] - Invoice lines shall have one and only one classified tax category.
+      Writer.WriteStartElement('cac:ClassifiedTaxCategory');
+      Writer.WriteElementString('cbc:ID', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(tradeLineItem.TaxCategoryCode));
+      Writer.WriteElementString('cbc:Percent', _formatDecimal(_asNullableParam<Currency>(tradeLineItem.TaxPercent)));
+
+      Writer.WriteStartElement('cac:TaxScheme');
+      Writer.WriteElementString('cbc:ID', TZUGFeRDTaxTypesExtensions.EnumToString(tradeLineItem.TaxType));
+      Writer.WriteEndElement();// !TaxScheme
+
+      Writer.WriteEndElement();// !ClassifiedTaxCategory
 
       Writer.WriteEndElement(); //!Item
 
@@ -555,15 +569,16 @@ begin
     _writer.WriteEndElement();
   end;
 
-  _writer.WriteStartElement('cac:PartyIdentification');
   if (Descriptor.PaymentMeans.SEPAMandateReference.IsEmpty) then
   begin
+    _writer.WriteStartElement('cac:PartyIdentification');
     _writer.WriteStartElement('cbc:ID');
     _writer.WriteAttributeString('schemeID', 'SEPA');
     _writer.WriteValue(Descriptor.PaymentMeans.SEPACreditorIdentifier);
     _writer.WriteEndElement();//!ID
+
+    _writer.WriteEndElement();//!PartyIdentification
   end;
-  _writer.WriteEndElement();//!PartyIdentification
 
   _writer.WriteStartElement('cac:PostalAddress');
 
@@ -591,6 +606,12 @@ begin
   _writer.WriteStartElement('cac:PartyLegalEntity');
 
   _writer.WriteElementString('cbc:RegistrationName', party.Name);
+
+  if (party.GlobalID <> nil) then
+  begin
+    //Party legal registration identifier (BT-30)
+    _writer.WriteElementString('cbc:CompanyID', party.GlobalID.ID);
+  end;
 
   _writer.WriteEndElement(); //!PartyLegalEntity
 
