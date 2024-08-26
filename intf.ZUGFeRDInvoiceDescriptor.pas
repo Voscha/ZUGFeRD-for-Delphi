@@ -76,7 +76,7 @@ type
   TZUGFeRDInvoiceDescriptor = class
   private
     FInvoiceNo: string;
-    FInvoiceDate: TDateTime;
+    FInvoiceDate: ZUGFeRDNullable<TDateTime>;
     FPaymentReference: string;
     FOrderNo: string;
     FOrderDate: ZUGFeRDNullable<TDateTime>;
@@ -124,8 +124,8 @@ type
     FCreditorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
     FDebitorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
     FPaymentMeans: TZUGFeRDPaymentMeans;
-    FBillingPeriodStart: TDateTime;
-    FBillingPeriodEnd: TDateTime;
+    FBillingPeriodStart: ZUGFeRDNullable<TDateTime>;
+    FBillingPeriodEnd: ZUGFeRDNullable<TDateTime>;
     FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
     FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
     FName: string;
@@ -145,7 +145,7 @@ type
     /// <summary>
     /// Invoice date
     /// </summary>
-    property InvoiceDate: TDateTime read FInvoiceDate write FInvoiceDate;
+    property InvoiceDate: ZUGFeRDNullable<TDateTime> read FInvoiceDate write FInvoiceDate;
 
     /// <summary>
     /// A textual value used to establish a link between the payment and the invoice, issued by the seller.
@@ -452,12 +452,12 @@ type
     /// <summary>
     /// Detailed information about the invoicing period, start date
     /// </summary>
-    property BillingPeriodStart: TDateTime read FBillingPeriodStart write FBillingPeriodStart;
+    property BillingPeriodStart: ZUGFeRDNullable<TDateTime> read FBillingPeriodStart write FBillingPeriodStart;
 
     /// <summary>
     /// Detailed information about the invoicing period, end date
     /// </summary>
-    property BillingPeriodEnd: TDateTime read FBillingPeriodEnd write FBillingPeriodEnd;
+    property BillingPeriodEnd: ZUGFeRDNullable<TDateTime> read FBillingPeriodEnd write FBillingPeriodEnd;
 
     /// <summary>
     /// Details about the associated order confirmation (BT-14).
@@ -570,9 +570,11 @@ type
     /// <param name="referenceTypeCode">Type of the referenced document</param>
     /// <param name="attachmentBinaryObject"></param>
     /// <param name="filename"></param>
-    procedure AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  const issueDateTime: TDateTime = 0; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
-  const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
+    procedure AddAdditionalReferencedDocument(const id: string;
+      const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
+      const issueDateTime: IZUGFeRDNullableParam<TDateTime> = nil; const name: string = '';
+      const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+      const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
 
     /// <summary>
     /// Sets details of the associated order
@@ -593,7 +595,8 @@ type
     /// </summary>
     /// <param name="deliveryNoteNo"></param>
     /// <param name="deliveryNoteDate"></param>
-    procedure SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: TDateTime = 0);
+    procedure SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string;
+      const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil);
 
     /// <summary>
     /// Sets detailed information about the corresponding contract
@@ -1311,8 +1314,10 @@ begin
   FSeller := Value;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddAdditionalReferencedDocument(const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  const issueDateTime: TDateTime = 0; const name: string = ''; const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+procedure TZUGFeRDInvoiceDescriptor.AddAdditionalReferencedDocument(const id: string;
+  const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
+  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = nil; const name: string = '';
+  const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
   const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(false));
@@ -1341,7 +1346,8 @@ begin
   FBuyer := Value;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string; const deliveryNoteDate: TDateTime = 0);
+procedure TZUGFeRDInvoiceDescriptor.SetDeliveryNoteReferenceDocument(const deliveryNoteNo: string;
+  const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime>);
 begin
   if Assigned(FDeliveryNoteReferencedDocument) then
     FDeliveryNoteReferencedDocument.Free;

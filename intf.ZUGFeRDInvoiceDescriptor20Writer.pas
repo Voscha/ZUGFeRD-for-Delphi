@@ -148,7 +148,7 @@ begin
     Writer.WriteElementString('ram:Name', Descriptor.Name, [TZUGFeRDProfile.Extended]);
     Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
 
-    if (Descriptor.InvoiceDate > 100) then
+    if Descriptor.InvoiceDate.HasValue then
     begin
         Writer.WriteStartElement('ram:IssueDateTime');
         Writer.WriteStartElement('udt:DateTimeString');
@@ -735,17 +735,17 @@ begin
 
     //#region BillingSpecifiedPeriod
     //  12. BillingSpecifiedPeriod (optional)
-    if (Descriptor.BillingPeriodStart>100) or (Descriptor.BillingPeriodEnd>100) then
+    if (Descriptor.BillingPeriodStart.HasValue) or (Descriptor.BillingPeriodEnd.HasValue) then
     begin
       Writer.WriteStartElement('ram:BillingSpecifiedPeriod', [TZUGFeRDProfile.BasicWL,TZUGFeRDProfile.Basic,TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
-      if (Descriptor.BillingPeriodStart>100) then
+      if (Descriptor.BillingPeriodStart.HasValue) then
       begin
           Writer.WriteStartElement('ram:StartDateTime');
           _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodStart));
           Writer.WriteEndElement(); // !StartDateTime
       end;
 
-      if (Descriptor.BillingPeriodEnd>100) then
+      if (Descriptor.BillingPeriodEnd.HasValue) then
       begin
           Writer.WriteStartElement('ram:EndDateTime');
           _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(Descriptor.BillingPeriodEnd));

@@ -59,8 +59,8 @@ begin
     For i := 0 to desc.TradeLineItems.Count - 1 do
     begin
       TLI := desc.TradeLineItems[i];
-      Assert.IsTrue(TLI.BillingPeriodStart.Value = Default(TDateTime));
-      Assert.IsTrue(TLI.BillingPeriodEnd.Value = Default(TDateTime));
+      Assert.IsNull(TLI.BillingPeriodStart);
+      Assert.IsNull(TLI.BillingPeriodEnd);
     end;
   finally
     desc.Free;
@@ -79,6 +79,7 @@ begin
   try
     Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Comfort);
     Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
+    Assert.IsTrue(desc.IsTest);
   finally
     desc.Free;
   end;

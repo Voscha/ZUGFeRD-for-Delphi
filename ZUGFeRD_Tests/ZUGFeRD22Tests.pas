@@ -129,6 +129,8 @@ type
     procedure TestSellerDescription;
     [Test]
     procedure TestSellerContact;
+    [Test]
+    procedure ShouldLoadCiiWithoutQdtNamespace;
   end;
 
 implementation
@@ -153,6 +155,22 @@ begin
   FInvoiceProvider := TInvoiceProvider.create;
 end;
 
+procedure TZUGFeRD22Tests.ShouldLoadCiiWithoutQdtNamespace;
+begin
+  var path := '..\..\..\demodata\xRechnung\xRechnung CII - without qdt.xml';
+  path := makeSurePathIsCrossPlatformCompatible(path);
+
+  var desc := TZUGFeRDInvoiceDescriptor.Load(path);
+
+  Assert.AreEqual(desc.Profile, TZUGFeRDProfile.XRechnung);
+  Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
+  Assert.AreEqual(desc.InvoiceNo, '123456XX');
+  Assert.AreEqual(desc.TradeLineItems.Count, 2);
+  Assert.AreEqual(desc.LineTotalAmount.Value, Currency(314.86));
+
+  desc.Free;
+end; // !ShouldLoadCIIWithoutQdtNamespace()
+
 procedure TZUGFeRD22Tests.TearDown;
 begin
   CoUninitialize;
@@ -166,7 +184,7 @@ begin
 
   var desc := FInvoiceProvider.CreateInvoice();
   desc.AddAdditionalReferencedDocument(uuid, TZUGFeRDAdditionalReferencedDocumentTypeCode.Unknown,
-    issueDateTime, 'Additional Test Document');
+  TZUGFeRDNullableParam<TDateTime>.Create(issueDateTime), 'Additional Test Document');
 
   var ms := TMemoryStream.Create();
   desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
@@ -563,7 +581,7 @@ begin
     desc.AddAdditionalReferencedDocument(
             'My-File',
             TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-            0,
+            nil,
             'Ausführbare Datei',
             TZUGFeRDReferenceTypeCodes.Unknown,
             msref1,
@@ -603,7 +621,7 @@ begin
     desc.AddAdditionalReferencedDocument(
             'My-File',
             TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-            0,
+            nil,
             'Ausführbare Datei',
             TZUGFeRDReferenceTypeCodes.Unknown,
             msref1,
@@ -653,7 +671,7 @@ begin
     desc.AddAdditionalReferencedDocument(
             'My-File',
             TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-            0,
+            nil,
             'Ausführbare Datei',
             TZUGFeRDReferenceTypeCodes.Unknown,
             msref1,
@@ -703,7 +721,7 @@ begin
     desc.AddAdditionalReferencedDocument(
             'My-File',
             TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-            0,
+            nil,
             'Ausführbare Datei',
             TZUGFeRDReferenceTypeCodes.Unknown,
             msref1,
@@ -772,7 +790,7 @@ begin
   desc.AddAdditionalReferencedDocument(
         'My-File-PDF',
         TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-        timestamp,
+        TZUGFeRDNullableParam<TDateTime>.Create(timestamp),
         'EmbeddedPdf',
         TZUGFeRDReferenceTypeCodes.Unknown,
         msref1,
@@ -785,7 +803,7 @@ begin
   desc.AddAdditionalReferencedDocument(
         'My-File-BIN',
         TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-        timestamp.IncDay(-2),
+        TZUGFeRDNullableParam<TDateTime>.Create(timestamp.IncDay(-2)),
         'EmbeddedPdf',
         TZUGFeRDReferenceTypeCodes.Unknown,
         msref2,
@@ -1073,6 +1091,7 @@ begin
     Assert.AreEqual(desc.TradeLineItems.Count, 0);
     Assert.AreEqual(desc.LineTotalAmount.Value, Currency(0.0)); // not present in file
     Assert.AreEqual(desc.TaxBasisAmount.Value, Currency(198.0));
+    Assert.AreEqual(desc.IsTest, false); // not present in file
   finally
     desc.Free;
   end;
@@ -1176,7 +1195,7 @@ begin
   Assert.AreEqual(desc.Type_, TZUGFeRDInvoiceType.Invoice);
 
   Assert.AreEqual(desc.InvoiceNo, '0815-99-1-a');
-  Assert.AreEqual(desc.InvoiceDate, EncodeDate(2020, 6, 21));
+  Assert.AreEqual(desc.InvoiceDate.Value, EncodeDate(2020, 6, 21));
   Assert.AreEqual(desc.PaymentReference, '0815-99-1-a');
   Assert.AreEqual(desc.OrderNo, '0815-99-1');
   Assert.AreEqual(desc.Currency, TZUGFeRDCurrencyCodes.EUR);
@@ -1784,7 +1803,7 @@ begin
   desc.AddAdditionalReferencedDocument(
       'My-File-BIN',
       TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-      timestamp.IncDay(-2),
+      TZUGFeRDNullableParam<TDateTime>.Create(timestamp.IncDay(-2)),
       'EmbeddedPdf',
       TZUGFeRDReferenceTypeCodes.Unknown,
       msref1,
@@ -1908,7 +1927,7 @@ begin
   ms.Free;
 
   Assert.AreEqual('471102', loadedInvoice.InvoiceNo);
-  Assert.AreEqual(EncodeDate(2018, 03, 05), loadedInvoice.InvoiceDate);
+  Assert.AreEqual(EncodeDate(2018, 03, 05), loadedInvoice.InvoiceDate.Value);
   Assert.AreEqual(TZUGFeRDCurrencyCodes.EUR, loadedInvoice.Currency);
   Assert.IsTrue(TZUGFeRDHelper.Any<TZUGFeRDNote>(loadedInvoice.Notes,
     function(Item: TZUGFeRDNote): Boolean
@@ -2025,8 +2044,8 @@ begin
   Assert.AreEqual(TZUGFeRDTaxTypes.VAT, tax.TypeCode);
   Assert.AreEqual(TZUGFeRDTaxCategoryCodes.S, tax.CategoryCode);
 
-  Assert.AreEqual(timestamp, loadedInvoice.BillingPeriodStart);
-  Assert.AreEqual(timestamp.IncDay(14), loadedInvoice.BillingPeriodEnd);
+  Assert.AreEqual(timestamp, loadedInvoice.BillingPeriodStart.Value);
+  Assert.AreEqual(timestamp.IncDay(14), loadedInvoice.BillingPeriodEnd.Value);
 
   //TradeAllowanceCharges
   var tradeAllowanceCharge := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDTradeAllowanceCharge>(

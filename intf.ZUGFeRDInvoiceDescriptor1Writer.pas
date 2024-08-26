@@ -145,7 +145,7 @@ begin
     Writer.WriteElementString('ram:Name', Descriptor.Name);
     Writer.WriteElementString('ram:TypeCode', Format('%d',[_encodeInvoiceType(Descriptor.Type_)]));
 
-    if (Trunc(Descriptor.InvoiceDate) > 0) then
+    if Descriptor.InvoiceDate.HasValue then
     begin
       Writer.WriteStartElement('ram:IssueDateTime');
       Writer.WriteStartElement('udt:DateTimeString');
@@ -439,18 +439,6 @@ begin
         Writer.WriteStartElement('ram:DueDateDateTime');
         _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
         Writer.WriteEndElement(); // !ram:DueDateDateTime
-      end;
-      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
-      //TODO PaymentTerms.PartialPaymentAmount
-      //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
-      if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) and
-         (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) then
-      begin
-        Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
-        _writeOptionalAmount(Writer, 'ram:BasisAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount);
-        _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
-        Writer.WriteEndElement();
-        //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
       end;
       Writer.WriteEndElement();
     end;

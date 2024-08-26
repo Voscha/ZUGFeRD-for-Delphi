@@ -102,6 +102,7 @@
         <DCCReference Include="ZUGFeRD20Tests.pas"/>
         <DCCReference Include="ZUGFeRD22Tests.pas"/>
         <DCCReference Include="XRechnungUBLTests.pas"/>
+        <DCCReference Include="DataTypeReaderTests.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

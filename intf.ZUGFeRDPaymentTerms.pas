@@ -24,7 +24,7 @@ uses
   intf.ZUGFeRDQuantityCodes;
 
 type
-
+(*
   TZUGFeRDApplicableTradePaymentTerms = class
   private
     FCalculationPercent: double;
@@ -42,7 +42,7 @@ type
     property ActualPenaltyAmount : Currency read FActualPenaltyAmount write FActualPenaltyAmount;
     property UnitCode: TZUGFeRDQuantityCodes read FUnitCode write FUnitCode;
   end;
-
+*)
   /// <summary>
   /// Condition that surrounds the payment part of an invoice, describing the specific details and the due date of the invoice.
   /// </summary>
@@ -50,10 +50,12 @@ type
   private
     FDescription: string;
     FDueDate: ZUGFeRDNullableDateTime;
+(*
     FDirectDebitMandateID: string;
     FApplicableTradePaymentDiscountTerms: TZUGFeRDApplicableTradePaymentTerms;
     FApplicableTradePaymentPenaltyTerms: TZUGFeRDApplicableTradePaymentTerms;
     FPartialPaymentAmount: Currency;
+*)
   public
     /// <summary>
     /// A textual description of the payment terms that apply to the amount due for payment (including description of possible penalties).
@@ -64,6 +66,7 @@ type
     /// </summary>
     property DueDate: ZUGFeRDNullableDateTime read FDueDate write FDueDate;
 
+(*
     /// SEPA Mandatsreferenz
     ///
     /// https://de.wikipedia.org/wiki/Mandatsreferenz
@@ -75,15 +78,18 @@ type
     property ApplicableTradePaymentPenaltyTerms : TZUGFeRDApplicableTradePaymentTerms read FApplicableTradePaymentPenaltyTerms write FApplicableTradePaymentPenaltyTerms;
 
     property ApplicableTradePaymentDiscountTerms : TZUGFeRDApplicableTradePaymentTerms read FApplicableTradePaymentDiscountTerms write FApplicableTradePaymentDiscountTerms;
+
   public
     constructor Create;
     destructor Destroy; override;
+*)
   end;
 
 implementation
 
 { TZUGFeRDPaymentTerms }
 
+(*
 constructor TZUGFeRDPaymentTerms.Create;
 begin
   FApplicableTradePaymentDiscountTerms:= TZUGFeRDApplicableTradePaymentTerms.Create;
@@ -96,5 +102,5 @@ begin
   if Assigned(FApplicableTradePaymentPenaltyTerms) then begin FApplicableTradePaymentPenaltyTerms.Free; FApplicableTradePaymentPenaltyTerms := nil; end;
   inherited;
 end;
-
+*)
 end.

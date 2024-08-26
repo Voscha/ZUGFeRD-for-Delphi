@@ -106,7 +106,7 @@ begin
     desc.AddAdditionalReferencedDocument(
               'My-File',
               TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-              0,
+              nil,
               'Ausführbare Datei',
               TZUGFeRDReferenceTypeCodes.Unknown,
               msref1,

@@ -131,7 +131,7 @@ const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
     desc.AddAdditionalReferencedDocument(
           'My-File-PDF',
           TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-          timestamp,
+          TZUGFeRDNullableParam<TDateTime>.Create(timestamp),
           'EmbeddedPdf',
           TZUGFeRDReferenceTypeCodes.Unknown,
           msref1,
@@ -144,7 +144,7 @@ const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
     desc.AddAdditionalReferencedDocument(
           'My-File-BIN',
           TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-          timestamp,
+          TZUGFeRDNullableParam<TDateTime>.Create(timestamp),
           'EmbeddedBin',
           TZUGFeRDReferenceTypeCodes.Unknown,
           msref2,
@@ -197,8 +197,8 @@ begin
   try
     for i := 0 to desc.TradeLineItems.Count - 1 do
     begin
-      Assert.IsTrue(desc.TradeLineItems[i].BillingPeriodStart.Value = Default(TDateTime));
-      Assert.IsTrue(desc.TradeLineItems[i].BillingPeriodEnd.Value = Default(TDateTime));
+      Assert.IsNULL(desc.TradeLineItems[i].BillingPeriodStart);
+      Assert.IsNULL(desc.TradeLineItems[i].BillingPeriodEnd);
     end;
   finally
     desc.Free;
@@ -326,6 +326,7 @@ begin
     Assert.AreEqual(desc.TradeLineItems.Count, 1);
     var LTA := desc.LineTotalAmount.Value;
     Assert.AreEqual(LTA, 198.00);
+    Assert.IsFalse(desc.IsTest);
   finally
     desc.Free;
     FS.Free;
@@ -351,6 +352,7 @@ begin
     Assert.AreEqual(desc.TradeLineItems.Count, 6);
     var LTA := desc.LineTotalAmount.Value;
     Assert.AreEqual(LTA, 457.20);
+    Assert.IsTrue(desc.IsTest);
   finally
     desc.Free;
     FS.Free;
@@ -587,7 +589,7 @@ begin
     desc.AddAdditionalReferencedDocument(
       'My-File-BIN',
       TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
-      timestamp - 2,
+      TZUGFeRDNullableParam<TDateTime>.Create(timestamp- 2),
       'EmbeddedPdf',
       TZUGFeRDReferenceTypeCodes.Unknown,
       msref1,
@@ -719,7 +721,7 @@ begin
     ms.Free;
 
     Assert.AreEqual('471102', loadedInvoice.InvoiceNo);
-    Assert.AreEqual(EncodeDate(2018, 03, 05), loadedInvoice.InvoiceDate);
+    Assert.AreEqual(EncodeDate(2018, 03, 05), loadedInvoice.InvoiceDate.Value);
     Assert.AreEqual(TZUGFeRDCurrencyCodes.EUR, loadedInvoice.Currency);
     Assert.IsTrue(TZUGFeRDHelper.Any<TZUGFeRDNote>(loadedInvoice.Notes,
       function(Item: TZUGFeRDNote):Boolean
@@ -841,8 +843,8 @@ begin
     Assert.AreEqual(TZUGFeRDTaxTypes.VAT, tax.TypeCode);
     Assert.AreEqual(TZUGFeRDTaxCategoryCodes.S, tax.CategoryCode);
 
-    Assert.AreEqual(timestamp, loadedInvoice.BillingPeriodStart);
-    Assert.AreEqual(timestamp.IncDay(14), loadedInvoice.BillingPeriodEnd);
+    Assert.AreEqual(timestamp, loadedInvoice.BillingPeriodStart.Value);
+    Assert.AreEqual(timestamp.IncDay(14), loadedInvoice.BillingPeriodEnd.Value);
 
     //TradeAllowanceCharges
     var tradeAllowanceCharge: TZUGFeRDTradeAllowanceCharge := TZUGFeRDHelper.FindFirstMatchingItem

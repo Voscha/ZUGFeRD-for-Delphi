@@ -20,7 +20,8 @@ uses
   ZUGFeRD10Tests in 'ZUGFeRD10Tests.pas',
   ZUGFeRD20Tests in 'ZUGFeRD20Tests.pas',
   ZUGFeRD22Tests in 'ZUGFeRD22Tests.pas',
-  XRechnungUBLTests in 'XRechnungUBLTests.pas';
+  XRechnungUBLTests in 'XRechnungUBLTests.pas',
+  DataTypeReaderTests in 'DataTypeReaderTests.pas';
 
 { keep comment here to protect the following conditional from being removed by the IDE when adding a unit }
 {$IFNDEF TESTINSIGHT}
