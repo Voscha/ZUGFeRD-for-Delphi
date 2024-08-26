@@ -408,27 +408,43 @@ begin
 
       Writer.WriteEndElement(); //!Item
 
+      Writer.WriteStartElement('cac:Price');  // BG-29
 
-      Writer.WriteStartElement('cac:Price');
+      Writer.WriteStartElement('cbc:PriceAmount');
+      Writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+      Writer.WriteValue(_formatDecimal(tradeLineItem.NetUnitPrice));
+      Writer.WriteEndElement();
 
-        //Writer.WriteElementString("cbc:BaseQuantity", tradeLineItem.UnitQuantity.ToString());
-        //Writer.WriteStartElement("cbc:BaseQuantity");
-        //Writer.WriteAttributeString("unitCode", this.Descriptor.Currency.EnumToString());
-        //Writer.WriteValue(tradeLineItem.UnitQuantity.ToString());
-        //Writer.WriteEndElement();
+      Writer.WriteStartElement('cbc:BaseQuantity'); // BT-149
+      Writer.WriteAttributeString('unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(tradeLineItem.UnitCode)); // BT-150
+      Writer.WriteValue(_formatDecimal(tradeLineItem.UnitQuantity));
+      Writer.WriteEndElement();
 
-        //Writer.WriteElementString("cbc:PriceAmount", tradeLineItem.NetUnitPrice.ToString());
-        Writer.WriteStartElement('cbc:PriceAmount');
-        Writer.WriteAttributeString('currencyID',
-          TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
-        Writer.WriteValue(_formatDecimal(tradeLineItem.NetUnitPrice));
+      if (tradeLineItem.TradeAllowanceCharges.Count > 0) then// only one charge possible in UBL
+      begin
+        var charge := tradeLineItem.TradeAllowanceCharges[0];
+        Writer.WriteStartElement('cac:AllowanceCharge');
+
+        Writer.WriteElementString('cbc:ChargeIndicator', IfThen(charge.ChargeIndicator, 'true', 'false'));
+
+        Writer.WriteStartElement('cbc:Amount'); // BT-147
+        Writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+        Writer.WriteValue(_formatDecimal(TZUGFeRDNullableParam<Currency>.Create(charge.ActualAmount)));
         Writer.WriteEndElement();
 
-        Writer.WriteEndElement(); //!Price
+        Writer.WriteStartElement('cbc:BaseAmount'); // BT-148
+        Writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+        Writer.WriteValue(_formatDecimal(TZUGFeRDNullableParam<Currency>.Create(charge.BasisAmount)));
+        Writer.WriteEndElement();
 
-        // TODO Add Tax Information for the tradeline item
+        Writer.WriteEndElement(); // !AllowanceCharge()
+      end;
 
-        Writer.WriteEndElement(); //!InvoiceLine
+      Writer.WriteEndElement(); //!Price
+
+      // TODO Add Tax Information for the tradeline item
+
+      Writer.WriteEndElement(); //!InvoiceLine
     end;
 
 
