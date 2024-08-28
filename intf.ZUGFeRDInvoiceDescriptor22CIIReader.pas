@@ -151,6 +151,7 @@ var
   node : IXMLDOMNode;
   nodes : IXMLDOMNodeList;
   i : Integer;
+  id, schemeID: string;
 begin
   doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
 
@@ -182,8 +183,8 @@ begin
 
   if doc.selectSingleNode('//ram:SellerTradeParty/ram:URIUniversalCommunication') <> nil then
   begin
-    var id : String := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:SellerTradeParty/ram:URIUniversalCommunication/ram:URIID');
-    var schemeID : String := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:SellerTradeParty/ram:URIUniversalCommunication/ram:URIID/@schemeID');
+    id := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:SellerTradeParty/ram:URIUniversalCommunication/ram:URIID');
+    schemeID := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:SellerTradeParty/ram:URIUniversalCommunication/ram:URIID/@schemeID');
 
     var eas : TZUGFeRDElectronicAddressSchemeIdentifiers :=
        TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString(schemeID);
@@ -195,8 +196,8 @@ begin
   nodes := doc.selectNodes('//ram:ApplicableHeaderTradeAgreement/ram:SellerTradeParty/ram:SpecifiedTaxRegistration');
   for i := 0 to nodes.length-1 do
   begin
-    var id : String := XMLUtils._nodeAsString(nodes[i], './/ram:ID');
-    var schemeID : String := XMLUtils._nodeAsString(nodes[i], './/ram:ID/@schemeID');
+    id := XMLUtils._nodeAsString(nodes[i], './/ram:ID');
+    schemeID := XMLUtils._nodeAsString(nodes[i], './/ram:ID/@schemeID');
     Result.AddSellerTaxRegistration(id, TZUGFeRDTaxRegistrationSchemeIDExtensions.FromString(schemeID));
   end;
 
@@ -214,8 +215,8 @@ begin
 
   if (doc.SelectSingleNode('//ram:BuyerTradeParty/ram:URIUniversalCommunication') <> nil) then
   begin
-    var id : String := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:BuyerTradeParty/ram:URIUniversalCommunication/ram:URIID');
-    var schemeID : String := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:BuyerTradeParty/ram:URIUniversalCommunication/ram:URIID/@schemeID');
+    id := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:BuyerTradeParty/ram:URIUniversalCommunication/ram:URIID');
+    schemeID := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:BuyerTradeParty/ram:URIUniversalCommunication/ram:URIID/@schemeID');
 
     var eas : TZUGFeRDElectronicAddressSchemeIdentifiers := TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString(schemeID);
 
@@ -226,8 +227,8 @@ begin
   nodes := doc.selectNodes('//ram:ApplicableHeaderTradeAgreement/ram:BuyerTradeParty/ram:SpecifiedTaxRegistration');
   for i := 0 to nodes.length-1 do
   begin
-    var id : String := XMLUtils._nodeAsString(nodes[i], './/ram:ID');
-    var schemeID : String := XMLUtils._nodeAsString(nodes[i], './/ram:ID/@schemeID');
+    id := XMLUtils._nodeAsString(nodes[i], './/ram:ID');
+    schemeID := XMLUtils._nodeAsString(nodes[i], './/ram:ID/@schemeID');
     Result.AddBuyerTaxRegistration(id, TZUGFeRDTaxRegistrationSchemeIDExtensions.FromString(schemeID));
   end;
 

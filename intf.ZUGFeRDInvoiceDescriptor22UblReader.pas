@@ -194,10 +194,10 @@ function TZUGFeRDInvoiceDescriptor22UBLReader.Load(
 var
   doc : IXMLDOMDocument2;
   node : IXMLDOMNode;
-//  node,node2,node3,node4,nodeSupplyChainTradeTransaction,
-//  nodeApplicableHeaderTradeAgreement : IXMLDOMNode;
   nodes : IXMLDOMNodeList;
   i : Integer;
+  id, schemeID: string;
+  TaxSchemeID: TZUGFeRDTaxRegistrationSchemeID;
 begin
   doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
   Result := TZUGFeRDInvoiceDescriptor.Create;
@@ -232,8 +232,8 @@ begin
 
   if doc.selectSingleNode('//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID') <> nil then
   begin
-    var id : String := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID');
-    var schemeID : String := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID/@schemeID');
+    id := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID');
+    schemeID := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID/@schemeID');
 
     var eas : TZUGFeRDElectronicAddressSchemeIdentifiers :=
        TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString(schemeID);
@@ -245,9 +245,9 @@ begin
   nodes := doc.selectNodes('//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme');
   for i := 0 to nodes.length-1 do
   begin
-    var id : String := XMLUtils._nodeAsString(nodes[i], './/cbc:CompanyID');
-    var schemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(node, './/cac:TaxScheme/cbc:ID'));
-    Result.AddSellerTaxRegistration(id, schemeID);
+    id := XMLUtils._nodeAsString(nodes[i], './/cbc:CompanyID');
+    TAXSchemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(node, './/cac:TaxScheme/cbc:ID'));
+    Result.AddSellerTaxRegistration(id, TaxSchemeID);
   end;
 
   if (doc.selectSingleNode('//cac:AccountingSupplierParty/cac:Party/cac:Contact') <> nil) then
@@ -264,8 +264,8 @@ begin
 
   if (doc.SelectSingleNode('//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID') <> nil) then
   begin
-    var id : String := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID');
-    var schemeID : String := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID/@schemeID');
+    id := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID');
+    schemeID := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:AccountingCustomerParty/cac:Party/cbc:EndpointID/@schemeID');
 
     var eas : TZUGFeRDElectronicAddressSchemeIdentifiers := TZUGFeRDElectronicAddressSchemeIdentifiersExtensions.FromString(schemeID);
 
@@ -276,9 +276,9 @@ begin
   nodes := doc.selectNodes('//cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme');
   for i := 0 to nodes.length-1 do
   begin
-    var id : String := XMLUtils._nodeAsString(nodes[i], './/cbc:CompanyID');
-    var schemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(node, './/cac:TaxScheme/cbc:ID'));
-    Result.AddBuyerTaxRegistration(id, schemeID);
+    id := XMLUtils._nodeAsString(nodes[i], './/cbc:CompanyID');
+    TaxSchemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(node, './/cac:TaxScheme/cbc:ID'));
+    Result.AddBuyerTaxRegistration(id, TaxSchemeID);
   end;
 
   if (doc.SelectSingleNode('//cac:AccountingCustomerParty/cac:Party/cac:Contact') <> nil) then
