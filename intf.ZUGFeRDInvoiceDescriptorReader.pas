@@ -92,8 +92,7 @@ begin
     data := reader.ReadToEnd.Replace(' ', '').ToLower;
     for validURI in validURIs do
     begin
-      if data.Contains(Format('>%s<', [validURI.ToLower])) or
-        data.Contains(Format('>%s#', [validURI.ToLower])) then
+      if data.Contains(Format('>%s<', [validURI.ToLower])) then
       begin
         stream.Position := oldStreamPosition;
         Result := true;

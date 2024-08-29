@@ -1397,9 +1397,9 @@ begin
     Assert.AreEqual(allowanceCharge.ChargeIndicator, false);//false = discount
     //CurrencyCodes are not written bei InvoiceDescriptor22Writer
     //Assert.AreEqual(allowanceCharge.Currency, CurrencyCodes.EUR);
-    Assert.AreEqual(allowanceCharge.BasisAmount, Currency(198));
+    Assert.AreEqual(allowanceCharge.BasisAmount.Value, Currency(198));
     Assert.AreEqual(allowanceCharge.ActualAmount, Currency(19.8));
-    Assert.AreEqual(allowanceCharge.ChargePercentage, Currency(10));
+    Assert.AreEqual(allowanceCharge.ChargePercentage.Value, Currency(10));
     Assert.AreEqual(allowanceCharge.Reason, 'Discount 10%');
     loadedInvoice.Free;
   finally
@@ -1674,9 +1674,9 @@ begin
   var allowanceCharges := loadedInvoice.TradeAllowanceCharges;
 
   Assert.IsTrue(allowanceCharges.Count = 1);
-  Assert.AreEqual(allowanceCharges[0].BasisAmount, Currency(100));
+  Assert.AreEqual(allowanceCharges[0].BasisAmount.Value, Currency(100));
   Assert.AreEqual(allowanceCharges[0].Amount, Currency(10));
-  Assert.AreEqual(allowanceCharges[0].ChargePercentage, Currency(12));
+  Assert.AreEqual(allowanceCharges[0].ChargePercentage.Value, Currency(12));
   loadedInvoice.Free;
 end;
 
@@ -1685,7 +1685,8 @@ begin
   var invoice := FInvoiceProvider.CreateInvoice();
 
   // fake values, does not matter for our test case
-  invoice.AddTradeAllowanceCharge(true, 100, TZUGFeRDCurrencyCodes.EUR, 10, '',
+  invoice.AddTradeAllowanceCharge(true, TZUGFeRDNullableParam<Currency>.create(100),
+    TZUGFeRDCurrencyCodes.EUR, 10, '',
     TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S, 19);
 
   var ms := TMemoryStream.Create;
@@ -1699,9 +1700,9 @@ begin
   var allowanceCharges := loadedInvoice.TradeAllowanceCharges;
 
   Assert.IsTrue(allowanceCharges.Count = 1);
-  Assert.AreEqual(allowanceCharges[0].BasisAmount, Currency(100));
+  Assert.AreEqual(allowanceCharges[0].BasisAmount.value, Currency(100));
   Assert.AreEqual(allowanceCharges[0].Amount, Currency(10));
-  Assert.AreEqual(allowanceCharges[0].ChargePercentage, Currency(0));
+  Assert.AreEqual(allowanceCharges[0].ChargePercentage.Value, Currency(0));
   loadedInvoice.Free;
 end;
 
@@ -1786,7 +1787,7 @@ procedure TZUGFeRD22Tests.TestWriteAndReadDespatchAdviceDocumentReferenceXRechnu
 begin
   var desc := FInvoiceProvider.CreateInvoice();
   var despatchAdviceNo := '421567982';
-  var despatchAdviceDate: TDateTime := EncodeDate(2024, 5, 14);
+  var despatchAdviceDate: ZUGFerdNullable<TDateTime> := EncodeDate(2024, 5, 14);
   desc.SetDespatchAdviceReferencedDocument(despatchAdviceNo, despatchAdviceDate);
 
   var ms := TMemoryStream.Create;
@@ -1798,7 +1799,7 @@ begin
   ms.Free;
 
   Assert.AreEqual(despatchAdviceNo, loadedInvoice.DespatchAdviceReferencedDocument.ID);
-  Assert.AreEqual(despatchAdviceDate, loadedInvoice.DespatchAdviceReferencedDocument.IssueDateTime.Value);
+  Assert.AreEqual(despatchAdviceDate.Value, loadedInvoice.DespatchAdviceReferencedDocument.IssueDateTime.Value);
   loadedInvoice.Free;
 end;
 
@@ -1829,7 +1830,7 @@ begin
   desc.OrderNo := '12345';
   desc.OrderDate := timestamp;
 
-  desc.SetContractReferencedDocument('12345', timestamp);
+  desc.SetContractReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.create(timestamp));
 
   desc.SpecifiedProcuringProject := TZUGFeRDSpecifiedProcuringProject.CreateWithParams('123', 'Project 123');
 
@@ -1891,8 +1892,9 @@ begin
   desc.BillingPeriodStart := timestamp;
   desc.BillingPeriodEnd := timestamp.IncDay(14);
 
-  desc.AddTradeAllowanceCharge(false, 5, TZUGFeRDCurrencyCodes.EUR, 15, 'Reason for charge',
-    TZUGFeRDTaxTypes.AAB, TZUGFeRDTaxCategoryCodes.AB, 19);
+  desc.AddTradeAllowanceCharge(false, TZUGFerDNullableParam<Currency>.Create(5),
+    TZUGFeRDCurrencyCodes.EUR, 15, 'Reason for charge',
+    TZUGFeRDTaxTypes.AAB, TZUGFeRDTaxCategoryCodes.AB, 19.0);
   desc.AddLogisticsServiceCharge(10, 'Logistics service charge', TZUGFeRDTaxTypes.AAC, TZUGFeRDTaxCategoryCodes.AC, 7);
 
   desc.PaymentTermsList[0].DueDate := timestamp.IncDay(14);
@@ -1912,7 +1914,8 @@ begin
   lineItem.SetDeliveryNoteReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.Create(timestamp));
   lineItem.SetContractReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.Create(timestamp));
 
-  lineItem.AddAdditionalReferencedDocument('xyz', timestamp, TZUGFeRDReferenceTypeCodes.AAB);
+  lineItem.AddAdditionalReferencedDocument('xyz', TZUGFeRDReferenceTypeCodes.AAB,
+    TZUGFeRDNullableParam<TDateTime>.Create(timestamp));
 
   lineItem.UnitQuantity := 3;
   lineItem.ActualDeliveryDate := timestamp;
@@ -2073,7 +2076,7 @@ begin
   Assert.IsNotNull(tradeAllowanceCharge);
   Assert.IsTrue(tradeAllowanceCharge.ChargeIndicator);
   Assert.AreEqual('Reason for charge', tradeAllowanceCharge.Reason);
-  Assert.AreEqual(Currency(5), tradeAllowanceCharge.BasisAmount);
+  Assert.AreEqual(Currency(5), tradeAllowanceCharge.BasisAmount.Value);
   Assert.AreEqual(Currency(15), tradeAllowanceCharge.ActualAmount);
   Assert.AreEqual(TZUGFeRDCurrencyCodes.EUR, tradeAllowanceCharge.Currency);
   Assert.AreEqual(Currency(19), tradeAllowanceCharge.Tax.Percent);
@@ -2177,7 +2180,7 @@ begin
     end);
   Assert.IsNotNull(lineItemTradeAllowanceCharge);
   Assert.IsTrue(lineItemTradeAllowanceCharge.ChargeIndicator);
-  Assert.AreEqual(Currency(10), lineItemTradeAllowanceCharge.BasisAmount);
+  Assert.AreEqual(Currency(10), lineItemTradeAllowanceCharge.BasisAmount.Value);
   Assert.AreEqual(Currency(50), lineItemTradeAllowanceCharge.ActualAmount);
   Assert.AreEqual('Reason: UnitTest', lineItemTradeAllowanceCharge.Reason);
   loadedInvoice.Free;

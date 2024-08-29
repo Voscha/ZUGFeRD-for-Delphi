@@ -20,7 +20,7 @@ unit intf.ZUGFeRDTradeLineItem;
 interface
 
 uses
-  System.SysUtils,System.Generics.Collections,System.Generics.Defaults,
+  System.SysUtils, System.Classes, System.Generics.Collections,System.Generics.Defaults,
   intf.ZUGFeRDHelper,
   intf.ZUGFeRDGlobalID,
   intf.ZUGFeRDReferenceTypeCodes,
@@ -40,7 +40,8 @@ uses
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
   intf.ZUGFeRDDesignatedProductClassification,
-  intf.ZUGFeRDDesignatedProductClassificationCodes
+  intf.ZUGFeRDDesignatedProductClassificationCodes,
+  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes
   ;
 
 type
@@ -91,7 +92,26 @@ type
     destructor Destroy; override;
 
     procedure AddAdditionalReferencedDocument(aID: string;
-      date: TDateTime = 0; code : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
+      code : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+      datetime: IZUGFeRDNullableParam<TDateTime> = nil); overload;
+
+		/// <summary>
+		/// Add an additional reference document
+		/// </summary>
+		/// <param name="id">Document number such as delivery note no or credit memo no</param>
+		/// <param name="typeCode"></param>
+		/// <param name="issueDateTime">Document Date</param>
+		/// <param name="name"></param>
+		/// <param name="referenceTypeCode">Type of the referenced document</param>
+		/// <param name="attachmentBinaryObject"></param>
+		/// <param name="filename"></param>
+		procedure AddAdditionalReferencedDocument(const aID: string;
+      const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
+      const datetime: IZUGFeRDNullableParam<TDateTime> = nil;
+      const name: string = '';
+      const code:  TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+      const attachmentBinaryObject: TMemoryStream = nil;
+      const filename: string = ''); overload;
 
     procedure AddReceivableSpecifiedTradeAccountingAccount(
       AccountID: string); overload;
@@ -182,9 +202,9 @@ type
     /// Adds a product classification
     /// </summary>
     /// <param name="classCode">Identifier of the item classification</param>
-    /// <param name="className">Classification name</param>
-    /// <param name="listID">Product classification name</param>
-    /// <param name="listVersionID">Version of product classification</param>
+    /// <param name="className">Classification name. If you leave className empty, it will be omitted in the output</param>
+    /// <param name="listID">Product classification name (optional)</param>
+    /// <param name="listVersionID">Version of product classification (optional)</param>
     procedure AddDesignatedProductClassification(classCode: TZUGFeRDDesignatedProductClassicficationCodes;
       const className: string; const listID: string = ''; const listVersionID: string = '');
   public
@@ -443,17 +463,14 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(
-  aID: string; date: TDateTime = 0;
-  code: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown);
+  aID: string; code : TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
+  datetime: IZUGFeRDNullableParam<TDateTime> = nil);
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(true));
   with FAdditionalReferencedDocuments[FAdditionalReferencedDocuments.Count - 1] do
   begin
     ID := aID;
-    if date <= 0 then
-      IssueDateTime:= Nil
-    else
-      IssueDateTime:= date;
+    IssueDateTime:= datetime;
     ReferenceTypeCode := code;
   end;
 end;
@@ -485,6 +502,22 @@ end;
 procedure TZUGFeRDTradeLineItem.AddReceivableSpecifiedTradeAccountingAccount(AccountID: string);
 begin
   AddReceivableSpecifiedTradeAccountingAccount(AccountID, TZUGFeRDAccountingAccountTypeCodes.Unknown);
+end;
+
+procedure TZUGFeRDTradeLineItem.AddAdditionalReferencedDocument(const aID: string;
+  const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
+  const datetime: IZUGFeRDNullableParam<TDateTime>; const name: string;
+  const code: TZUGFeRDReferenceTypeCodes; const attachmentBinaryObject: TMemoryStream;
+  const filename: string);
+begin
+  FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(false));
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].ReferenceTypeCode := code;
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].ID := aid;
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].IssueDateTime:= datetime;
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].Name := name;
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject := attachmentBinaryObject;
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].Filename := filename;
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].TypeCode := typeCode;
 end;
 
 procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(

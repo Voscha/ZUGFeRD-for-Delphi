@@ -72,7 +72,7 @@ type
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
     function _nodeAsAddressParty(baseNode: IXMLDomNode; const xpath: string) : TZUGFeRDParty;
     function _nodeAsBankAccount(baseNode: IXMLDomNode; const xpath: string): TZUGFeRDBankAccount;
-    function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode) : TZUGFeRDAdditionalReferencedDocument;
+    function _readAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode) : TZUGFeRDAdditionalReferencedDocument;
     function _getUncefactTaxSchemeID(const schemeID: string) : TZUGFeRDTaxRegistrationSchemeID;
     function _IsReadableByThisReaderVersion(stream: TStream; const validURIs: TArray<string>): Boolean; overload;
   public
@@ -504,7 +504,7 @@ begin
   nodes := doc.SelectNodes('//cac:AdditionalDocumentReference');
   for i := 0 to nodes.length - 1 do
   begin
-    Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
+    Result.AdditionalReferencedDocuments.Add(_readAdditionalReferencedDocument(nodes[i]));
   end;
 
   Result.SpecifiedProcuringProject := TZUGFeRDSpecifiedProcuringProject.Create;
@@ -516,7 +516,7 @@ begin
     Result.TradeLineItems.Add(_parseTradeLineItem(nodes[i]));
 end;
 
-function TZUGFeRDInvoiceDescriptor22UBLReader._getAdditionalReferencedDocument(
+function TZUGFeRDInvoiceDescriptor22UBLReader._readAdditionalReferencedDocument(
   a_oXmlNode: IXmlDomNode): TZUGFeRDAdditionalReferencedDocument;
 begin
 

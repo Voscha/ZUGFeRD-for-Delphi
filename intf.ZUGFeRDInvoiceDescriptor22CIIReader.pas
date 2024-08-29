@@ -73,7 +73,7 @@ type
     function GetValidURIs : TArray<string>;
     function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
-    function _getAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDAdditionalReferencedDocument;
+    function _readAdditionalReferencedDocument(a_oXmlNode : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDAdditionalReferencedDocument;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
   public
     function IsReadableByThisReaderVersion(stream: TStream): Boolean; override;
@@ -250,7 +250,7 @@ begin
   nodes := doc.SelectNodes('.//ram:ApplicableHeaderTradeAgreement/ram:AdditionalReferencedDocument');
   for i := 0 to nodes.length-1 do
   begin
-    Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
+    Result.AdditionalReferencedDocuments.Add(_readAdditionalReferencedDocument(nodes[i]));
   end;
 
   //-------------------------------------------------
@@ -511,7 +511,7 @@ begin
     Result.TradeLineItems.Add(_parseTradeLineItem(nodes[i]));
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIReader._getAdditionalReferencedDocument(
+function TZUGFeRDInvoiceDescriptor22CIIReader._readAdditionalReferencedDocument(
   a_oXmlNode: IXmlDomNode): TZUGFeRDAdditionalReferencedDocument;
 begin
   var strBase64BinaryData : String := XMLUtils._nodeAsString(a_oXmlNode, 'ram:AttachmentBinaryObject');
@@ -778,7 +778,7 @@ begin
   nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedLineTradeAgreement/ram:AdditionalReferencedDocument');
   for i := 0 to nodes.length-1 do
   begin
-    Result.AdditionalReferencedDocuments.Add(_getAdditionalReferencedDocument(nodes[i]));
+    Result.AdditionalReferencedDocuments.Add(_readAdditionalReferencedDocument(nodes[i]));
   end;
 
   nodes := TradeLineItem.SelectNodes('.//ram:DesignatedProductClassification');

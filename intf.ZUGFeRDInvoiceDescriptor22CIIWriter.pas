@@ -78,6 +78,8 @@ type
     procedure _writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter;contactTag: String; contact: TZUGFeRDContact;profile: TZUGFeRDProfiles);
     procedure _writeOptionalTaxes(_writer: TZUGFeRDProfileAwareXmlTextWriter);
     procedure _writeElementWithAttribute(_writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName,attributeValue, nodeValue: String; profile: TZUGFeRDProfiles = [TZUGFeRDProfile.Unknown]);
+    procedure _writeAdditionalReferencedDocument(_writer: TZUGFeRDProfileAwareXmlTextWriter;
+      document: TZUGFeRDAdditionalReferencedDocument; profile: TZUGFeRDProfiles);
     function _translateTaxCategoryCode(taxCategoryCode : TZUGFeRDTaxCategoryCodes) : String;
     function _translateInvoiceType(type_ : TZUGFeRDInvoiceType) : String;
     function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
@@ -324,22 +326,7 @@ begin
         //Detailangaben zu einer zusätzlichen Dokumentenreferenz
         for var document : TZUGFeRDAdditionalReferencedDocument in tradeLineItem.AdditionalReferencedDocuments do
         begin
-          Writer.WriteStartElement('ram:AdditionalReferencedDocument', [TZUGFeRDProfile.Extended]);
-          if (document.IssueDateTime.HasValue) then
-          begin
-              Writer.WriteStartElement('ram:FormattedIssueDateTime');
-              Writer.WriteStartElement('qdt:DateTimeString');
-              Writer.WriteAttributeString('format', '102');
-              Writer.WriteValue(_formatDate(document.IssueDateTime.Value));
-              Writer.WriteEndElement(); // !udt:DateTimeString
-              Writer.WriteEndElement(); // !ram:IssueDateTime
-          end;
-
-          Writer.WriteElementString('ram:LineID', Format('%s',[tradeLineItem.AssociatedDocument.LineID]));
-          Writer.WriteOptionalElementString('ram:IssuerAssignedID', document.ID);
-          Writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
-
-          Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
+          _writeAdditionalReferencedDocument(Writer, document, [TZUGFeRDProfile.Extended]);
         end; // !foreach(document)
         //#endregion
 
@@ -381,7 +368,7 @@ begin
             //#endregion
 
             //#region ChargePercentage
-            if (tradeAllowanceCharge.ChargePercentage <> 0.0) then
+            if (tradeAllowanceCharge.ChargePercentage <> nil) then
             begin
               Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
               Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.ChargePercentage)));
@@ -390,7 +377,7 @@ begin
             //#endregion
 
             //#region BasisAmount
-            if (tradeAllowanceCharge.BasisAmount <> 0.0) then
+            if (tradeAllowanceCharge.BasisAmount <> nil) then
             begin
               Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Extended]); // not in XRechnung, according to CII-SR-123
               Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.BasisAmount), 2));
@@ -539,7 +526,7 @@ begin
           //#endregion
 
           //#region ChargePercentage
-          if (specifiedTradeAllowanceCharge.ChargePercentage <> 0.0) then
+          if (specifiedTradeAllowanceCharge.ChargePercentage <> nil) then
           begin
             Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
             Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(specifiedTradeAllowanceCharge.ChargePercentage)));
@@ -548,7 +535,7 @@ begin
           //#endregion
 
           //#region BasisAmount
-          if (specifiedTradeAllowanceCharge.BasisAmount <> 0.0) then
+          if (specifiedTradeAllowanceCharge.BasisAmount <> nil) then
           begin
             Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Extended]); // not in XRechnung, according to CII-SR-123
             Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(specifiedTradeAllowanceCharge.BasisAmount)));
@@ -744,37 +731,7 @@ begin
     begin
       for var document : TZUGFeRDAdditionalReferencedDocument in Descriptor.AdditionalReferencedDocuments do
       begin
-        Writer.WriteStartElement('ram:AdditionalReferencedDocument', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
-        Writer.WriteElementString('ram:IssuerAssignedID', document.ID);
-        Writer.WriteElementString('ram:TypeCode', TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(document.TypeCode));
-
-        if (document.ReferenceTypeCode <> TZUGFeRDReferenceTypeCodes.Unknown) then
-        begin
-          Writer.WriteElementString('ram:ReferenceTypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
-        end;
-
-        Writer.WriteOptionalElementString('ram:Name', document.Name);
-
-        if (document.AttachmentBinaryObject <> nil) then
-        begin
-          Writer.WriteStartElement('ram:AttachmentBinaryObject');  // BT-125
-          Writer.WriteAttributeString('filename', document.Filename); // BT-125-2
-          Writer.WriteAttributeString('mimeCode', TZUGFeRDMimeTypeMapper.GetMimeType(document.Filename)); // BT-125-1
-          Writer.WriteValue(TZUGFeRDHelper.GetDataAsBase64(document.AttachmentBinaryObject));
-          Writer.WriteEndElement(); // !AttachmentBinaryObject()
-        end;
-
-        if (document.IssueDateTime.HasValue) then
-        begin
-          Writer.WriteStartElement('ram:FormattedIssueDateTime');
-          Writer.WriteStartElement('qdt:DateTimeString');
-          Writer.WriteAttributeString('format', '102');
-          Writer.WriteValue(_formatDate(document.IssueDateTime.Value));
-          Writer.WriteEndElement(); // !qdt:DateTimeString
-          Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
-        end;
-
-        Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
+        _writeAdditionalReferencedDocument(Writer, document, [TZUGFeRDProfile.Extended]);
       end;
     end;
     //#endregion
@@ -960,9 +917,10 @@ begin
         Writer.WriteOptionalElementString('ram:ProprietaryID', creditorAccount.ID);
         Writer.WriteEndElement(); // !PayeePartyCreditorFinancialAccount
 
-        if (creditorAccount.BIC<>'') then
+        if not String.IsNullOrWhiteSpace(creditorAccount.BIC) then
         begin
-          Writer.WriteStartElement('ram:PayeeSpecifiedCreditorFinancialInstitution');
+          Writer.WriteStartElement('ram:PayeeSpecifiedCreditorFinancialInstitution',
+            [TZUGFeRDProfile.Comfort, TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
           Writer.WriteElementString('ram:BICID', creditorAccount.BIC);
           Writer.WriteEndElement(); // !PayeeSpecifiedCreditorFinancialInstitution
         end;
@@ -1034,14 +992,14 @@ begin
       Writer.WriteElementString('udt:Indicator', ifthen(tradeAllowanceCharge.ChargeIndicator,'true','false'));
       Writer.WriteEndElement(); // !ram:ChargeIndicator
 
-      if (tradeAllowanceCharge.ChargePercentage <> 0.0) then
+      if (tradeAllowanceCharge.ChargePercentage <> nil) then
       begin
         Writer.WriteStartElement('ram:CalculationPercent', [TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
         Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.ChargePercentage)));
         Writer.WriteEndElement();
       end;
 
-      if (tradeAllowanceCharge.BasisAmount <> 0.0) then
+      if (tradeAllowanceCharge.BasisAmount <> nil) then
       begin
         Writer.WriteStartElement('ram:BasisAmount', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
         Writer.WriteValue(_formatDecimal(_asNullableParam<Currency>(tradeAllowanceCharge.BasisAmount)));
@@ -1277,6 +1235,46 @@ begin
   end;
 end;
 
+procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeAdditionalReferencedDocument(
+  _writer: TZUGFeRDProfileAwareXmlTextWriter; document: TZUGFeRDAdditionalReferencedDocument;
+  profile: TZUGFeRDProfiles);
+begin
+  _writer.WriteStartElement('ram:AdditionalReferencedDocument',
+    [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung]);
+  _writer.WriteElementString('ram:IssuerAssignedID', document.ID);
+  _writer.WriteElementString('ram:TypeCode',
+    TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(document.TypeCode));
+
+  if (document.ReferenceTypeCode <> TZUGFeRDReferenceTypeCodes.Unknown) then
+  begin
+    _writer.WriteElementString('ram:ReferenceTypeCode',
+      TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
+  end;
+
+  _writer.WriteOptionalElementString('ram:Name', document.Name);
+
+  if (document.AttachmentBinaryObject <> nil) then
+  begin
+    _writer.WriteStartElement('ram:AttachmentBinaryObject');  // BT-125
+    _writer.WriteAttributeString('filename', document.Filename); // BT-125-2
+    _writer.WriteAttributeString('mimeCode', TZUGFeRDMimeTypeMapper.GetMimeType(document.Filename)); // BT-125-1
+    _writer.WriteValue(TZUGFeRDHelper.GetDataAsBase64(document.AttachmentBinaryObject));
+    _writer.WriteEndElement(); // !AttachmentBinaryObject()
+  end;
+
+  if (document.IssueDateTime.HasValue) then
+  begin
+    _writer.WriteStartElement('ram:FormattedIssueDateTime');
+    _writer.WriteStartElement('qdt:DateTimeString');
+    _writer.WriteAttributeString('format', '102');
+    _writer.WriteValue(_formatDate(document.IssueDateTime.Value));
+    _writer.WriteEndElement(); // !qdt:DateTimeString
+    _writer.WriteEndElement(); // !ram:FormattedIssueDateTime
+  end;
+
+  _writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
+end;
+
 procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeElementWithAttribute(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName, attributeValue,
   nodeValue: String; profile: TZUGFeRDProfiles);
@@ -1367,10 +1365,8 @@ begin
     TZUGFeRDPartyTypes.SellerTradeParty: ; // all profiles
     TZUGFeRDPartyTypes.BuyerTradeParty: ; // all profiles
     TZUGFeRDPartyTypes.ShipToTradeParty:
-      if (Descriptor.Profile <> TZUGFeRDProfile.Extended) and
-         (Descriptor.Profile <> TZUGFeRDProfile.XRechnung1) and
-         (Descriptor.Profile <> TZUGFeRDProfile.XRechnung) then
-           exit; // extended, XRechnung1, XRechnung profile only
+      if Descriptor.Profile = TZUGFerDProfile.Minimum then
+        exit;    // it is also possible to add ShipToTradeParty() to a LineItem. In this case, the correct profile filter is different!
     TZUGFeRDPartyTypes.UltimateShipToTradeParty:
       if (Descriptor.Profile <> TZUGFeRDProfile.Extended) and
          (Descriptor.Profile <> TZUGFeRDProfile.XRechnung1) and
