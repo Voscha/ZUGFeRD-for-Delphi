@@ -588,7 +588,8 @@ type
     /// </summary>
     /// <param name="deliveryNoteNo"></param>
     /// <param name="deliveryNoteDate"></param>
-    procedure SetDespatchAdviceReferencedDocument(despatchAdviceNo : String; despatchAdviceDate: TDateTime = 0);
+    procedure SetDespatchAdviceReferencedDocument(despatchAdviceNo : String;
+      despatchAdviceDate: IZUGFeRDNullableParam<TDateTime> = nil);
 
     /// <summary>
     /// Sets detailed information about the corresponding delivery note
@@ -603,7 +604,8 @@ type
     /// </summary>
     /// <param name="contractNo">Contract number</param>
     /// <param name="contractDate">Date of the contract</param>
-    procedure SetContractReferencedDocument(const contractNo: string; const contractDate: TDateTime);
+    procedure SetContractReferencedDocument(const contractNo: string;
+      const contractDate: IZUGFeRDNullableParam<TDateTime> = nil);
 
     /// <summary>
     /// The logistics service charge (ram:SpecifiedLogisticsServiceCharge) is part of the ZUGFeRD specification.
@@ -1359,7 +1361,7 @@ begin
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetDespatchAdviceReferencedDocument(
-  despatchAdviceNo: String; despatchAdviceDate: TDateTime);
+  despatchAdviceNo: String; despatchAdviceDate: IZUGFeRDNullableParam<TDateTime>);
 begin
   if Assigned(FDespatchAdviceReferencedDocument) then
     FDespatchAdviceReferencedDocument.Free;
@@ -1369,7 +1371,8 @@ begin
   FDespatchAdviceReferencedDocument.IssueDateTime:= despatchAdviceDate;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetContractReferencedDocument(const contractNo: string; const contractDate: TDateTime);
+procedure TZUGFeRDInvoiceDescriptor.SetContractReferencedDocument(const contractNo: string;
+  const contractDate: IZUGFeRDNullableParam<TDateTime>);
 begin
   if Assigned(FContractReferencedDocument) then
     FContractReferencedDocument.Free;

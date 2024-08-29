@@ -292,9 +292,10 @@ begin
   Result.ActualDeliveryDate:= DataTypeReader.ReadFormattedIssueDateTime(doc.DocumentElement,
     '//ram:ApplicableHeaderTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime');
 
-  var _despatchAdviceNo : String := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:IssuerAssignedID');
-  var _despatchAdviceDate := DataTypeReader.ReadFormattedIssueDateTime(doc.DocumentElement,
-    '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:FormattedIssueDateTime');
+  var _despatchAdviceNo : String := XMLUtils._nodeAsString(doc.DocumentElement,
+    '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:IssuerAssignedID');
+  var _despatchAdviceDate: ZUGFeRDNullable<TDateTime> := XMLUtils._nodeAsDateTime(doc.documentElement,
+    '//ram:ApplicableHeaderTradeDelivery/ram:DespatchAdviceReferencedDocument/ram:FormattedIssueDateTime/udt:DateTimeString');
 
   if not (_despatchAdviceDate.HasValue) then
   begin
@@ -305,7 +306,7 @@ begin
   if ((_despatchAdviceDate.HasValue) or (_despatchAdviceNo <> '')) then
   begin
     Result.DespatchAdviceReferencedDocument := TZUGFeRDDespatchAdviceReferencedDocument.Create;
-    Result.SetDespatchAdviceReferencedDocument(_despatchAdviceNo,_despatchAdviceDate);
+    Result.SetDespatchAdviceReferencedDocument(_despatchAdviceNo, _despatchAdviceDate);
   end;
 
   var _deliveryNoteNo : String := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssuerAssignedID');
