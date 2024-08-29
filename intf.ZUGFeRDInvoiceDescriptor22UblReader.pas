@@ -246,7 +246,7 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     id := XMLUtils._nodeAsString(nodes[i], './/cbc:CompanyID');
-    TAXSchemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(node, './/cac:TaxScheme/cbc:ID'));
+    TAXSchemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(nodes[i], './/cac:TaxScheme/cbc:ID'));
     Result.AddSellerTaxRegistration(id, TaxSchemeID);
   end;
 
@@ -277,7 +277,7 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     id := XMLUtils._nodeAsString(nodes[i], './/cbc:CompanyID');
-    TaxSchemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(node, './/cac:TaxScheme/cbc:ID'));
+    TaxSchemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(nodes[i], './/cac:TaxScheme/cbc:ID'));
     Result.AddBuyerTaxRegistration(id, TaxSchemeID);
   end;
 
@@ -543,12 +543,15 @@ begin
   if (schemeID.IsNullOrWhiteSpace(schemeID)) then
     exit(TZUGFeRDTaxRegistrationSchemeID.Unknown);
 
+// Mandatory element.
+// For Seller VAT identifier (BT-31), use value “VAT”,
+// for the seller tax registration identifier (BT-32), use != "VAT"
   if schemeID.ToUpper = 'ID' then
-    result := TZUGFeRDTaxRegistrationSchemeID.FC
-  else if schemeID.ToUpper = 'VAT' then
+    result := TZUGFeRDTaxRegistrationSchemeID.FC;
+  if schemeID.ToUpper = 'VAT' then
     result := TZUGFeRDTaxRegistrationSchemeID.VA
   else
-    result := TZUGFeRDTaxRegistrationSchemeIDExtensions.FromString(schemeID);
+    result := TZUGFeRDTaxRegistrationSchemeID.FC
 end;
 
 function TZUGFeRDInvoiceDescriptor22UBLReader._nodeAsAddressParty(baseNode: IXMLDomNode;
