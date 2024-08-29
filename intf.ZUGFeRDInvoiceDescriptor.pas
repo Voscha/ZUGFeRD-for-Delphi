@@ -628,7 +628,8 @@ type
     /// <param name="taxCategoryCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxPercent">VAT rate for the allowance</param>
     procedure AddTradeAllowanceCharge(const isDiscount: Boolean;
-             const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes;
+             const basisAmount: IZUGFeRDNullableParam<Currency>;
+             const currency: TZUGFeRDCurrencyCodes;
              const actualAmount: Currency; const reason: string;
              const taxTypeCode: TZUGFeRDTaxTypes;
              const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
@@ -1392,11 +1393,13 @@ begin
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(
-  const isDiscount: Boolean; const basisAmount: Currency;
+  const isDiscount: Boolean;
+  const basisAmount: IZUGFeRDNullableParam<Currency>;
   const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency;
   const reason: string;
   const taxTypeCode: TZUGFeRDTaxTypes;
-  const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency);
+  const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
+  const taxPercent: Currency);
 var
   tradeAllowanceCharge: TZUGFeRDTradeAllowanceCharge;
 begin
@@ -1407,7 +1410,7 @@ begin
   tradeAllowanceCharge.ActualAmount := actualAmount;
   tradeAllowanceCharge.Currency := currency;
   tradeAllowanceCharge.Amount := actualAmount;
-  tradeAllowanceCharge.ChargePercentage := 0;
+  tradeAllowanceCharge.ChargePercentage := nil;
   tradeAllowanceCharge.Tax.CategoryCode := taxCategoryCode;
   tradeAllowanceCharge.Tax.TypeCode := taxTypeCode;
   tradeAllowanceCharge.Tax.Percent := taxPercent;

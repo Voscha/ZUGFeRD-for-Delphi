@@ -424,7 +424,7 @@ begin
                                  XMLUtils._nodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReason'));
   end;
 
-  nodes := doc.SelectNodes('//cac:AllowanceCharge');
+  nodes := doc.DocumentElement.SelectNodes('cac:AllowanceCharge');
   for i := 0 to nodes.length-1 do
   begin
     Result.AddTradeAllowanceCharge(not XMLUtils._nodeAsBool(nodes[i], './/cbc:ChargeIndicator'), // wichtig: das not (!) beachten
@@ -819,7 +819,7 @@ begin
   nodes := tradeLineItem.SelectNodes('.//cac:AllowanceCharge');
   for i := 0 to nodes.length-1 do
   begin
-    var chargeIndicator : Boolean := XMLUtils._nodeAsBool(nodes[i], '"./cbc:ChargeIndicator');
+    var chargeIndicator : Boolean := XMLUtils._nodeAsBool(nodes[i], './cbc:ChargeIndicator');
     var basisAmount : Currency := XMLUtils._NodeAsDecimal(nodes[i], './cbc:BaseAmount', TZUGFeRDNullableParam<Currency>.Create(0));
     var basisAmountCurrency : String := XMLUtils._nodeAsString(nodes[i], './cbc:BaseAmount/@currencyID');
     var actualAmount : Currency := XMLUtils._NodeAsDecimal(nodes[i], './cbc:Amount', TZUGFeRDNullableParam<Currency>.Create(0));

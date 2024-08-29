@@ -22,7 +22,8 @@ interface
 uses
   intf.ZUGFeRDCharge,intf.ZUGFeRDCurrencyCodes,
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
-  intf.ZUGFeRDSpecialServiceDescriptionCodes
+  intf.ZUGFeRDSpecialServiceDescriptionCodes,
+  intf.ZUGFeRDHelper
   ;
 
 type
@@ -46,10 +47,10 @@ type
   private
     FChargeIndicator: Boolean;
     FReason: string;
-    FBasisAmount: Currency;
+    FBasisAmount: ZUGFeRDNullable<Currency>;
     FCurrency: TZUGFeRDCurrencyCodes;
     FActualAmount: Currency;
-    FChargePercentage: Currency;
+    FChargePercentage: ZUGFeRDNullable<Currency>;
     FReasonCodeAllowance: TZUGFeRDAllowanceOrChargeIdentificationCodes;
     FReasonCodeCharge: TZUGFeRDSpecialServiceDescriptionCodes;
   public
@@ -78,7 +79,7 @@ type
     /// <summary>
     /// The base amount that may be used in conjunction with the percentage of the invoice line discount to calculate the amount of the invoice line discount
     /// </summary>
-    property BasisAmount: Currency read FBasisAmount write FBasisAmount;
+    property BasisAmount: ZUGFeRDNullable<Currency> read FBasisAmount write FBasisAmount;
     /// <summary>
     /// Currency that is used for representing BasisAmount and ActualAmount
     /// </summary>
@@ -92,7 +93,7 @@ type
     /// document level discount amount.
     /// BT-101
     /// </summary>
-    property ChargePercentage : Currency read FChargePercentage write FChargePercentage;
+    property ChargePercentage : ZUGFeRDNullable<Currency> read FChargePercentage write FChargePercentage;
   end;
 
 implementation
