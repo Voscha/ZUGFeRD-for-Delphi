@@ -92,7 +92,8 @@ begin
     data := reader.ReadToEnd.Replace(' ', '').ToLower;
     for validURI in validURIs do
     begin
-      if data.Contains(Format('>%s<', [validURI.ToLower])) then
+      if data.Contains(Format('>%s<', [validURI.ToLower])) or
+        data.Contains(Format('>%s#', [validURI.ToLower])) then
       begin
         stream.Position := oldStreamPosition;
         Result := true;
@@ -101,9 +102,10 @@ begin
     end;
   finally
     reader.Free;
+    stream.Position := oldStreamPosition;
   end;
 
-  stream.Position := oldStreamPosition;
+
 end;
 
 function TZUGFeRDInvoiceDescriptorReader.IsReadableByThisReaderVersion(
