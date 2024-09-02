@@ -785,10 +785,10 @@ begin
   for i := 0 to nodes.length - 1 do
   begin
     var className := XMLUtils._nodeAsString(nodes[i], './/ram:ClassName');
-    var classCode := TZUGFeRDDesignatedProductClassicficationCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:ClassCode'));
+    var classCode := TZUGFeRDDesignatedProductClassificationCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:ClassCode'));
     var listID := XMLUtils._nodeAsString(nodes[i], './/ram:ClassCode/@listID');
     var listVersionID := XMLUtils._nodeAsString(nodes[i], './/ram:ClassCode/@listVersionID');
-    result.AddDesignatedProductClassification(classCode, className, listID, listVersionID);
+    result.AddDesignatedProductClassification(className, classCode, listID, listVersionID);
   end;
 end;
 

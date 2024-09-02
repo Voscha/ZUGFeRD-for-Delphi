@@ -63,7 +63,8 @@ uses
   ,intf.ZUGFeRDMimeTypeMapper
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
-  ,intf.ZUGFeRDFormats;
+  ,intf.ZUGFeRDFormats
+  ,intf.ZUGFeRDDesignatedProductClassificationCodes;
 
 
 type
@@ -245,19 +246,19 @@ begin
         for var designatedProductClassification in tradeLineItem.DesignatedProductClassifications do
         begin
           Writer.WriteStartElement('ram:DesignatedProductClassification');
-          Writer.WriteOptionalElementString('ram:ClassName', designatedProductClassification.ClassName);
-
           if (designatedProductClassification.ClassCode.HasValue) then
           begin
-            Writer.WriteStartElement('ram::ClassCode');
+            Writer.WriteStartElement('ram:ClassCode');
             if not String.IsNullOrWhiteSpace(designatedProductClassification.ListID) then
             begin
               Writer.WriteAttributeString('listID', designatedProductClassification.ListID);
               Writer.WriteAttributeString('listVersionID', designatedProductClassification.ListVersionID);
             end;
-            Writer.WriteValue(designatedProductClassification.ClassCode.Value.ToString());
+            Writer.WriteValue(TZUGFeRDDesignatedProductClassificationCodesExtensions.EnumToString(
+              TZUGFeRDDesignatedProductClassificationCodes(designatedProductClassification.ClassCode.Value)));
             Writer.WriteEndElement(); // !ram::ClassCode
           end;
+          Writer.WriteOptionalElementString('ram:ClassName', designatedProductClassification.ClassName_);
           Writer.WriteEndElement(); // !ram:DesignatedProductClassification
         end;
       end;

@@ -148,6 +148,14 @@ type
     procedure TestSellerContact;
     [Test]
     procedure ShouldLoadCiiWithoutQdtNamespace;
+    [Test]
+    procedure TestDesignatedProductClassificationWithFullClassification;
+    [Test]
+    procedure TestDesignatedProductClassificationWithEmptyVersionId;
+    [Test]
+    procedure TestDesignatedProductClassificationWithEmptyListIdAndVersionId;
+    [Test]
+    procedure TestDesignatedProductClassificationWithoutClassCode;
   end;
 
 implementation
@@ -164,6 +172,7 @@ uses intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDProfile, intf.ZUGFeRDInvoiceType
   intf.ZUGFeRDSellerOrderreferencedDocument, intf.ZUGFeRDPaymentMeansTypeCodes,
   intf.ZUGFeRDSpecifiedProcuringProject, intf.ZUGFeRDFinancialCard, intf.ZUGFeRDNote,
   intf.ZUGFeRDBankAccount, intf.ZUGFeRDTax, intf.ZUGFeRDServiceCharge, intf.ZUGFeRDSubjectCodes,
+  intf.ZUGFeRDDesignatedProductClassificationCodes,
   intf.ZUGFeRDContentCodes, intf.ZUGFeRDXmlHelper, intf.ZUGFeRDFormats,winapi.ActiveX;
 
 procedure TZUGFeRD22Tests.Setup;
@@ -459,6 +468,137 @@ begin
     desc.Free;
   end;
 end;
+
+procedure TZUGFeRD22Tests.TestDesignatedProductClassificationWithEmptyListIdAndVersionId;
+begin
+  // test with empty version id value
+	var desc := FInvoiceProvider.CreateInvoice();
+	desc.TradeLineItems.First().AddDesignatedProductClassification(
+    'Test Value',
+		TZUGFeRDDesignatedProductClassificationCodes.HS
+  );
+
+	var ms := TMemoryStream.create;
+
+	desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  ms.Seek(0, soFromBeginning);
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+	Assert.AreEqual(Integer(TZUGFeRDDesignatedProductClassificationCodes.HS),
+    desc.TradeLineItems.First().DesignatedProductClassifications.First().ClassCode.Value);
+	Assert.AreEqual('Test Value',
+    desc.TradeLineItems.First().DesignatedProductClassifications.First().ClassName_);
+	Assert.isEmpty(desc.TradeLineItems.First().DesignatedProductClassifications.First().ListID);
+	Assert.IsEmpty(desc.TradeLineItems.First().DesignatedProductClassifications.First().ListVersionID);
+
+  desc.Free;
+  loadedInvoice.Free;
+
+end; // !TestDesignatedProductClassificationWithEmptyListIdAndVersionId()
+
+procedure TZUGFeRD22Tests.TestDesignatedProductClassificationWithEmptyVersionId;
+begin
+  // test with empty version id value
+	var desc := FInvoiceProvider.CreateInvoice();
+	desc.TradeLineItems.First().AddDesignatedProductClassification(
+    'Test Value',
+		TZUGFeRDDesignatedProductClassificationCodes.HS,
+		'List ID Value'
+  );
+
+  var ms := TMemoryStream.create;
+
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  ms.Seek(0, soFromBeginning);
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(Integer(TZUGFeRDDesignatedProductClassificationCodes.HS),
+    desc.TradeLineItems.First().DesignatedProductClassifications.First().ClassCode.Value);
+  Assert.AreEqual('Test Value',
+    desc.TradeLineItems.First().DesignatedProductClassifications.First().ClassName_);
+  Assert.AreEqual('List ID Value',
+    desc.TradeLineItems.First().DesignatedProductClassifications.First().ListID);
+  Assert.IsEmpty(desc.TradeLineItems.First().DesignatedProductClassifications.First().ListVersionID);
+
+  desc.Free;
+  loadedInvoice.Free;
+end; // !TestDesignatedProductClassificationWithEmptyVersionId()
+
+
+procedure TZUGFeRD22Tests.TestDesignatedProductClassificationWithFullClassification;
+begin
+  var desc := FInvoiceProvider.CreateInvoice();
+  desc.TradeLineItems.First().AddDesignatedProductClassification(
+    'Test Value',
+    TZUGFeRDDesignatedProductClassificationCodes.HS,
+	  'List ID Value',
+    'List Version ID Value'
+  );
+
+  var ms := TMemoryStream.create;
+
+  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+
+  // string comparison
+	ms.Seek(0, soFromBeginning);
+  var reader := TStreamReader.Create(ms);
+  var content: string := reader.ReadToEnd();
+
+	Assert.IsTrue(content.Contains('<ram:DesignatedProductClassification>'));
+	Assert.IsTrue(content.Contains('<ram:ClassCode listID="List ID Value" listVersionID="List Version ID Value">HS</ram:ClassCode>'));
+	Assert.IsTrue(content.Contains('<ram:ClassName>Test Value</ram:ClassName>'));
+
+  reader.Free;
+
+	 // structure comparison
+  ms.Seek(0, soFromBeginning);
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(Integer(TZUGFeRDDesignatedProductClassificationCodes.HS),
+      desc.TradeLineItems.First().DesignatedProductClassifications.First().ClassCode.Value);
+  Assert.AreEqual('Test Value',
+      desc.TradeLineItems.First().DesignatedProductClassifications.First().ClassName_);
+  Assert.AreEqual('List ID Value',
+      desc.TradeLineItems.First().DesignatedProductClassifications.First().ListID);
+  Assert.AreEqual('List Version ID Value',
+      desc.TradeLineItems.First().DesignatedProductClassifications.First().ListVersionID);
+
+  desc.Free;
+  loadedInvoice.Free;
+end; // !TestDesignatedProductClassificationWithFullClassification()
+
+procedure TZUGFeRD22Tests.TestDesignatedProductClassificationWithoutClassCode;
+begin
+  // test with empty version id value
+	var desc := FInvoiceProvider.CreateInvoice();
+	desc.TradeLineItems.First().AddDesignatedProductClassification(
+    'Test Value'
+  );
+
+	var ms := TMemoryStream.create;
+
+	desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  ms.Seek(0, soFromBeginning);
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+	Assert.AreEqual(Integer(default(TZUGFeRDDesignatedProductClassificationCodes)),
+    desc.TradeLineItems.First().DesignatedProductClassifications.First().ClassCode.Value);
+	Assert.AreEqual('Test Value',
+    desc.TradeLineItems.First().DesignatedProductClassifications.First().ClassName_);
+	Assert.isEmpty(desc.TradeLineItems.First().DesignatedProductClassifications.First().ListID);
+	Assert.IsEmpty(desc.TradeLineItems.First().DesignatedProductClassifications.First().ListVersionID);
+
+  desc.Free;
+  loadedInvoice.Free;
+
+end; // !TestDesignatedProductClassificationWithoutClassCode()
 
 procedure TZUGFeRD22Tests.TestElectronicAddress;
 var

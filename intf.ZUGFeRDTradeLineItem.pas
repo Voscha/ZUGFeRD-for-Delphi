@@ -198,15 +198,18 @@ type
     procedure SetOrderReferencedDocument(orderReferencedId: string;
       orderReferencedDate: IZUGFeRDNullableParam<TDateTime>);
 
-    /// <summary>
-    /// Adds a product classification
-    /// </summary>
-    /// <param name="classCode">Identifier of the item classification</param>
-    /// <param name="className">Classification name. If you leave className empty, it will be omitted in the output</param>
-    /// <param name="listID">Product classification name (optional)</param>
-    /// <param name="listVersionID">Version of product classification (optional)</param>
-    procedure AddDesignatedProductClassification(classCode: TZUGFeRDDesignatedProductClassicficationCodes;
-      const className: string; const listID: string = ''; const listVersionID: string = '');
+		/// <summary>
+		/// Adds a product classification
+		/// </summary>
+		/// <param name="className">Classification name. If you leave className empty, it will be omitted in the output</param>
+		/// <param name="classCode">Identifier of the item classification (optional)</param>
+		/// <param name="listID">Product classification name (optional)</param>
+		/// <param name="listVersionID">Version of product classification (optional)</param>
+		procedure AddDesignatedProductClassification(
+      const className: string;
+      classCode: TZUGFeRDDesignatedProductClassificationCodes = default(TZUGFeRDDesignatedProductClassificationCodes);
+      const listID: string = '';
+      const listVersionID: string = '');
   public
     /// <summary>
     /// The identification of articles based on a registered scheme
@@ -521,8 +524,10 @@ begin
 end;
 
 procedure TZUGFeRDTradeLineItem.AddDesignatedProductClassification(
-  classCode: TZUGFeRDDesignatedProductClassicficationCodes; const className, listID,
-  listVersionID: string);
+      const className: string;
+      classCode: TZUGFeRDDesignatedProductClassificationCodes = default(TZUGFeRDDesignatedProductClassificationCodes);
+      const listID: string = '';
+      const listVersionID: string = '');
 begin
   var dpc := TZUGFeRDDesignatedProductClassification.Create;
   dpc.ClassCode := Integer(classCode);

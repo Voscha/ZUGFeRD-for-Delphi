@@ -68,7 +68,7 @@ implementation
 procedure TZUGFeRDDesignatedProductClassification.SetClassCode(
   const Value: ZUGFeRDNullableInt);
 begin
-  if Value.HasValue and (Value.Value <= Integer(High(TZUGFeRDDesignatedProductClassicficationCodes))) then
+  if Value.HasValue and (Value.Value <= Integer(High(TZUGFeRDDesignatedProductClassificationCodes))) then
     FClassCode := Value
   else
     FClassCode.ClearValue;

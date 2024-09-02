@@ -22,34 +22,55 @@ interface
 uses System.TypInfo;
 
 type
-  TZUGFeRDDesignatedProductClassicficationCodes =  (
-    HS,
-    Unknown
+	/// <summary>
+	/// A code for the classification of an item according to type or kind or nature.
+	///
+	/// Classification codes are used for the aggregation of similar products, which might be useful for various
+	/// purposes,
+	/// for instance like public procurement, in accordance with the Common Vocabulary for Public Procurement
+	/// [CPV]), e-Commerce(UNSPSC) etc.
+	///
+	/// Source: UNTDID 7143
+	/// Business rule: BR-65
+	/// </summary>
+  TZUGFeRDDesignatedProductClassificationCodes =  (
+    Unknown  = 0,
+		/// <summary>
+		/// Product version number
+		/// Number assigned by manufacturer or seller to identify the release of a product.
+		/// </summary>
+		AA,
+
+		/// <summary>
+		/// Harmonised system
+		/// The item number is part of, or is generated in the context of the Harmonised Commodity Description and Coding System (Harmonised System), as developed and maintained by the World Customs Organization (WCO).
+		/// </summary>
+		HS
   );
 
-  TZUGFeRDDesignatedProductClassicficationCodesExtensions = class
+  TZUGFeRDDesignatedProductClassificationCodesExtensions = class
   public
-    class function FromString(const s: string): TZUGFeRDDesignatedProductClassicficationCodes;
-    class function EnumToString(codes: TZUGFeRDDesignatedProductClassicficationCodes): string;
+    class function FromString(const s: string): TZUGFeRDDesignatedProductClassificationCodes;
+    class function EnumToString(codes: TZUGFeRDDesignatedProductClassificationCodes): string;
   end;
 
 implementation
 
 { TZUGFeRDDesignatedProductClassicficationCodesExtensions }
 
-class function TZUGFeRDDesignatedProductClassicficationCodesExtensions.EnumToString(
-  codes: TZUGFeRDDesignatedProductClassicficationCodes): string;
+class function TZUGFeRDDesignatedProductClassificationCodesExtensions.EnumToString(
+  codes: TZUGFeRDDesignatedProductClassificationCodes): string;
 begin
-  Result := GetEnumName(TypeInfo(TZUGFeRDDesignatedProductClassicficationCodes), Integer(codes));
+  Result := GetEnumName(TypeInfo(TZUGFeRDDesignatedProductClassificationCodes), Integer(codes));
 end;
 
-class function TZUGFeRDDesignatedProductClassicficationCodesExtensions.FromString(
-  const s: string): TZUGFeRDDesignatedProductClassicficationCodes;
+class function TZUGFeRDDesignatedProductClassificationCodesExtensions.FromString(
+  const s: string): TZUGFeRDDesignatedProductClassificationCodes;
 var
   enumValue : Integer;
 begin
-  enumValue := GetEnumValue(TypeInfo(TZUGFeRDDesignatedProductClassicficationCodes), s);
-  Result := TZUGFeRDDesignatedProductClassicficationCodes(enumValue);
+  enumValue := GetEnumValue(TypeInfo(TZUGFeRDDesignatedProductClassificationCodes), s);
+  Result := TZUGFeRDDesignatedProductClassificationCodes(enumValue);
 end;
 
 end.

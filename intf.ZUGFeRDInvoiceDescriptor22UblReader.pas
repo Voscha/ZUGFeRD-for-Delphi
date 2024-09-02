@@ -725,11 +725,11 @@ begin
     nodes := tradeLineItem.SelectNodes('.//cac:Item/cac:CommodityClassification/cac:ItemClassificationCode');
     for i := 0 to nodes.length - 1 do
     begin
-      var code: TZUGFeRDDesignatedProductClassicficationCodes :=
-      TZUGFeRDDesignatedProductClassicficationCodesExtensions.FromString(nodes[i].Text);
+      var code: TZUGFeRDDesignatedProductClassificationCodes :=
+      TZUGFeRDDesignatedProductClassificationCodesExtensions.FromString(nodes[i].Text);
       result.AddDesignatedProductClassification(
-              code,
               '', // no name in Peppol Billing!
+              code,
               XMLUtils._nodeAsString(nodes[i], './@listID'),
               XMLUtils._nodeAsString(nodes[i], './@istVersionID')
               );
