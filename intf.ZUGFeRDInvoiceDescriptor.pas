@@ -842,7 +842,7 @@ uses
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
   intf.ZUGFeRDInvoiceDescriptor1Reader,intf.ZUGFeRDInvoiceDescriptor1Writer,
   intf.ZUGFeRDInvoiceDescriptor20Reader,intf.ZUGFeRDInvoiceDescriptor20Writer,
-  intf.ZUGFeRDInvoiceDescriptor23CIIReader,intf.ZUGFeRDInvoiceDescriptor22Writer,
+  intf.ZUGFeRDInvoiceDescriptor23CIIReader,intf.ZUGFeRDInvoiceDescriptor23Writer,
   intf.ZUGFeRDInvoiceDescriptor22UblReader
   ;
 
@@ -1511,7 +1511,7 @@ begin
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
     TZUGFeRDVersion.Version23:
-      writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
+      writer := TZUGFeRDInvoiceDescriptor23Writer.Create;
     else
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
   end;
@@ -1535,7 +1535,7 @@ begin
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
     TZUGFeRDVersion.Version23:
-      writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
+      writer := TZUGFeRDInvoiceDescriptor23Writer.Create;
     else
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
   end;

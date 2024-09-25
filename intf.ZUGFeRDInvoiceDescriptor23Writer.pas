@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDInvoiceDescriptor22Writer;
+unit intf.ZUGFeRDInvoiceDescriptor23Writer;
 
 interface
 
@@ -72,7 +72,7 @@ uses
   ;
 
 type
-  TZUGFeRDInvoiceDescriptor22Writer = class(TZUGFeRDInvoiceDescriptorWriter)
+  TZUGFeRDInvoiceDescriptor23Writer = class(TZUGFeRDInvoiceDescriptorWriter)
   private const
     ALL_PROFILES = [TZUGFeRDProfile.Minimum,
                     TZUGFeRDProfile.BasicWL,
@@ -96,9 +96,9 @@ type
 
 implementation
 
-{ TZUGFeRDInvoiceDescriptor22Writer }
+{ TZUGFeRDInvoiceDescriptor23Writer }
 
-procedure TZUGFeRDInvoiceDescriptor22Writer.Save(
+procedure TZUGFeRDInvoiceDescriptor23Writer.Save(
   _descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream; _format: TZUGFeRDFormats = TZUGFeRDFormats.CII);
 var
   Writer: TZUGFeRDInvoiceDescriptorWriter;
@@ -115,17 +115,18 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptor22Writer.Validate(
+function TZUGFeRDInvoiceDescriptor23Writer.Validate(
   _descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean): Boolean;
 begin
   Result := false;
 
-  //TODO in C# enthalten, aber eigentlich falsch, deswegen auskommentiert
-  //if (descriptor.TZUGFeRDProfile = TZUGFeRDProfile.BasicWL) then
-  //if (throwExceptions) then
-  //  raise TZUGFeRDUnsupportedException.Create('Invalid TZUGFeRDProfile used for ZUGFeRD 2.0 invoice.')
-  //else
-  //  exit;
+  if (_descriptor.Profile = TZUGFeRDProfile.BasicWL) then
+  begin
+    if (_throwExceptions) then
+      raise TZUGFeRDUnsupportedException.Create('Invalid TZUGFeRDProfile used for ZUGFeRD 2.0 invoice.')
+    else
+      exit;
+  end;
 
   if (_descriptor.Profile <> TZUGFeRDProfile.Extended) then // check tax types, only extended TZUGFeRDProfile allows tax types other than vat
   begin

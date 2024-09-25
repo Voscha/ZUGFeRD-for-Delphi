@@ -1300,7 +1300,7 @@ begin
     _writer.WriteStartElement('ram:IncludedNote');
     if (note.ContentCode <> TZUGFeRDContentCodes.Unknown) then
       _writer.WriteElementString('ram:ContentCode', TZUGFeRDContentCodesExtensions.EnumToString(note.ContentCode));
-    _writer.WriteElementString('ram:Content', note.Content);
+    _writer.WriteOptionalElementString('ram:Content', note.Content);
     if (note.SubjectCode <> TZUGFeRDSubjectCodes.Unknown) then
       _writer.WriteElementString('ram:SubjectCode', TZUGFeRDSubjectCodesExtensions.EnumToString(note.SubjectCode));
     _writer.WriteEndElement();
