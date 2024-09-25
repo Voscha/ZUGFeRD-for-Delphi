@@ -117,9 +117,8 @@ type
     FTaxes: TObjectList<TZUGFeRDTax>;
     FServiceCharges: TObjectList<TZUGFeRDServiceCharge>;
     FTradeAllowanceCharges: TObjectList<TZUGFeRDTradeAllowanceCharge>;
-//    FPaymentTerms: TZUGFeRDPaymentTerms;
     FPaymentTermsList: TObjectList<TZUGFeRDPaymentTerms>;
-    FInvoiceReferencedDocument: TZUGFeRDInvoiceReferencedDocument;
+    FInvoiceReferencedDocuments: TObjectList<TZUGFeRDInvoiceReferencedDocument>;
     FReceivableSpecifiedTradeAccountingAccounts: TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>;
     FCreditorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
     FDebitorBankAccounts: TObjectList<TZUGFeRDBankAccount>;
@@ -413,14 +412,10 @@ type
     property PaymentTermsList: TObjectList<TZUGFeRDPaymentTerms> read FPaymentTermsList;
 
     /// <summary>
-    /// A group of business terms providing information about a preceding invoices.
-    ///
-    /// To be used in case:
-    /// — a preceding invoice is corrected;
-    /// — preceding partial invoices are referred to from a final invoice;
-    /// — preceding pre-payment invoices are referred to from a final invoice.
+    /// Retrieves all preceding invoice references
     /// </summary>
-    property InvoiceReferencedDocument: TZUGFeRDInvoiceReferencedDocument read FInvoiceReferencedDocument write FInvoiceReferencedDocument;
+    /// <returns></returns>
+    property InvoiceReferencedDocuments: TObjectList<TZUGFeRDInvoiceReferencedDocument> read FInvoiceReferencedDocuments;
 
     /// <summary>
     /// Detailed information about the accounting reference
@@ -664,7 +659,7 @@ type
     /// </summary>
     /// <param name="id">Preceding InvoiceNo</param>
     /// <param name="IssueDateTime">Preceding Invoice Date</param>
-    procedure SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
+    procedure AddInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
 
     /// <summary>
     /// Detailinformationen zu Belegsummen
@@ -877,9 +872,8 @@ begin
   FTaxes                         := TObjectList<TZUGFeRDTax>.Create;
   FServiceCharges                := TObjectList<TZUGFeRDServiceCharge>.Create;
   FTradeAllowanceCharges         := TObjectList<TZUGFeRDTradeAllowanceCharge>.Create;
-//  FPaymentTerms                  := nil;//TZUGFeRDPaymentTerms.Create;
   FPaymentTermsList              := TObjectList<TZUGFeRDPaymentTerms>.Create;
-  FInvoiceReferencedDocument     := nil;//TZUGFeRDInvoiceReferencedDocument.Create;
+  FInvoiceReferencedDocuments     := TObjectList<TZUGFeRDInvoiceReferencedDocument>.Create;
   FReceivableSpecifiedTradeAccountingAccounts:= TObjectList<TZUGFeRDReceivableSpecifiedTradeAccountingAccount>.Create;
   FCreditorBankAccounts          := TObjectList<TZUGFeRDBankAccount>.Create;
   FDebitorBankAccounts           := TObjectList<TZUGFeRDBankAccount>.Create;
@@ -919,7 +913,7 @@ begin
   if Assigned(FServiceCharges                ) then begin FServiceCharges.Free; FServiceCharges                 := nil; end;
   if Assigned(FTradeAllowanceCharges         ) then begin FTradeAllowanceCharges.Free; FTradeAllowanceCharges          := nil; end;
   if Assigned(FPaymentTermsList              ) then begin FPaymentTermsList.Free; FPaymentTermsList                   := nil; end;
-  if Assigned(FInvoiceReferencedDocument     ) then begin FInvoiceReferencedDocument.Free; FInvoiceReferencedDocument      := nil; end;
+  if Assigned(FInvoiceReferencedDocuments    ) then begin FInvoiceReferencedDocuments.Free; FInvoiceReferencedDocuments      := nil; end;
   if Assigned(FReceivableSpecifiedTradeAccountingAccounts) then begin FReceivableSpecifiedTradeAccountingAccounts.Free; FReceivableSpecifiedTradeAccountingAccounts := nil; end;
   if Assigned(FCreditorBankAccounts         ) then begin FCreditorBankAccounts.Free; FCreditorBankAccounts          := nil; end;
   if Assigned(FDebitorBankAccounts          ) then begin FDebitorBankAccounts.Free; FDebitorBankAccounts           := nil; end;
@@ -1450,13 +1444,9 @@ begin
   FInvoicee := Value;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
+procedure TZUGFeRDInvoiceDescriptor.AddInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
 begin
-  if assigned(FInvoiceReferencedDocument) then
-    FInvoiceReferencedDocument.Free;
-  FInvoiceReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
-  FInvoiceReferencedDocument.ID := id;
-  FInvoiceReferencedDocument.IssueDateTime:= IssueDateTime;
+  FInvoiceReferencedDocuments.Add(TZUGFeRDInvoiceReferencedDocument.CreateWithParams(id, IssueDateTime));
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetInvoicerParty(const Value: TZUGFeRDParty);
