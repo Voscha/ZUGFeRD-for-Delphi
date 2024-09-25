@@ -389,8 +389,14 @@ begin
       XMLUtils._nodeAsDateTime(nodes[i], './ram:FormattedIssueDateTime')
     );
 
-  Result.OrderDate:= XMLUtils._nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:BuyerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
-  Result.OrderNo := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID');
+  var buyerOrderReferencedDocumentNode := doc.SelectSingleNode(
+    '//ram:ApplicableHeaderTradeAgreement/ram:BuyerOrderReferencedDocument');
+  if (buyerOrderReferencedDocumentNode <> nil) then
+  begin
+    Result.OrderDate := DataTypeReader.ReadFormattedIssueDateTime(buyerOrderReferencedDocumentNode,
+      'ram:FormattedIssueDateTime');
+    Result.OrderNo := XmlUtils._nodeAsString(buyerOrderReferencedDocumentNode, 'ram:IssuerAssignedID');
+  end;
 
   nodes := doc.SelectNodes('//ram:IncludedSupplyChainTradeLineItem');
   for i := 0 to nodes.length-1 do
@@ -401,8 +407,9 @@ begin
   if node <> nil then
   begin
     Result.SellerOrderReferencedDocument := TZUGFeRDSellerOrderReferencedDocument.Create;
-    Result.SellerOrderReferencedDocument.ID := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:SellerOrderReferencedDocument/ram:IssuerAssignedID');
-    Result.SellerOrderReferencedDocument.IssueDateTime:= XMLUtils._nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:SellerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
+    Result.SellerOrderReferencedDocument.ID := XMLUtils._nodeAsString(doc.DocumentElement, 'ram:IssuerAssignedID');
+    Result.SellerOrderReferencedDocument.IssueDateTime:= DataTypeReader.ReadFormattedIssueDateTime(node,
+      'ram:FormattedIssueDateTime')
   end;
 end;
 
@@ -557,31 +564,45 @@ begin
     Result.UnitCode := TZUGFeRDQuantityCodesExtensions.FromString(XMLUtils._nodeAsString(tradeLineItem, './/ram:BilledQuantity/@unitCode'));
   end;
 
-  if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID') <> nil) then
+  var buyerOrderReferencedDocumentNode := tradeLineItem.SelectSingleNode(
+    './/ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument');
+  if (buyerOrderReferencedDocumentNode <> nil) then
   begin
-    Result.BuyerOrderReferencedDocument := TZUGFeRDBuyerOrderReferencedDocument.Create;
-    Result.BuyerOrderReferencedDocument.ID := XMLUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID');
-    Result.BuyerOrderReferencedDocument.IssueDateTime:= XMLUtils._nodeAsDateTime(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
-    Result.BuyerOrderReferencedDocument.LineID := XmlUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:LineID');
+      Result.BuyerOrderReferencedDocument := TZUGFeRDBuyerOrderReferencedDocument.Create;
+      Result.BuyerOrderReferencedDocument.ID := XMLUtils._nodeAsString(buyerOrderReferencedDocumentNode,
+        'ram:IssuerAssignedID');
+      Result.BuyerOrderReferencedDocument.IssueDateTime:=
+        DataTypeReader.ReadFormattedIssueDateTime(buyerOrderReferencedDocumentNode, 'ram:FormattedIssueDateTime');
+      Result.BuyerOrderReferencedDocument.LineID := XmlUtils._nodeAsString(buyerOrderReferencedDocumentNode,
+        'ram:BuyerOrderReferencedDocument/ram:LineID');
   end;
 
-  if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssuerAssignedID') <> nil) then
+  var deliveryNoteReferencedDocumentNode := tradeLineItem.SelectSingleNode(
+    './/ram:SpecifiedLineTradeDelivery/ram:DeliveryNoteReferencedDocument');
+  if (deliveryNoteReferencedDocumentNode <> nil) then
   begin
-    Result.DeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
-    Result.DeliveryNoteReferencedDocument.ID := XMLUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:IssuerAssignedID');
-    Result.DeliveryNoteReferencedDocument.IssueDateTime:= XMLUtils._nodeAsDateTime(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:DeliveryNoteReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
+      Result.DeliveryNoteReferencedDocument := TZUGFeRDDeliveryNoteReferencedDocument.Create;
+      Result.DeliveryNoteReferencedDocument.ID := XmlUtils._nodeAsString(deliveryNoteReferencedDocumentNode,
+        'ram:IssuerAssignedID');
+      Result.DeliveryNoteReferencedDocument.IssueDateTime :=
+        DataTypeReader.ReadFormattedIssueDateTime(deliveryNoteReferencedDocumentNode, 'ram:FormattedIssueDateTime');
+
   end;
+
 
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime') <> nil) then
   begin
     Result.ActualDeliveryDate:= XMLUtils._nodeAsDateTime(tradeLineItem, './/ram:SpecifiedLineTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString');
   end;
 
-  if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:IssuerAssignedID') <> nil) then
+  var contractReferencedDocument := tradeLineItem.SelectSingleNode(
+    './/ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument');
+  if (contractReferencedDocument <> nil) then
   begin
-    Result.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.Create;
-    Result.ContractReferencedDocument.ID := XMLUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:IssuerAssignedID');
-    Result.ContractReferencedDocument.IssueDateTime:= XMLUtils._nodeAsDateTime(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
+    Result.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.CreateWithParams(
+        XmlUtils._nodeAsString(contractReferencedDocument, 'ram:IssuerAssignedID'),
+        DataTypeReader.ReadFormattedIssueDateTime(contractReferencedDocument, 'ram:FormattedIssueDateTime')
+      );
   end;
 
   //Get all referenced AND embedded documents

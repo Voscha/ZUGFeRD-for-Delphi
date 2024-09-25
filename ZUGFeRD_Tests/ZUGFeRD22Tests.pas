@@ -66,6 +66,10 @@ type
     [Test]
     procedure TestCreateInvoice_WithProfileEReporting;
     [Test]
+    procedure TestBuyerOrderReferencedDocumentWithExtended;
+    [Test]
+    procedure TestBuyerOrderReferencedDocumentWithXRechnung;
+    [Test]
     procedure TestContractReferencedDocumentWithXRechnung;
     [Test]
     procedure TestContractReferencedDocumentWithExtended;
@@ -394,6 +398,54 @@ begin
   XMLDoc := nil;
 end;
 
+procedure TZUGFeRD22Tests.TestBuyerOrderReferencedDocumentWithExtended;
+begin
+  var uuid := TZUGFerdHelper.CreateUuid;
+  var orderDate: ZUGFeRDNullable<TDateTime> := Today;
+
+  var desc := FInvoiceProvider.CreateInvoice();
+  desc.SetBuyerOrderReferenceDocument(uuid, orderDate);
+
+  var ms := TMemoryStream.create();
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+  ms.Seek(0, soBeginning);
+
+  Assert.AreEqual(desc.Profile, TZUGFeRDProfile.Extended);
+  desc.Free;
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(loadedInvoice.OrderNo, uuid);
+  Assert.AreEqual(loadedInvoice.OrderDate.Value, orderDate.Value); // explicitly not to be set in XRechnung, see separate test case
+
+  loadedInvoice.Free;
+end;// !TestBuyerOrderReferencedDocumentWithExtended()
+
+procedure TZUGFeRD22Tests.TestBuyerOrderReferencedDocumentWithXRechnung;
+begin
+  var uuid := TZUGFerdHelper.CreateUuid;
+  var orderDate: ZUGFeRDNullable<TDateTime> := Today;
+
+  var desc := FInvoiceProvider.CreateInvoice();
+  desc.SetBuyerOrderReferenceDocument(uuid, orderDate);
+
+  var ms :=TMemoryStream.Create();
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
+  ms.Seek(0, soBeginning);
+
+  Assert.AreEqual(desc.Profile, TZUGFeRDProfile.XRechnung);
+  desc.Free;
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(loadedInvoice.OrderNo, uuid);
+  Assert.isNull(loadedInvoice.OrderDate); // explicitly not to be set in XRechnung, see separate test case
+
+  loadedInvoice.Free;
+end; // !TestBuyerOrderReferencedDocumentWithXRechnung()
+
 procedure TZUGFeRD22Tests.TestContractReferencedDocumentWithExtended;
 var
   desc: TZUGFeRDInvoiceDescriptor;
@@ -425,7 +477,7 @@ var
   desc: TZUGFeRDInvoiceDescriptor;
 begin
   var uuid := TZUGFerdHelper.CreateUuid;
-  var issueDateTime: TDateTime := Date;
+  var issueDateTime: ZUGFeRDNullable<TDateTime> := Date;
 
   desc := FInvoiceProvider.CreateInvoice();
   try
@@ -440,7 +492,7 @@ begin
     var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
     ms.Free;
     Assert.AreEqual(loadedInvoice.ContractReferencedDocument.ID, uuid);
-    Assert.IsNull(loadedInvoice.ContractReferencedDocument.IssueDateTime); // explicitly not to be set in XRechnung
+    Assert.isNull(loadedInvoice.ContractReferencedDocument.IssueDateTime); // explicitly not to be set in XRechnung, see separate test case
     loadedInvoice.Free;
   finally
     desc.Free;
