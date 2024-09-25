@@ -63,7 +63,7 @@ InvoiceDescriptor desc = InvoiceDescriptor.CreateInvoice("471102", new DateTime(
 desc.Name = "WARENRECHNUNG";
 desc.ReferenceOrderNo = "AB-312";
 desc.AddNote("Rechnung gemäß Bestellung Nr. 2013-471331 vom 01.03.2013.");
-desc.AddNote("Es bestehen Rabatt- und Bonusvereinbarungen.", "AAK");
+desc.AddNote("Es bestehen Rabatt- und Bonusvereinbarungen.", SubjectCodes.AAK);
 desc.SetBuyer("Kunden Mitte AG", "69876", "Frankfurt", "Kundenstraße 15", CountryCodes.DE, "88", new GlobalID(GlobalIDSchemeIdentifiers.GLN, "4000001123452"));
 desc.AddBuyerTaxRegistration("DE234567890", TaxRegistrationSchemeID.VA);
 desc.SetBuyerContact("Hans Muster");
@@ -279,7 +279,7 @@ This information needs to be sent to the tax authorities. Different due dates ap
 # Support for profiles
 The library contains support for all profiles that are supported by the ZUGFeRD formats:
 
-| Profile         	 | Version1 	 | Version20	 | Version22 	 |
+| Profile         	 | Version1 	 | Version20	 | Version23 	 |
 |-------------------|------------|------------|-------------|
 | MINIMUM         	 | 	          | X        	 | X         	 |
 | BASIC WL        	 | 	          | X        	 | X         	 |
@@ -295,8 +295,8 @@ If you want to write the invoice xml with a certain ZUGFeRD version and a certai
 ```csharp
 descriptor.Save("zugferd-v1.xml", ZUGFeRDVersion.Version1, Profile.Basic); // save as version 1.x, profile Basic
 descriptor.Save("zugferd-v20.xml", ZUGFeRDVersion.Version20, Profile.Basic); // save as version 2.0, profile Basic
-descriptor.Save("zugferd-v22.xml", ZUGFeRDVersion.Version22, Profile.Basic); // save as version 2.1, profile Basic
-descriptor.Save("zugferd-v22-xrechnung.xml", ZUGFeRDVersion.Version22, Profile.XRechnung); // save as version 2.1, profile XRechnung
+descriptor.Save("zugferd-v23.xml", ZUGFeRDVersion.Version23, Profile.Basic); // save as version 2.1, profile Basic
+descriptor.Save("zugferd-v23-xrechnung.xml", ZUGFeRDVersion.Version23, Profile.XRechnung); // save as version 2.1, profile XRechnung
 ```
 
 # Extracting xml attachments from pdf files

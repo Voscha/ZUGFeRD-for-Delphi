@@ -126,6 +126,7 @@ begin
     format := dateNode.Attributes.getNamedItem('format').text;
 
   rawValue := dateNode.text;
+  rawValue := rawValue.Trim;
 
   if (Trim(rawValue) = '') then // we have to deal with real-life ZUGFeRD files :(
     exit;
