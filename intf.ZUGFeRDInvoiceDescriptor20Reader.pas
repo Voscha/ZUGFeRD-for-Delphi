@@ -381,9 +381,13 @@ begin
   Result.TotalPrepaidAmount:= XMLUtils._nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:TotalPrepaidAmount', nil);
   Result.DuePayableAmount:= XMLUtils._nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:DuePayableAmount', TZUGFeRDNullableParam<Currency>.Create(0));
 
-  Result.InvoiceReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
-  Result.InvoiceReferencedDocument.ID := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:IssuerAssignedID');
-  Result.InvoiceReferencedDocument.IssueDateTime:= XMLUtils._nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:FormattedIssueDateTime');
+  // in this version we should only have on invoice referenced document but nevertheless...
+  nodes := doc.DocumentElement.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument');
+  for i := 0 to nodes.length - 1 do
+    Result.AddInvoiceReferencedDocument(
+      XMLUtils._nodeAsString(nodes[i], './ram:IssuerAssignedID'),
+      XMLUtils._nodeAsDateTime(nodes[i], './ram:FormattedIssueDateTime')
+    );
 
   Result.OrderDate:= XMLUtils._nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:BuyerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString');
   Result.OrderNo := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID');

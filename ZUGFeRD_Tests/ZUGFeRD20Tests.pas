@@ -694,7 +694,7 @@ begin
       _PaymentTerms.DueDate := timestamp.IncDay(14);
       desc.PaymentTermsList.Add(_PaymentTerms);
     end;
-    desc.SetInvoiceReferencedDocument('RE-12345', timestamp);
+    desc.AddInvoiceReferencedDocument('RE-12345', timestamp);
 
 
     var list: TObjectlist<TZUGFeRDTradeLineItem> := desc.TradeLineItems;
@@ -910,8 +910,8 @@ begin
     Assert.AreEqual(Currency(529.87), loadedInvoice.DuePayableAmount.Value);
 
     //InvoiceReferencedDocument
-    Assert.AreEqual('RE-12345', loadedInvoice.InvoiceReferencedDocument.ID);
-    Assert.AreEqual(timestamp, loadedInvoice.InvoiceReferencedDocument.IssueDateTime.Value);
+    Assert.AreEqual('RE-12345', loadedInvoice.InvoiceReferencedDocuments.First.ID);
+    Assert.AreEqual(timestamp, loadedInvoice.InvoiceReferencedDocuments.First.IssueDateTime.Value);
 
     //Line items
     var loadedLineItem: TZUGFeRDTradeLineItem := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDTradeLineItem>

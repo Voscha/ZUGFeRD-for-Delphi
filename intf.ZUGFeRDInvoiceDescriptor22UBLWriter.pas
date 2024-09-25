@@ -167,7 +167,24 @@ begin
     Writer.WriteElementString('cbc:ID', Descriptor.OrderNo);
     Writer.WriteEndElement(); // !OrderReference
 
-
+    // BillingReference
+    if (Descriptor.InvoiceReferencedDocuments.Count > 0) then
+    begin
+      Writer.WriteStartElement('cac:BillingReference');
+      for var InvoiceReferencedDocument in Descriptor.InvoiceReferencedDocuments do
+      begin
+        Writer.WriteStartElement('cac:InvoiceDocumentReference', [TZUGFeRDProfile.Extended,
+          TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
+        Writer.WriteOptionalElementString('cbc:ID', InvoiceReferencedDocument.ID);
+        if (invoiceReferencedDocument.IssueDateTime.HasValue) then
+        begin
+          Writer.WriteElementString('cbc:IssueDate', _formatDate(invoiceReferencedDocument.IssueDateTime.Value, false, true));
+        end;
+        Writer.WriteEndElement(); // !ram:InvoiceDocumentReference
+        break; // only one reference allowed in UBL
+        end;
+        Writer.WriteEndElement(); // !cac:BillingReference
+    end;
 
     // ContractDocumentReference
     if (Descriptor.ContractReferencedDocument <> nil) then

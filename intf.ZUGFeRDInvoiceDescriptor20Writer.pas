@@ -891,14 +891,16 @@ begin
 
     //#region InvoiceReferencedDocument
     //  17. InvoiceReferencedDocument (optional)
-    if (Descriptor.InvoiceReferencedDocument <> nil) then
+    for var InvoiceReferencedDocument in Descriptor.InvoiceReferencedDocuments do
     begin
-      Writer.WriteStartElement('ram:InvoiceReferencedDocument');
-      Writer.WriteOptionalElementString('ram:IssuerAssignedID', Descriptor.InvoiceReferencedDocument.ID);
-      if (Descriptor.InvoiceReferencedDocument.IssueDateTime.HasValue) then
+      Writer.WriteStartElement('ram:InvoiceReferencedDocument', [TZUGFeRDProfile.BasicWL, TZUGFeRDProfile.Basic,
+        TZUGFeRDProfile.Comfort, TZUGFeRDProfile.Extended, TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung]);
+      Writer.WriteOptionalElementString('ram:IssuerAssignedID', InvoiceReferencedDocument.ID);
+      if (InvoiceReferencedDocument.IssueDateTime.HasValue) then
       begin
         Writer.WriteStartElement('ram:FormattedIssueDateTime');
-        _writeElementWithAttribute(Writer, 'qdt:DateTimeString', 'format', '102', _formatDate(Descriptor.InvoiceReferencedDocument.IssueDateTime.Value));
+        _writeElementWithAttribute(Writer, 'qdt:DateTimeString', 'format', '102',
+          _formatDate(InvoiceReferencedDocument.IssueDateTime.Value));
         Writer.WriteEndElement(); // !ram:FormattedIssueDateTime
       end;
       Writer.WriteEndElement(); // !ram:InvoiceReferencedDocument

@@ -444,11 +444,20 @@ begin
                                      XMLUtils._nodeAsDecimal(nodes[i], './/ram:AppliedTradeTax/ram:RateApplicablePercent', TZUGFeRDNullableParam<Currency>.Create(0)));
   end;
 
+  nodes := doc.DocumentElement.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument');
+  for i := 0 to nodes.length - 1 do
+    Result.AddInvoiceReferencedDocument(
+      XMLUtils._nodeAsString(nodes[i], './ram:IssuerAssignedID'),
+      XMLUtils._nodeAsDateTime(nodes[i], './ram:FormattedIssueDateTime')
+    );
+
+
+(*
   Result.InvoiceReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
   Result.InvoiceReferencedDocument.ID := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:IssuerAssignedID');
   Result.InvoiceReferencedDocument.IssueDateTime:= XMLUtils._nodeAsDateTime(doc.DocumentElement,
     '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:FormattedIssueDateTime');
-
+*)
   nodes := doc.SelectNodes('//ram:SpecifiedTradePaymentTerms');
   for i := 0 to nodes.length-1 do
   begin

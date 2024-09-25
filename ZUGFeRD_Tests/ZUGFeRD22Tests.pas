@@ -213,7 +213,7 @@ begin
   TZUGFeRDNullableParam<TDateTime>.Create(issueDateTime), 'Additional Test Document');
 
   var ms := TMemoryStream.Create();
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   desc.Free;
 
   ms.Seek(0, soBeginning);
@@ -301,7 +301,7 @@ const name: string;
 
   var ms := TMemoryStream.Create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
   desc.Free;
   ms.Seek(0, soBeginning);
 
@@ -334,7 +334,7 @@ begin
 
   var ms := TMemoryStream.Create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
   desc.Free;
   ms.Seek(0, soBeginning);
 
@@ -371,7 +371,7 @@ begin
 
   var ms := TMemoryStream.Create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
   desc.Free;
 
   ms.Seek(0, soBeginning);
@@ -405,7 +405,7 @@ begin
   try
     desc.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.CreateWithParams(uuid, issueDateTime);
     var ms := TMemoryStream.Create;
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFerDProfile.Extended);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFerDProfile.Extended);
     ms.Seek(0, soBeginning);
     Assert.AreEqual(desc.Profile, TZUGFerDProfile.Extended);
 
@@ -431,9 +431,9 @@ begin
   try
     desc.ContractReferencedDocument := TZUGFeRDContractReferencedDocument.CreateWithParams(uuid, IssueDateTime);
 
-    desc.Save('TestInvoice.xml', TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+    desc.Save('TestInvoice.xml', TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
     var ms := TMemoryStream.Create;
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
     ms.Seek(0, soBeginning);
     Assert.AreEqual(desc.Profile, TZUGFeRDProfile.XRechnung);
 
@@ -456,7 +456,7 @@ begin
   try
     var ms := TMemoryStream.Create();
 
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.EReporting);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.EReporting);
     Assert.AreEqual(desc.Profile, TZUGFeRDProfile.EReporting);
 
     ms.Seek(0, soBeginning);
@@ -480,7 +480,7 @@ begin
 
 	var ms := TMemoryStream.create;
 
-	desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+	desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
   ms.Seek(0, soFromBeginning);
 
   var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -510,7 +510,7 @@ begin
 
   var ms := TMemoryStream.create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
   ms.Seek(0, soFromBeginning);
 
   var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -541,7 +541,7 @@ begin
 
   var ms := TMemoryStream.create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
 
   // string comparison
 	ms.Seek(0, soFromBeginning);
@@ -582,7 +582,7 @@ begin
 
 	var ms := TMemoryStream.create;
 
-	desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+	desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
   ms.Seek(0, soFromBeginning);
 
   var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -610,7 +610,7 @@ begin
     desc.SetBuyerElectronicAddress('LU987654321', TZUGFeRDElectronicAddressSchemeIdentifiers.LuxemburgVatNumber);
 
     var ms := TMemoryStream.Create;
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
     ms.Seek(0, soBeginning);
     Assert.AreEqual(desc.SellerElectronicAddress.Address, 'DE123456789');
     Assert.AreEqual(desc.SellerElectronicAddress.ElectronicAddressSchemeID,
@@ -646,8 +646,8 @@ begin
   desc.AddDebitorFinancialAccount('DE02120300000000202051', '');
 
   var ms := TMemoryStream.Create;
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
-  desc.Save('test.xml', TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
+  desc.Save('test.xml', TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
   desc.Free;
 
   ms.Seek(0, soBeginning);
@@ -678,25 +678,25 @@ begin
 
   var ms := TMemoryStream.Create;
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
   except
       Assert.Fail();
   end;
 
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.BasicWL);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.BasicWL);
   except
       Assert.Fail();
   end;
 
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
   except
       Assert.Fail();
   end;
 
   try
-      invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
+      invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
   except
       Assert.Fail();
   end;
@@ -704,13 +704,13 @@ begin
   // allowed in extended profile
 
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung1);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung1);
   except
       Assert.Fail();
   end;
 
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
   except
     Assert.Fail();
   end;
@@ -746,7 +746,7 @@ begin
     );
 
     var ms := TMemoryStream.Create();
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
     ms.Seek(0, soBeginning);
 
     var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -786,7 +786,7 @@ begin
     );
 
     var ms := TMemoryStream.Create();
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
     ms.Seek(0, soBeginning);
 
     var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -836,7 +836,7 @@ begin
     );
 
     var ms := TMemoryStream.Create();
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
     ms.Seek(0, soBeginning);
 
     var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -886,7 +886,7 @@ begin
     );
 
     var ms := TMemoryStream.Create();
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
     ms.Seek(0, soBeginning);
 
     var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -969,7 +969,7 @@ begin
 
   var ms := TMemoryStream.Create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   ms.Seek(0, soBeginning);
   desc.Free;
 
@@ -1013,7 +1013,7 @@ begin
     desc.TaxBasisAmount := 73; // this information will not be stored in the output file since it is available in Extended profile only
 
     var ms := TMemoryStream.Create;
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFerDProfile.Minimum);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFerDProfile.Minimum);
     ms.Seek(0, soBeginning);
 
     var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -1084,7 +1084,7 @@ begin
   s.Free;
 
   var ms := TMemoryStream.Create;
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   desc.Free;
 
   ms.Seek(0, soBeginning);
@@ -1117,7 +1117,7 @@ begin
 
   var ms := TMemoryStream.Create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   desc.Free;
   ms.Seek(0, soBeginning);
 
@@ -1448,7 +1448,7 @@ begin
   invoice.SetSellerContact(SELLER_CONTACT, ORG_UNIT, EMAIL_ADDRESS, PHONE_NO, FAX_NO);
 
   var ms := TMemoryStream.Create;
-  invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   invoice.Free;
 
   ms.Position := 0;
@@ -1480,7 +1480,7 @@ begin
   );
 
   var ms := TMemoryStream.Create;
-  invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   invoice.Free;
 
   ms.Position := 0;
@@ -1501,7 +1501,7 @@ begin
     uuid, issueDateTime);
 
   var ms := TMemoryStream.Create;
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   desc.Free;
 
   ms.Seek(0, soBeginning);
@@ -1527,7 +1527,7 @@ begin
       198, 19.8, 10, 'Discount 10%');
 
     var ms := TMemoryStream.Create;
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFerDProfile.Extended);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFerDProfile.Extended);
     ms.Position := 0;
 
     var loadedInvoice := TZUGFerDInvoiceDescriptor.Load(ms);
@@ -1586,8 +1586,8 @@ begin
     originalDesc.IsTest := false;
 
     var ms := TMemoryStream.Create;
-    originalDesc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
-    originalDesc.Save('zugferd_2p1_BASIC_Einfach-factur-x_Result.xml', TZUGFeRDVersion.Version22);
+    originalDesc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
+    originalDesc.Save('zugferd_2p1_BASIC_Einfach-factur-x_Result.xml', TZUGFeRDVersion.Version23);
 
     var desc := TZUGFeRDInvoiceDescriptor.Load(ms);
     ms.Free;
@@ -1690,7 +1690,7 @@ begin
   d.AddApplicableTradeTax(198.00, 19.00, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
 
   var stream := TMemoryStream.Create;
-  d.Save(stream, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
+  d.Save(stream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
   d.Free;
 
   stream.Seek(0, soBeginning);
@@ -1731,7 +1731,7 @@ begin
       TZUGFeRDNullableParam<Currency>.create(0.01));
 
     var msExtended := TMemoryStream.Create;
-    desc.Save(msExtended, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+    desc.Save(msExtended, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
     msExtended.Seek(0, soBeginning);
 
     var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(msExtended);
@@ -1740,7 +1740,7 @@ begin
     loadedInvoice.Free;
 
     var msBasic := TMemoryStream.Create;
-    desc.Save(msBasic, TZUGFeRDVersion.Version22);
+    desc.Save(msBasic, TZUGFeRDVersion.Version23);
     msBasic.Seek(0, soBeginning);
 
     loadedInvoice := TZUGFerDInvoiceDescriptor.Load(msBasic);
@@ -1774,7 +1774,7 @@ begin
       TZUGFeRDNullableParam<Currency>.create(0.01));
 
     var msExtended := TMemoryStream.Create;
-    desc.Save(msExtended, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+    desc.Save(msExtended, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
     msExtended.Seek(0, soBeginning);
 
     var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(msExtended);
@@ -1783,7 +1783,7 @@ begin
     loadedInvoice.Free;
 
     var msBasic := TMemoryStream.Create;
-    desc.Save(msBasic, TZUGFeRDVersion.Version22);
+    desc.Save(msBasic, TZUGFeRDVersion.Version23);
     msBasic.Seek(0, soBeginning);
 
     loadedInvoice := TZUGFerDInvoiceDescriptor.Load(msBasic);
@@ -1806,7 +1806,7 @@ begin
     TZUGFeRDTaxCategoryCodes.S, 19);
 
   var ms := TMemoryStream.Create;
-  invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGfeRDProfile.Extended);
+  invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGfeRDProfile.Extended);
   invoice.Free;
   ms.Position := 0;
   var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -1830,7 +1830,7 @@ begin
     TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S, 19);
 
   var ms := TMemoryStream.Create;
-  invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   invoice.Free;
   ms.Position := 0;
 
@@ -1854,33 +1854,33 @@ begin
 
   var ms := TMemoryStream.Create;
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
   except
     on E:Exception do
       Assert.Fail('', E);
   end;
 
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.BasicWL);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.BasicWL);
 
   except
       Assert.Fail();
   end;
 
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Comfort);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
   except
     Assert.Fail();
   end;
 
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   except
       Assert.Fail();
   end;
 
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung1);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung1);
   except
     Assert.Fail();
   end;
@@ -1889,7 +1889,7 @@ begin
     Item.TaxType := TZUGFeRDTaxTypes.AAA;
 
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
   except
       Assert.Fail();
   end;
@@ -1897,7 +1897,7 @@ begin
   // extended profile supports other tax types as well:
 //  invoice.TradeLineItems.ForEach(i => i.TaxType = TaxTypes.AAA);
   try
-    invoice.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+    invoice.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   except
     Assert.Fail();
   end;
@@ -1913,7 +1913,7 @@ begin
   desc.BusinessProcess := 'A1';
 
   var ms := TMemoryStream.Create;
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   desc.Free;
   ms.Seek(0, soBeginning);
   var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -1931,7 +1931,7 @@ begin
   desc.SetDespatchAdviceReferencedDocument(despatchAdviceNo, despatchAdviceDate);
 
   var ms := TMemoryStream.Create;
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
   desc.Free;
 
   ms.Seek(0, soBeginning);
@@ -2038,7 +2038,7 @@ begin
   desc.AddLogisticsServiceCharge(10, 'Logistics service charge', TZUGFeRDTaxTypes.AAC, TZUGFeRDTaxCategoryCodes.AC, 7);
 
   desc.PaymentTermsList[0].DueDate := timestamp.IncDay(14);
-  desc.SetInvoiceReferencedDocument('RE-12345', timestamp);
+  desc.AddInvoiceReferencedDocument('RE-12345', timestamp);
 
 
   //set additional LineItem data
@@ -2071,7 +2071,7 @@ begin
 
 
   var ms := TMemoryStream.create;
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
   desc.Free;
 
   ms.Seek(0, soBeginning);
@@ -2080,7 +2080,7 @@ begin
   reader.Free;
 
   ms.Seek(0, soBeginning);
-  Assert.AreEqual(TZUGFeRDInvoiceDescriptor.GetVersion(ms), TZUGFeRDVersion.Version22);
+  Assert.AreEqual(TZUGFeRDInvoiceDescriptor.GetVersion(ms), TZUGFeRDVersion.Version23);
 
   ms.Seek(0, soBeginning);
   var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
@@ -2251,8 +2251,8 @@ begin
   Assert.AreEqual(Currency(529.87), loadedInvoice.DuePayableAmount.Value);
 
   //InvoiceReferencedDocument
-  Assert.AreEqual('RE-12345', loadedInvoice.InvoiceReferencedDocument.ID);
-  Assert.AreEqual(timestamp, loadedInvoice.InvoiceReferencedDocument.IssueDateTime.Value);
+  Assert.AreEqual('RE-12345', loadedInvoice.InvoiceReferencedDocuments.First.ID);
+  Assert.AreEqual(timestamp, loadedInvoice.InvoiceReferencedDocuments.First.IssueDateTime.Value);
 
 
   //Line items
@@ -2346,8 +2346,8 @@ begin
   originalInvoiceDescriptor.IsTest := false;
 
   var memoryStream := TMemoryStream.Create;
-  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
-  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version22);
+  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
+  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version23);
   originalInvoiceDescriptor.Free;
 
   // Load Invoice and compare to expected
@@ -2381,8 +2381,8 @@ begin
   originalInvoiceDescriptor.IsTest := false;
 
   var memoryStream := TMemoryStream.create;
-  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
-  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version22);
+  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
+  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version23);
   originalInvoiceDescriptor.Free;
   // Load Invoice and compare to expected
   var invoiceDescriptor := TZUGFeRDInvoiceDescriptor.Load(memoryStream);
@@ -2417,8 +2417,8 @@ begin
   originalInvoiceDescriptor.IsTest := false;
 
   var memoryStream := TMemoryStream.Create;
-  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
-  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version22);
+  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
+  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version23);
   originalInvoiceDescriptor.Free;
   memoryStream.Free;
 
@@ -2452,8 +2452,8 @@ begin
   originalInvoiceDescriptor.IsTest := false;
 
   var memoryStream := TMemoryStream.Create;
-  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
-  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version22);
+  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
+  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version23);
   originalInvoiceDescriptor.Free;
 
   // Load Invoice and compare to expected
@@ -2491,8 +2491,8 @@ begin
   originalInvoiceDescriptor.IsTest := false;
 
   var memoryStream := TMemoryStream.Create;
-  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Basic);
-  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version22);
+  originalInvoiceDescriptor.Save(memoryStream, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Basic);
+  originalInvoiceDescriptor.Save('xrechnung with trade line settlement filled.xml', TZUGFeRDVersion.Version23);
   originalInvoiceDescriptor.Free;
 
   // Load Invoice and compare to expected
@@ -2520,7 +2520,7 @@ begin
   desc := FInvoiceProvider.CreateInvoice();
   try
     var ms := TMemoryStream.Create();
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung1);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung1);
     ms.Seek(0, soBeginning);
     Assert.AreEqual(desc.Profile, TZUGFeRDProfile.XRechnung1);
 
@@ -2541,7 +2541,7 @@ begin
   try
     var ms := TMemoryStream.Create;
 
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung);
     Assert.AreEqual(desc.Profile, TZUGFeRDProfile.XRechnung);
 
     ms.Seek(0, soBeginning);

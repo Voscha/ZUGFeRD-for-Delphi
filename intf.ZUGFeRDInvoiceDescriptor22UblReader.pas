@@ -450,9 +450,15 @@ begin
 //                                     _nodeAsDecimal(nodes[i], './/ram:AppliedTradeTax/ram:RateApplicablePercent', 0));
 //  end;
 
-  Result.InvoiceReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
-  Result.InvoiceReferencedDocument.ID := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:BillingReference/cac:InvoiceDocumentReference/cbc:ID');
-  Result.InvoiceReferencedDocument.IssueDateTime := XMLUtils._nodeAsDateTime(doc.DocumentElement, '//cac:BillingReference/cac:InvoiceDocumentReference/cbc:IssueDate');
+  nodes := doc.DocumentElement.SelectNodes('//cac:BillingReference/cac:InvoiceDocumentReference');
+  for i := 0 to nodes.length - 1 do
+  begin
+    Result.AddInvoiceReferencedDocument(
+      XMLUtils._nodeAsString(nodes[i], './cbc:ID'),
+      XMLUtils._nodeAsDateTime(nodes[i], './cbc:IssueDate')
+    );
+    break; // only one occurrence allowed in UBL
+  end;
 
   var _PaymentTerms := TZUGFeRDPaymentTerms.Create;
   _PaymentTerms.Description := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:PaymentTerms/cbc:Note');
