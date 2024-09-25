@@ -74,8 +74,8 @@ begin
 
   var ms := TMemoryStream.Create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
-  desc.Save('test.xml', TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Save('test.xml', TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
   desc.Free;
   ms.Seek(0, soBeginning);
 
@@ -114,7 +114,7 @@ begin
     );
 
     var ms := TMemoryStream.create;
-    desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.Extended, TZUGFeRDFormats.UBL);
+    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended, TZUGFeRDFormats.UBL);
 
 
     ms.Seek(0, soBeginning);
@@ -152,7 +152,7 @@ begin
     TZUGFeRDTaxTypes.LOC, TZUGFeRDTaxCategoryCodes.K, allowanceChargeBasisAmount);
 
   var ms := TMemoryStream.create;
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
   desc.Free;
   ms.Seek(0, soBeginning);
 
@@ -184,7 +184,7 @@ begin
 
   var ms := TMemoryStream.Create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version22, TZUGFerDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFerDProfile.XRechnung, TZUGFeRDFormats.UBL);
   desc.Free;
   ms.Seek(0, soBeginning);
 
