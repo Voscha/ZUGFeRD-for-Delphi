@@ -407,7 +407,7 @@ begin
   if node <> nil then
   begin
     Result.SellerOrderReferencedDocument := TZUGFeRDSellerOrderReferencedDocument.Create;
-    Result.SellerOrderReferencedDocument.ID := XMLUtils._nodeAsString(doc.DocumentElement, 'ram:IssuerAssignedID');
+    Result.SellerOrderReferencedDocument.ID := XMLUtils._nodeAsString(node, 'ram:IssuerAssignedID');
     Result.SellerOrderReferencedDocument.IssueDateTime:= DataTypeReader.ReadFormattedIssueDateTime(node,
       'ram:FormattedIssueDateTime')
   end;
