@@ -280,12 +280,13 @@ begin
 
           //#region IssuerAssignedID
           //Bestellnummer
-          Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.BuyerOrderReferencedDocument.ID, [TZUGFeRDProfile.Extended]);
+          Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.BuyerOrderReferencedDocument.ID,
+            [TZUGFeRDProfile.Extended]);
           //#endregion
 
           //#region LineID
           //Referenz zur Bestellposition
-          //ToDo: fehlt ganz
+          Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.BuyerOrderReferencedDocument.LineID);
           //#endregion
 
           //#region IssueDateTime

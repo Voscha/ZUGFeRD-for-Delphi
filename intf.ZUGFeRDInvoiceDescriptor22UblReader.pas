@@ -488,7 +488,7 @@ begin
 
 // TODO: Find value  Result.OrderDate.SetValue(XMLUtils._nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:BuyerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString'));
   Result.OrderNo := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:OrderReference/cbc:ID');
-  Result.OrderDate := XMLUtils._nodeAsDateTime(doc.DocumentElement, '//cac:OrderReference/cbc:IssueDate');
+  //Result.OrderDate := XMLUtils._nodeAsDateTime(doc.DocumentElement, '//cac:OrderReference/cbc:IssueDate');
 
   // Read SellerOrderReferencedDocument
   node := doc.SelectSingleNode('//cac:OrderReference/cbc:SalesOrderID');
@@ -496,7 +496,9 @@ begin
   begin
     Result.SellerOrderReferencedDocument := TZUGFeRDSellerOrderReferencedDocument.Create;
     Result.SellerOrderReferencedDocument.ID := XMLUtils._nodeAsString(doc.DocumentElement, '//cac:OrderReference/cbc:SalesOrderID');
-    // TODO: Find value Result.SellerOrderReferencedDocument.IssueDateTime := XMLUtils._nodeAsDateTime(doc.DocumentElement, '//ram:ApplicableHeaderTradeAgreement/ram:SellerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString'));
+    // unclear how to map
+    //    IssueDateTime = XmlUtils.NodeAsDateTime(tradeLineItem, ".//ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:FormattedIssueDateTime/qdt:DateTimeString", nsmgr),
+    //    LineID = XmlUtils.NodeAsString(tradeLineItem, ".//ram:SpecifiedSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:LineID", nsmgr),
   end;
 
   // Read ContractReferencedDocument

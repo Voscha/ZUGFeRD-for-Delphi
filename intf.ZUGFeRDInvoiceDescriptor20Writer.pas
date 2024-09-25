@@ -221,15 +221,11 @@ begin
       begin
         Writer.WriteStartElement('ram:BuyerOrderReferencedDocument', [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung,TZUGFeRDProfile.XRechnung1]);
 
-        //#region IssuerAssignedID
-        //Bestellnummer
+        // order number
         Writer.WriteOptionalElementString('ram:IssuerAssignedID', tradeLineItem.BuyerOrderReferencedDocument.ID);
-        //#endregion
 
-        //#region LineID
-        //Referenz zur Bestellposition
-        //ToDo: fehlt ganz
-        //#endregion
+        // reference to the order position
+        Writer.WriteOptionalElementString('ram:LineID', tradeLineItem.BuyerOrderReferencedDocument.LineID);
 
         //#region IssueDateTime
         if (tradeLineItem.BuyerOrderReferencedDocument.IssueDateTime.HasValue) then

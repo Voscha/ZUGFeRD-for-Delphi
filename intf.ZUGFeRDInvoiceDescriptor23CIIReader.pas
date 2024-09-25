@@ -646,6 +646,9 @@ begin
     Result.BuyerOrderReferencedDocument.ID := XMLUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:IssuerAssignedID');
     Result.BuyerOrderReferencedDocument.IssueDateTime:= DataTypeReader.ReadFormattedIssueDateTime(tradeLineItem,
       './/ram:SpecifiedLineTradeAgreement/ram:BuyerOrderReferencedDocument/ram:FormattedIssueDateTime');
+    Result.BuyerOrderReferencedDocument.LineID := XmlUtils._nodeAsString(tradeLineItem,
+      './/ram:SpecifiedSupplyChainTradeAgreement/ram:BuyerOrderReferencedDocument/ram:LineID');
+
   end;
 
   if (tradeLineItem.SelectSingleNode('.//ram:SpecifiedLineTradeAgreement/ram:ContractReferencedDocument') <> nil) then
