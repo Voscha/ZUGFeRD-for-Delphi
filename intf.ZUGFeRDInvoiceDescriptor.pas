@@ -846,7 +846,7 @@ uses
   intf.ZUGFeRDInvoiceDescriptorReader,intf.ZUGFeRDInvoiceDescriptorWriter,
   intf.ZUGFeRDInvoiceDescriptor1Reader,intf.ZUGFeRDInvoiceDescriptor1Writer,
   intf.ZUGFeRDInvoiceDescriptor20Reader,intf.ZUGFeRDInvoiceDescriptor20Writer,
-  intf.ZUGFeRDInvoiceDescriptor22CIIReader,intf.ZUGFeRDInvoiceDescriptor22Writer,
+  intf.ZUGFeRDInvoiceDescriptor23CIIReader,intf.ZUGFeRDInvoiceDescriptor22Writer,
   intf.ZUGFeRDInvoiceDescriptor22UblReader
   ;
 
@@ -947,18 +947,18 @@ begin
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
-      Result := TZUGFeRDVersion.Version22;
+      Result := TZUGFeRDVersion.Version23;
       Exit;
     end;
   finally
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
-      Result := TZUGFeRDVersion.Version22;
+      Result := TZUGFeRDVersion.Version23;
       Exit;
     end;
   finally
@@ -999,18 +999,18 @@ begin
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
-      Result := TZUGFeRDVersion.Version22;
+      Result := TZUGFeRDVersion.Version23;
       Exit;
     end;
   finally
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
-      Result := TZUGFeRDVersion.Version22;
+      Result := TZUGFeRDVersion.Version23;
       Exit;
     end;
   finally
@@ -1057,7 +1057,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(stream) then
     begin
@@ -1108,7 +1108,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(filename) then
     begin
@@ -1159,7 +1159,7 @@ begin
     reader.Free;
   end;
 
-  reader := TZUGFeRDInvoiceDescriptor22CIIReader.Create;
+  reader := TZUGFeRDInvoiceDescriptor23CIIReader.Create;
   try
     if reader.IsReadableByThisReaderVersion(xmldocument) then
     begin
@@ -1519,7 +1519,7 @@ begin
       writer := TZUGFeRDInvoiceDescriptor1Writer.Create;
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
-    TZUGFeRDVersion.Version22:
+    TZUGFeRDVersion.Version23:
       writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
     else
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');
@@ -1543,7 +1543,7 @@ begin
       writer := TZUGFeRDInvoiceDescriptor1Writer.Create;
     TZUGFeRDVersion.Version20:
       writer := TZUGFeRDInvoiceDescriptor20Writer.Create;
-    TZUGFeRDVersion.Version22:
+    TZUGFeRDVersion.Version23:
       writer := TZUGFeRDInvoiceDescriptor22Writer.Create;
     else
       raise TZUGFeRDUnsupportedException.Create('New ZUGFeRDVersion defined but not implemented!');

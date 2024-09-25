@@ -67,7 +67,7 @@ uses
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
 *)
   ,intf.ZUGFeRDFormats
-  ,intf.ZUGFeRDInvoiceDescriptor22CIIWriter
+  ,intf.ZUGFeRDInvoiceDescriptor23CIIWriter
   ,intf.ZUGFeRDInvoiceDescriptor22UBLWriter
   ;
 
@@ -106,7 +106,7 @@ begin
   case _format of
     TZUGFeRDFormats.UBL: Writer := TZUGFeRDInvoiceDescriptor22UBLWriter.create;
   else
-    Writer := TZUGFeRDInvoiceDescriptor22CIIWriter.Create;
+    Writer := TZUGFeRDInvoiceDescriptor23CIIWriter.Create;
   end;
   try
     Writer.Save(_descriptor, _stream, _format);

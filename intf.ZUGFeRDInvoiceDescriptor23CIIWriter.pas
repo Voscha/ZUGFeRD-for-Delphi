@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDInvoiceDescriptor22CIIWriter;
+unit intf.ZUGFeRDInvoiceDescriptor23CIIWriter;
 
 interface
 
@@ -68,7 +68,7 @@ uses
 
 
 type
-  TZUGFeRDInvoiceDescriptor22CIIWriter = class(TZUGFeRDInvoiceDescriptorWriter)
+  TZUGFeRDInvoiceDescriptor23CIIWriter = class(TZUGFeRDInvoiceDescriptorWriter)
   private
     Writer: TZUGFeRDProfileAwareXmlTextWriter;
     Descriptor: TZUGFeRDInvoiceDescriptor;
@@ -107,9 +107,9 @@ type
 
 implementation
 
-{ TZUGFeRDInvoiceDescriptor22CIIWriter }
+{ TZUGFeRDInvoiceDescriptor23CIIWriter }
 
-procedure TZUGFeRDInvoiceDescriptor22CIIWriter.Save(_descriptor: TZUGFeRDInvoiceDescriptor;
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter.Save(_descriptor: TZUGFeRDInvoiceDescriptor;
   _stream: TStream; _format: TZUGFeRDFormats);
 var
   streamPosition : Int64;
@@ -155,7 +155,7 @@ begin
 
     Writer.WriteStartElement('ram:GuidelineSpecifiedDocumentContextParameter');
     //Gruppierung der Anwendungsempfehlungsinformationen
-    Writer.WriteElementString('ram:ID', TZUGFeRDProfileExtensions.EnumToString(Descriptor.Profile,TZUGFeRDVersion.Version22));
+    Writer.WriteElementString('ram:ID', TZUGFeRDProfileExtensions.EnumToString(Descriptor.Profile,TZUGFeRDVersion.Version23));
     Writer.WriteEndElement(); // !ram:GuidelineSpecifiedDocumentContextParameter
     Writer.WriteEndElement(); // !rsm:ExchangedDocumentContext
     //#endregion
@@ -1169,13 +1169,13 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIWriter.Validate(descriptor: TZUGFeRDInvoiceDescriptor;
+function TZUGFeRDInvoiceDescriptor23CIIWriter.Validate(descriptor: TZUGFeRDInvoiceDescriptor;
   throwExceptions: Boolean): Boolean;
 begin
   result := False;
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIWriter._encodeInvoiceType(
+function TZUGFeRDInvoiceDescriptor23CIIWriter._encodeInvoiceType(
   type_: TZUGFeRDInvoiceType): Integer;
 begin
   if (Integer(type_) > 1000) then
@@ -1187,7 +1187,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIWriter._translateInvoiceType(
+function TZUGFeRDInvoiceDescriptor23CIIWriter._translateInvoiceType(
   type_: TZUGFeRDInvoiceType): String;
 begin
   case type_ of
@@ -1206,7 +1206,7 @@ begin
   end;
 end;
 
-function TZUGFeRDInvoiceDescriptor22CIIWriter._translateTaxCategoryCode(
+function TZUGFeRDInvoiceDescriptor23CIIWriter._translateTaxCategoryCode(
   taxCategoryCode: TZUGFeRDTaxCategoryCodes): String;
 begin
   Result := '';
@@ -1236,7 +1236,7 @@ begin
   end;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeAdditionalReferencedDocument(
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeAdditionalReferencedDocument(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; document: TZUGFeRDAdditionalReferencedDocument;
   profile: TZUGFeRDProfiles);
 begin
@@ -1276,7 +1276,7 @@ begin
   _writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
 end;
 
-procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeElementWithAttribute(
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeElementWithAttribute(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName, attributeValue,
   nodeValue: String; profile: TZUGFeRDProfiles);
 begin
@@ -1286,7 +1286,7 @@ begin
   _writer.WriteEndElement(); // !tagName
 end;
 
-procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeNotes(
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeNotes(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; notes: TObjectList<TZUGFeRDNote>);
 begin
   if notes.Count = 0 then
@@ -1304,7 +1304,7 @@ begin
   end;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeOptionalAmount(
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeOptionalAmount(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; tagName: string; value: ZUGFeRDNullable<Currency>;
   numDecimals: Integer; forceCurrency: Boolean; profile: TZUGFeRDProfiles);
 begin
@@ -1318,7 +1318,7 @@ begin
   end;
 end;
 
-procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeOptionalContact(
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeOptionalContact(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag: String; contact: TZUGFeRDContact;
   profile: TZUGFeRDProfiles);
 begin
@@ -1354,7 +1354,7 @@ begin
   _writer.WriteEndElement();
 end;
 
-procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeOptionalLegalOrganization(
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeOptionalLegalOrganization(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; legalOrganizationTag: String;
   legalOrganization: TZUGFeRDLegalOrganization; partyType: TZUGFeRDPartyTypes);
 begin
@@ -1444,7 +1444,7 @@ begin
   writer.WriteEndElement();
 end;
 
-procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeOptionalParty(
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeOptionalParty(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; partyType: TZUGFeRDPartyTypes; party: TZUGFeRDParty;
   contact: TZUGFeRDContact; electronicAddress: TZUGFeRDElectronicAddress;
   taxRegistrations: TObjectList<TZUGFeRDTaxRegistration>);
@@ -1618,7 +1618,7 @@ begin
   writer.WriteEndElement(); // !*TradeParty
 end;
 
-procedure TZUGFeRDInvoiceDescriptor22CIIWriter._writeOptionalTaxes(
+procedure TZUGFeRDInvoiceDescriptor23CIIWriter._writeOptionalTaxes(
   _writer: TZUGFeRDProfileAwareXmlTextWriter);
 begin
   for var tax : TZUGFeRDTax in Descriptor.Taxes do
