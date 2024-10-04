@@ -1435,12 +1435,12 @@ begin
     begin
       writer.WriteElementString('ram:ID', legalOrganization.ID.ID);
     end;
-    // filter according to https://github.com/stephanstapel/ZUGFeRD-csharp/pull/221
-    if (((partyType = TZUGFeRDPartyTypes.SellerTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum)) or
-        ((partyType = TZUGFeRDPartyTypes.PayeeTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum)) or
-        ((partyType = TZUGFeRDPartyTypes.BuyerTradeParty) and (Descriptor.Profile <> TZUGFeRDProfile.Minimum)) or
-         (Descriptor.Profile = TZUGFeRDProfile.Extended) // remaining party types
-       ) then
+
+   // filter according to https://github.com/stephanstapel/ZUGFeRD-csharp/pull/221
+   if ((Descriptor.Profile <> TZUGFeRDProfile.Minimum) and
+    (partyType in [TZUGFERDPartyTypes.SellerTradeParty, TZUGFerDPartyTypes.PayeeTradeParty, TZUGFeRDPartyTypes.BuyerTradeParty]))
+    or (Descriptor.Profile = TZUGFeRDProfile.Extended) //* remaining party types */
+    then
     begin
       writer.WriteOptionalElementString('ram:TradingBusinessName', legalOrganization.TradingBusinessName, [Descriptor.Profile]);
     end;
@@ -1575,19 +1575,23 @@ begin
   _writeOptionalContact(writer, 'ram:DefinedTradeContact', contact, [TZUGFeRDProfile.Comfort,
     TZUGFeRDProfile.Extended,TZUGFeRDProfile.XRechnung1,TZUGFeRDProfile.XRechnung]);
 
-  writer.WriteStartElement('ram:PostalTradeAddress');
-  writer.WriteOptionalElementString('ram:PostcodeCode', party.Postcode); //buyer: BT-53
-  writer.WriteOptionalElementString('ram:LineOne', ifthen(party.ContactName='',party.Street,party.ContactName)); //buyer: BT-50
-  if (party.ContactName<>'')then
+  // spec 2.3 says: Minimum/BuyerTradeParty does not include PostalTradeAddress
+  if (Descriptor.Profile = TZUGFerDProfile.Extended) or
+     (partyType in [TZUGFerDPartyTypes.SellerTradeParty, TZUGFeRDPartyTypes.BuyerTaxRepresentativeTradeParty,
+    TZUGFerDPartyTypes.ShipToTradeParty, TZUGFerDPartyTypes.ShipToTradeParty,
+    TZUGFerDPartyTypes.UltimateShipToTradeParty, TZUGFerDPartyTypes.SalesAgentTradeParty]) then
   begin
-      writer.WriteOptionalElementString('ram:LineTwo', party.Street); //buyer: BT-51
+      writer.WriteStartElement('ram:PostalTradeAddress');
+      writer.WriteOptionalElementString('ram:PostcodeCode', party.Postcode); // buyer: BT-53
+      writer.WriteOptionalElementString('ram:LineOne', ifthen(party.ContactName='',party.Street,party.ContactName)); //buyer: BT-50
+      if (party.ContactName<>'')then
+        writer.WriteOptionalElementString('ram:LineTwo', party.Street); //buyer: BT-51
+      writer.WriteOptionalElementString('ram:LineThree', party.AddressLine3); //buyer: BT-163
+      writer.WriteOptionalElementString('ram:CityName', party.City); //buyer: BT-52
+      writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(party.Country)); //buyer: BT-55
+      writer.WriteOptionalElementString('ram:CountrySubDivisionName', party.CountrySubdivisionName); // BT-79
+    writer.WriteEndElement(); // !PostalTradeAddress
   end;
-
-  writer.WriteOptionalElementString('ram:LineThree', party.AddressLine3); //buyer: BT-163
-  writer.WriteOptionalElementString('ram:CityName', party.City); //buyer: BT-52
-  writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(party.Country)); //buyer: BT-55
-  writer.WriteOptionalElementString('ram:CountrySubDivisionName', party.CountrySubdivisionName); // BT-79
-  writer.WriteEndElement(); // !PostalTradeAddress
 
   if (electronicAddress <> nil) then
   begin
