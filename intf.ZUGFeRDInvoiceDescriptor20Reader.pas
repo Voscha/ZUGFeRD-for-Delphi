@@ -483,7 +483,11 @@ begin
   if (tradeLineItem = nil) then
     exit;
 
-  Result := TZUGFeRDTradeLineItem.Create;
+  var lineId := string.Empty;
+  if (tradeLineItem.SelectSingleNode('.//ram:AssociatedDocumentLineDocument') <> nil) then
+    lineId := XmlUtils._NodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineID');
+
+  Result := TZUGFeRDTradeLineItem.Create(lineId);
 
   Result.GlobalID.ID := XMLUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID');
   Result.GlobalID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(XMLUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID/@schemeID'));
@@ -518,8 +522,6 @@ begin
 
   if (tradeLineItem.SelectSingleNode('.//ram:AssociatedDocumentLineDocument') <> nil) then
   begin
-    Result.AssociatedDocument := TZUGFeRDAssociatedDocument.Create(XMLUtils._nodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineID'));
-
     nodes := tradeLineItem.SelectNodes('.//ram:AssociatedDocumentLineDocument/ram:IncludedNote');
     for i := 0 to nodes.length-1 do
     begin

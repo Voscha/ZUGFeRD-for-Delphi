@@ -702,7 +702,9 @@ begin
   if (tradeLineItem = nil) then
     exit;
 
-  Result := TZUGFeRDTradeLineItem.Create;
+  var lineId := XmlUtils._NodeAsString(tradeLineItem, './/cbc:ID');
+  Result := TZUGFeRDTradeLineItem.Create(lineID);
+
 (*
   // TODO: Find value //GlobalID = new GlobalID(default(GlobalIDSchemeIdentifiers).FromString(XMLUtils._nodeAsString(tradeLineItem, ".//ram:SpecifiedTradeProduct/ram:GlobalID/@schemeID", nsmgr)),
   //                          XMLUtils._nodeAsString(tradeLineItem, ".//ram:SpecifiedTradeProduct/ram:GlobalID", nsmgr)),
@@ -811,8 +813,6 @@ begin
 
   if (tradeLineItem.SelectSingleNode('.//cbc:ID') <> nil) then
   begin
-    Result.AssociatedDocument := TZUGFeRDAssociatedDocument.Create(XMLUtils._nodeAsString(tradeLineItem, './/cbc:ID'));
-
     nodes := tradeLineItem.SelectNodes('.//cbc:Note');
     for i := 0 to nodes.length-1 do
     begin

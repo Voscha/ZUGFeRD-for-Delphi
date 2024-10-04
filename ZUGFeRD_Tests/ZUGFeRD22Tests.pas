@@ -2390,10 +2390,9 @@ begin
   fileStream.free;
 
   // Modifiy trade line settlement data
-  var _tempTradeLineItem := TZUGFeRDTradeLineItem.Create;
+  var _tempTradeLineItem := OriginalInvoiceDescriptor.AddTradeLineItem('', '');
   _tempTradeLineItem.BilledQuantity := 10;
   _tempTradeLineItem.NetUnitPrice := 1;
-  originalInvoiceDescriptor.TradeLineItems.Add(_tempTradeLineItem);
 
   originalInvoiceDescriptor.IsTest := false;
 
@@ -2420,15 +2419,13 @@ begin
   s.Free;
 
   // Modifiy trade line settlement data
-  var _tempTradeLineItem := TZUGFeRDTradeLineItem.Create;
+  var _tempTradeLineItem := originalInvoiceDescriptor.AddTradeLineItem('', '');
   _tempTradeLineItem.BillingPeriodStart := EncodeDate(2020,1,1);
   _tempTradeLineItem.BillingPeriodEnd := EncodeDate(2021, 1, 1);
-  originalInvoiceDescriptor.TradeLineItems.Add(_tempTradeLineItem);
 
-  var _tempTradeLineItem2 := TZUGFeRDTradeLineItem.Create;
+  var _tempTradeLineItem2 := originalInvoiceDescriptor.AddTradeLineItem('', '');
   _tempTradeLineItem2.BillingPeriodStart := EncodeDate(2021,1,1);
   _tempTradeLineItem2.BillingPeriodEnd := EncodeDate(2022, 1, 1);
-  originalInvoiceDescriptor.TradeLineItems.Add(_tempTradeLineItem2);
 
   originalInvoiceDescriptor.IsTest := false;
 
@@ -2496,11 +2493,9 @@ begin
   var originalInvoiceDescriptor := TZUGFeRDInvoiceDescriptor.Load(fileStream);
   fileStream.Free;
 
-  var _tempTradeLineItem := TZUGFeRDTradeLineItem.Create;
+  var _tempTradeLineItem := OriginalInvoiceDescriptor.AddTradeLineItem('', '');
   _tempTradeLIneItem.NetUnitPrice := 25;
   // Modifiy trade line settlement data
-  originalInvoiceDescriptor.TradeLineItems.Add(_tempTradeLineItem);
-
   originalInvoiceDescriptor.IsTest := false;
 
   var memoryStream := TMemoryStream.Create;
@@ -2526,19 +2521,17 @@ begin
   fileStream.Free;
 
   // Modifiy trade line settlement data
-  var _tempTradeLineItem := TZUGFeRDTradeLineItem.Create;
+  var _tempTradeLineItem := OriginalInvoiceDescriptor.AddTradeLineItem('', '');
   _tempTradeLineItem.ApplicableProductCharacteristics.Add(
     TZUGFeRDApplicableProductCharacteristic.CreateWithParams('Description_1_1', 'Value_1_1'));
   _tempTradeLineItem.ApplicableProductCharacteristics.Add(
     TZUGFeRDApplicableProductCharacteristic.CreateWithParams('Description_1_2', 'Value_1_2'));
-  originalInvoiceDescriptor.TradeLineItems.Add(_tempTradeLineItem);
 
-  var _tempTradeLineItem2 := TZUGFeRDTradeLineItem.Create;
+  var _tempTradeLineItem2 := OriginalInvoiceDescriptor.AddTradeLineItem('', '');
   _tempTradeLineItem2.ApplicableProductCharacteristics.Add(
     TZUGFeRDApplicableProductCharacteristic.CreateWithParams('Description_2_1', 'Value_2_1'));
   _tempTradeLineItem2.ApplicableProductCharacteristics.Add(
     TZUGFeRDApplicableProductCharacteristic.CreateWithParams('Description_2_2', 'Value_2_2'));
-  originalInvoiceDescriptor.TradeLineItems.Add(_tempTradeLineItem2);
 
   originalInvoiceDescriptor.IsTest := false;
 

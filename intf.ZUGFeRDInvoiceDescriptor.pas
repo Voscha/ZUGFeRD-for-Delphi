@@ -1565,8 +1565,7 @@ begin
       raise TZUGFeRDArgumentException.Create('LineID must be unique');
   end;
 
-  item := TZUGFeRDTradeLineItem.Create;
-  item.AssociatedDocument := TZUGFeRDAssociatedDocument.Create(lineID);
+  item := TZUGFeRDTradeLineItem.Create(lineID);
   item.GrossUnitPrice:= 0;
   item.NetUnitPrice:= 0;
   item.BilledQuantity := 0;
@@ -1646,8 +1645,7 @@ begin
       raise TZUGFeRDArgumentException.Create('LineID must be unique');
   end;
 
-  newItem := TZUGFeRDTradeLineItem.Create;
-  newItem.AssociatedDocument := TZUGFeRDAssociatedDocument.Create(lineID);
+  newItem := TZUGFeRDTradeLineItem.Create(lineID);
   newItem.GlobalID.Free; newItem.GlobalID := id;
   newItem.SellerAssignedID := sellerAssignedID;
   newItem.BuyerAssignedID := buyerAssignedID;

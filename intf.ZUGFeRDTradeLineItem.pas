@@ -88,7 +88,10 @@ type
     /// <summary>
     /// Initialisiert ein neues, leeres Handelspositionsobjekt
     /// </summary>
-    constructor Create;
+    constructor Create; overload;
+
+    constructor Create(const LineID: string); overload;
+
     destructor Destroy; override;
 
     procedure AddAdditionalReferencedDocument(aID: string;
@@ -452,6 +455,12 @@ begin
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeAllowance := reasonCodeAllowance;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].ReasonCodeCharge := reasonCodeCharge;
   FTradeAllowanceCharges[FTradeAllowanceCharges.Count - 1].Reason := reason;
+end;
+
+constructor TZUGFeRDTradeLineItem.Create(const LineID: string);
+begin
+  Create;
+  FAssociatedDocument := TZUGFeRDAssociatedDocument.Create(LineId);
 end;
 
 procedure TZUGFeRDTradeLineItem.SetDeliveryNoteReferencedDocument(
