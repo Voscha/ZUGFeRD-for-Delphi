@@ -424,7 +424,7 @@ begin
                                  XMLUtils._nodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReason'));
   end;
 
-  nodes := doc.DocumentElement.SelectNodes('cac:AllowanceCharge');
+  nodes := doc.SelectNodes('//cac:AllowanceCharge');
   for i := 0 to nodes.length-1 do
   begin
     Result.AddTradeAllowanceCharge(not XMLUtils._nodeAsBool(nodes[i], './/cbc:ChargeIndicator'), // wichtig: das not (!) beachten

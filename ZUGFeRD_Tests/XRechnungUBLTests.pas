@@ -21,13 +21,14 @@ interface
 
 uses
   DUnitX.TestFramework,  System.Classes, System.SysUtils, System.Generics.Collections, TestBase,
-  InvoiceProvider, System.DateUtils, XML.XMLDoc;
+  InvoiceProvider, System.DateUtils, XML.XMLDoc, intf.ZUGFeRDVersion;
 
 type
   [TestFixture]
   TXRechnungUBLTests = class(TTestBase)
   private
     FInvoiceProvider: TInvoiceProvider;
+    FVersion: TZUGFeRDVersion;
   public
     [Setup]
     procedure Setup;
@@ -44,15 +45,17 @@ type
     procedure TestSkippingOfAllowanceChargeBasisAmount;
     [Test]
     procedure TestInvoiceWithAttachment;
+    [Test]
+    procedure TestAllowanceChargeOnDocumentLevel();
   end;
 
 implementation
 
-uses Winapi.ActiveX, intf.ZUGFeRDVersion, intf.ZUGFeRDProfile, intf.ZUGFeRDFormats,
+uses Winapi.ActiveX, intf.ZUGFeRDProfile, intf.ZUGFeRDFormats,
   intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDApplicableProductCharacteristic, intf.ZUGFeRDTaxTypes,
   intf.ZUGFeRDTaxCategoryCodes, intf.ZUGFeRDHelper, intf.ZUGFeRDTax,
   intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes, intf.ZUGFeRDReferenceTypeCodes,
-  intf.ZUGFeRDAdditionalReferencedDocument;
+  intf.ZUGFeRDAdditionalReferencedDocument, intf.ZUGFeRDCurrencyCodes;
 
 { TXRechnungUBLTests }
 
@@ -60,6 +63,7 @@ procedure TXRechnungUBLTests.Setup;
 begin
   CoInitialize(nil);
   FInvoiceProvider := TInvoiceProvider.create;
+  FVersion := TZUGFeRDVersion.Version23;
 end;
 
 procedure TXRechnungUBLTests.TearDown;
@@ -68,14 +72,57 @@ begin
   FInvoiceProvider.Free;
 end;
 
+procedure TXRechnungUBLTests.TestAllowanceChargeOnDocumentLevel;
+begin
+  var desc := FInvoiceProvider.CreateInvoice();
+
+  // Test Values
+  var isDiscount: Boolean := true;
+  var basisAmount: ZUGFeRDNullable<Currency> := 123.45;
+  var currencyCode: TZUGFeRDCurrencyCodes := TZUGFeRDCurrencyCodes.EUR;
+  var actualAmount: Currency := 12.34;
+  var reason: string := 'Gutschrift';
+  var taxTypeCode: TZUGFeRDTaxTypes := TZUGFeRDTaxTypes.VAT;
+  var taxCategoryCode: TZUGFeRDTaxCategoryCodes := TZUGFeRDTaxCategoryCodes.AA;
+  var taxPercent:Currency := 19.0;
+
+  desc.AddTradeAllowanceCharge(isDiscount, basisAmount, currencyCode, actualAmount, reason,
+    taxTypeCode, taxCategoryCode, taxPercent);
+
+  var testAllowanceCharge := desc.TradeAllowanceCharges.First();
+
+  var ms := TMemoryStream.create();
+
+  desc.Save(ms, FVersion, TZUGFeRDProfile.Extended, TZUGFeRDFormats.UBL);
+  ms.Seek(0, soFromBeginning);
+  desc.Free;
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  var loadedAllowanceCharge := loadedInvoice.TradeAllowanceCharges[0];
+
+  Assert.AreEqual(loadedInvoice.TradeAllowanceCharges.Count, 1);
+  Assert.AreEqual(loadedAllowanceCharge.ChargeIndicator, not isDiscount, 'isDiscount');
+  Assert.AreEqual(loadedAllowanceCharge.BasisAmount.Value, basisAmount.Value, 'basisAmount');
+  Assert.AreEqual(loadedAllowanceCharge.Currency, currencyCode, 'currency');
+  Assert.AreEqual(loadedAllowanceCharge.Amount, actualAmount, 'actualAmount');
+  Assert.AreEqual(loadedAllowanceCharge.Reason, reason, 'reason');
+  Assert.AreEqual(loadedAllowanceCharge.Tax.TypeCode, taxTypeCode, 'taxTypeCode');
+  Assert.AreEqual(loadedAllowanceCharge.Tax.CategoryCode, taxCategoryCode, 'taxCategoryCode');
+  Assert.AreEqual(loadedAllowanceCharge.Tax.Percent, taxPercent, 'taxPercent');
+  loadedInvoice.Free;
+
+end; // !TestAllowanceChargeOnDocumentLevel
+
 procedure TXRechnungUBLTests.TestInvoiceCreation;
 begin
   var desc := FInvoiceProvider.CreateInvoice();
 
   var ms := TMemoryStream.Create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
-  desc.Save('test.xml', TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Save(ms, FVersion, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Save('test.xml', FVersion, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
   desc.Free;
   ms.Seek(0, soBeginning);
 
@@ -114,7 +161,7 @@ begin
     );
 
     var ms := TMemoryStream.create;
-    desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended, TZUGFeRDFormats.UBL);
+    desc.Save(ms, FVersion, TZUGFeRDProfile.Extended, TZUGFeRDFormats.UBL);
 
 
     ms.Seek(0, soBeginning);
@@ -152,7 +199,7 @@ begin
     TZUGFeRDTaxTypes.LOC, TZUGFeRDTaxCategoryCodes.K, allowanceChargeBasisAmount);
 
   var ms := TMemoryStream.create;
-  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Save(ms, FVersion, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
   desc.Free;
   ms.Seek(0, soBeginning);
 
@@ -184,7 +231,7 @@ begin
 
   var ms := TMemoryStream.Create;
 
-  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFerDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  desc.Save(ms, FVersion, TZUGFerDProfile.XRechnung, TZUGFeRDFormats.UBL);
   desc.Free;
   ms.Seek(0, soBeginning);
 
