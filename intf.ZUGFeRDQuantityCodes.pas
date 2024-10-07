@@ -140,6 +140,11 @@ type
     /// </summary>
     MTR,
     /// <summary>
+    /// Megawatt Stunde (1000 kW.h)
+    /// Abkürzung: MWh
+    /// </summary>
+    MWH,
+    /// <summary>
     /// Anzahl Artikel
     /// Abkürzung: Anz.
     /// </summary>
