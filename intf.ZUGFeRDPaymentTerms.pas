@@ -21,28 +21,10 @@ interface
 
 uses
   intf.ZUGFeRDHelper,
-  intf.ZUGFeRDQuantityCodes;
+  intf.ZUGFeRDQuantityCodes,
+  intf.ZUGFeRDPaymentTermsType;
 
 type
-(*
-  TZUGFeRDApplicableTradePaymentTerms = class
-  private
-    FCalculationPercent: double;
-    FBasisPeriodMeasure: ZUGFeRDNullableDouble;
-    FBasisAmount: Currency;
-    FActualPenaltyAmount: Currency;
-    FUnitCode: TZUGFeRDQuantityCodes;
-
-    //TODO FBasisDateTime: ZUGFeRDNullableTDateTime;
-  public
-    //TODO property BasisDateTime: ZUGFeRDNullableTDateTime read FBasisDateTime write FBasisDateTime;
-    property BasisPeriodMeasure : ZUGFeRDNullable<double> read FBasisPeriodMeasure write FBasisPeriodMeasure;
-    property BasisAmount : Currency read FBasisAmount write FBasisAmount;
-    property CalculationPercent : double read FCalculationPercent write FCalculationPercent;
-    property ActualPenaltyAmount : Currency read FActualPenaltyAmount write FActualPenaltyAmount;
-    property UnitCode: TZUGFeRDQuantityCodes read FUnitCode write FUnitCode;
-  end;
-*)
   /// <summary>
   /// Condition that surrounds the payment part of an invoice, describing the specific details and the due date of the invoice.
   /// </summary>
@@ -50,12 +32,10 @@ type
   private
     FDescription: string;
     FDueDate: ZUGFeRDNullableDateTime;
-(*
-    FDirectDebitMandateID: string;
-    FApplicableTradePaymentDiscountTerms: TZUGFeRDApplicableTradePaymentTerms;
-    FApplicableTradePaymentPenaltyTerms: TZUGFeRDApplicableTradePaymentTerms;
-    FPartialPaymentAmount: Currency;
-*)
+    FBaseAmount: ZUGFeRDNullableCurrency;
+    FPercentage: ZUGFeRDNullableCurrency;
+    FDueDays: ZUGFeRDNullableInt;
+    FPaymentTermsType: ZUGFeRDNullable<TZUGFeRDPaymentTermsType>;
   public
     /// <summary>
     /// A textual description of the payment terms that apply to the amount due for payment (including description of possible penalties).
@@ -65,42 +45,26 @@ type
     /// The date when the payment is due
     /// </summary>
     property DueDate: ZUGFeRDNullableDateTime read FDueDate write FDueDate;
-
-(*
-    /// SEPA Mandatsreferenz
-    ///
-    /// https://de.wikipedia.org/wiki/Mandatsreferenz
+    /// <summary>
+    /// Type whether it's a discount or a surcharge / interest
     /// </summary>
-    property DirectDebitMandateID: string read FDirectDebitMandateID write FDirectDebitMandateID;
-
-    property PartialPaymentAmount: Currency read FPartialPaymentAmount write FPartialPaymentAmount;
-
-    property ApplicableTradePaymentPenaltyTerms : TZUGFeRDApplicableTradePaymentTerms read FApplicableTradePaymentPenaltyTerms write FApplicableTradePaymentPenaltyTerms;
-
-    property ApplicableTradePaymentDiscountTerms : TZUGFeRDApplicableTradePaymentTerms read FApplicableTradePaymentDiscountTerms write FApplicableTradePaymentDiscountTerms;
-
-  public
-    constructor Create;
-    destructor Destroy; override;
-*)
+    property PaymentTermsType: ZUGFeRDNullable<TZUGFeRDPaymentTermsType> read FPaymentTermsType write FPaymentTermsType;
+    /// <summary>
+    /// Number of days within terms are valid
+    /// </summary>
+    property DueDays: ZUGFeRDNullableInt read FDueDays write FDueDays;
+    /// <summary>
+    /// Percentage of discount or surcharge
+    /// </summary>
+    property Percentage: ZUGFeRDNullableCurrency read FPercentage write FPercentage;
+    /// <summary>
+    /// Base amount applied to percentage of discount or surcharge
+    /// </summary>
+    property BaseAmount: ZUGFeRDNullableCurrency read FBaseAmount write FBaseAmount;
   end;
 
 implementation
 
 { TZUGFeRDPaymentTerms }
 
-(*
-constructor TZUGFeRDPaymentTerms.Create;
-begin
-  FApplicableTradePaymentDiscountTerms:= TZUGFeRDApplicableTradePaymentTerms.Create;
-  FApplicableTradePaymentPenaltyTerms:= TZUGFeRDApplicableTradePaymentTerms.Create;
-end;
-
-destructor TZUGFeRDPaymentTerms.Destroy;
-begin
-  if Assigned(FApplicableTradePaymentDiscountTerms) then begin FApplicableTradePaymentDiscountTerms.Free; FApplicableTradePaymentDiscountTerms := nil; end;
-  if Assigned(FApplicableTradePaymentPenaltyTerms) then begin FApplicableTradePaymentPenaltyTerms.Free; FApplicableTradePaymentPenaltyTerms := nil; end;
-  inherited;
-end;
-*)
 end.

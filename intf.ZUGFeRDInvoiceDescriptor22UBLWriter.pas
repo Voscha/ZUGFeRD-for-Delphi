@@ -376,8 +376,17 @@ begin
     if (Descriptor.PaymentTermsList.Count > 0) then
     begin
       Writer.WriteStartElement('cac:PaymentTerms');
-      Writer.WriteOptionalElementString('cbc:Note', Descriptor.PaymentTermsList[0].Description);
-      Writer.WriteEndElement();
+      var sbPaymentNotes := TStringBuilder.Create();
+      try
+        for var paymentTerms in Descriptor.PaymentTermsList do
+        begin
+          sbPaymentNotes.AppendLine(paymentTerms.Description);
+        end;
+        Writer.WriteOptionalElementString('cbc:Note', sbPaymentNotes.ToString().TrimRight);
+        Writer.WriteEndElement();
+      finally
+        sbPaymentNotes.Free;
+      end;
     end;
 
 

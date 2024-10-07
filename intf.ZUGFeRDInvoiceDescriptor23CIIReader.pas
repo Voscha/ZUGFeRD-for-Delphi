@@ -94,7 +94,7 @@ type
 
 implementation
 
-uses intf.ZUGFeRDXMLUtils, intf.ZUGFeRDHelper, intf.ZUGFeRDDataTypeReader;
+uses intf.ZUGFeRDXMLUtils, intf.ZUGFeRDHelper, intf.ZUGFeRDDataTypeReader, intf.ZUGFeRDPaymentTermsType;
 
 { TZUGFeRDInvoiceDescriptor23CIIReader }
 
@@ -451,20 +451,36 @@ begin
       XMLUtils._nodeAsDateTime(nodes[i], './ram:FormattedIssueDateTime')
     );
 
-
-(*
-  Result.InvoiceReferencedDocument := TZUGFeRDInvoiceReferencedDocument.Create;
-  Result.InvoiceReferencedDocument.ID := XMLUtils._nodeAsString(doc.DocumentElement, '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:IssuerAssignedID');
-  Result.InvoiceReferencedDocument.IssueDateTime:= XMLUtils._nodeAsDateTime(doc.DocumentElement,
-    '//ram:ApplicableHeaderTradeSettlement/ram:InvoiceReferencedDocument/ram:FormattedIssueDateTime');
-*)
   nodes := doc.SelectNodes('//ram:SpecifiedTradePaymentTerms');
   for i := 0 to nodes.length-1 do
   begin
-    var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
-    paymentTerm.Description := XMLUtils._nodeAsString(nodes[i], './/ram:Description');
-    paymentTerm.DueDate:= XMLUtils._nodeAsDateTime(nodes[i], './/ram:DueDateDateTime');
-    Result.PaymentTermsList.Add(paymentTerm);
+    var discountPercent := XmlUtils._NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent', nil);
+    var discountDueDays: ZUGFeRDNullable<Integer> := nil; // XmlUtils.NodeAsInt(node, ".//ram:ApplicableTradePaymentDiscountTerms/ram:BasisPeriodMeasure", nsmgr);
+    var discountAmount := XmlUtils._NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount', nil);
+    var penaltyPercent := XmlUtils._NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:CalculationPercent', nil);
+    var penaltyDueDays: ZUGFeRDNullable<Integer> := nil; // XmlUtils.NodeAsInt(node, ".//ram:ApplicableTradePaymentPenaltyTerms/ram:BasisPeriodMeasure", nsmgr);
+    var penaltyAmount := XmlUtils._NodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentPenaltyTerms/ram:BasisAmount', nil);
+
+    var paymentTermsType: ZUGFeRDNullable<TZUGFeRDPaymentTermsType> := nil;
+    if discountPercent.HasValue then
+      paymentTermsType := TZUGFeRDPaymentTermsType.Skonto
+    else if penaltyPercent.HasValue then
+      paymentTermsType := TZUGFeRDPaymentTermsType.Verzug;
+
+    if discountDueDays = nil then
+      discountDueDays := penaltyDueDays;
+    if discountPercent = nil then
+      discountPercent := penaltyPercent;
+    if discountAmount = nil then
+      discountAmount := penaltyAmount;
+
+    result.AddTradePaymentTerms(
+      XmlUtils._NodeAsString(nodes[i], './/ram:Description'),
+      XmlUtils._NodeAsDateTime(nodes[i], './/ram:DueDateDateTime'),
+      paymentTermsType, {TZUGFeRDNullableParam<TZUGFeRDPaymentTermsType>.Create(paymentTermsType.GetValueOrDefault),}
+      discountDueDays, //discountDueDays.GetValueOrDefault(penaltyDueDays),
+      discountPercent, //TZUGFeRDNullableParam<Currency>.Create(discountPercent.GetValueOrDefault(penaltyPercent)),
+      discountAmount);//TZUGFeRDNullable
   end;
 
   Result.LineTotalAmount:= XMLUtils._nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:LineTotalAmount', TZUGFeRDNullableParam<Currency>.Create(0));

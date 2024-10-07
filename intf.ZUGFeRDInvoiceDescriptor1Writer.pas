@@ -430,17 +430,53 @@ begin
       Writer.WriteEndElement();
     end;
 
-    for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
-    begin
-      Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-      Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
-      if (PaymentTerms.DueDate.HasValue) then
+    //  The cardinality depends on the profile.
+    case (Descriptor.Profile) of
+      TZUGFeRDProfile.Unknown, TZUGFeRDProfile.Minimum: ;
+      TZUGFeRDProfile.Extended:
       begin
-        Writer.WriteStartElement('ram:DueDateDateTime');
-        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
-        Writer.WriteEndElement(); // !ram:DueDateDateTime
+        for var paymentTerms in Descriptor.PaymentTermsList do
+        begin
+            Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+            Writer.WriteOptionalElementString('ram:Description', paymentTerms.Description);
+            if (paymentTerms.DueDate.HasValue) then
+            begin
+              Writer.WriteStartElement('ram:DueDateDateTime');
+              _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102',
+                _formatDate(paymentTerms.DueDate.Value));
+              Writer.WriteEndElement(); // !ram:DueDateDateTime
+            end;
+            Writer.WriteEndElement();
+        end;
       end;
-      Writer.WriteEndElement();
+    else
+      begin
+        if Descriptor.PaymentTermsList.Count > 0 then
+        begin
+          Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+          var sbPaymentNotes := TStringBuilder.create;
+          var dueDate: ZUGFeRDNullable<TDateTime> := nil;
+          try
+            for var paymentTerms in Descriptor.PaymentTermsList do
+            begin
+              sbPaymentNotes.AppendLine(paymentTerms.Description);
+              if (dueDate = nil) then
+                dueDate := paymentTerms.DueDate;
+            end;
+            Writer.WriteOptionalElementString('ram:Description', sbPaymentNotes.ToString().TrimRight);
+            if (dueDate.HasValue) then
+            begin
+              Writer.WriteStartElement('ram:DueDateDateTime');
+              _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102',
+                _formatDate(dueDate.Value));
+              Writer.WriteEndElement(); // !ram:DueDateDateTime
+            end;
+            Writer.WriteEndElement();
+          finally
+            sbPaymentNotes.Free;
+          end;
+        end;
+      end;
     end;
 
     Writer.WriteStartElement('ram:SpecifiedTradeSettlementMonetarySummation');

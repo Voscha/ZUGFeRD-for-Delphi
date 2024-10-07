@@ -304,16 +304,8 @@ begin
   nodes := doc.SelectNodes('//ram:SpecifiedTradePaymentTerms');
   for i := 0 to nodes.length-1 do
   begin
-    var paymentTerm : TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
-    paymentTerm.Description := XMLUtils._nodeAsString(nodes[i], './/ram:Description');
-(*    paymentTerm.DueDate:= XMLUtils._nodeAsDateTime(nodes[i], './/ram:DueDateDateTime');
-    paymentTerm.DirectDebitMandateID := XMLUtils._nodeAsString(nodes[i], './/ram:DirectDebitMandateID');
-    //TODO paymentTerm.PartialPaymentAmount
-    //TODO paymentTerm.ApplicableTradePaymentPenaltyTerms
-    paymentTerm.ApplicableTradePaymentDiscountTerms.BasisAmount := XMLUtils._nodeAsDecimal(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:BasisAmount');
-    paymentTerm.ApplicableTradePaymentDiscountTerms.CalculationPercent := XMLUtils._nodeAsDouble(nodes[i], './/ram:ApplicableTradePaymentDiscountTerms/ram:CalculationPercent');
-*)
-    Result.PaymentTermsList.Add(paymentTerm);
+    Result.AddTradePaymentTerms(XMLUtils._nodeAsString(nodes[i], './/ram:Description'),
+      XmlUtils._nodeAsDateTime(nodes[i], './/ram:DueDateDateTime'));
   end;
 
   Result.LineTotalAmount:= XMLUtils._nodeAsDecimal(doc.DocumentElement, '//ram:SpecifiedTradeSettlementMonetarySummation/ram:LineTotalAmount', TZUGFeRDNullableParam<Currency>.Create(0));

@@ -66,7 +66,8 @@ uses
   intf.ZUGFeRDDespatchAdviceReferencedDocument,
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
-  intf.ZUGFeRDFormats
+  intf.ZUGFeRDFormats,
+  intf.ZUGFeRDPaymentTermsType
   ;
 
 type
@@ -832,6 +833,30 @@ type
 
     procedure AddReceivableSpecifiedTradeAccountingAccount(const AccountID: string;
       const AccountTypeCode: TZUGFeRDAccountingAccountTypeCodes); overload;
+
+    /// <summary>
+    /// Clears the current trade payment terms and sets the initial payment terms
+    /// </summary>
+    /// <param name="description"></param>
+    /// <param name="dueDate"></param>
+    procedure SetTradePaymentTerms(const description: string; dueDate: IZUGFeRDNullableParam<TDateTime> = nil);
+
+    /// <summary>
+    /// Adds a trade payment term.
+    /// </summary>
+    /// <param name="description"></param>
+    /// <param name="dueDate"></param>
+    /// <param name="paymentTermsType"></param>
+    /// <param name="dueDays"></param>
+    /// <param name="percentage"></param>
+    /// <param name="baseAmount"></param>
+    procedure AddTradePaymentTerms(
+      const description: string;
+      dueDate: IZUGFeRDNullableParam<TDateTime> = nil;
+      paymentTermsType: IZUGFeRDNullableParam<TZUGFeRDPaymentTermsType> = nil;
+      dueDays: IZUGFeRDNullableParam<Integer> = nil;
+      percentage: IZUGFeRDNullableParam<Currency> = nil;
+      baseAmount: IZUGFeRDNullableParam<Currency> = nil);
   private
     function _getNextLineId: string;
   end;
@@ -1472,6 +1497,13 @@ begin
   RoundingAmount:= aRoundingAmount;
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.SetTradePaymentTerms(const description: string;
+  dueDate: IZUGFeRDNullableParam<TDateTime>);
+begin
+  FPaymentTermsList.Clear();
+  AddTradePaymentTerms(description, dueDate);
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(
   const basisAmount: Currency;
   const percent: Currency; const typeCode: TZUGFeRDTaxTypes;
@@ -1680,6 +1712,21 @@ begin
   TradeLineItems.Add(newItem);
 
   Result := newItem;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.AddTradePaymentTerms(const description: string;
+  dueDate: IZUGFeRDNullableParam<TDateTime>;
+  paymentTermsType: IZUGFeRDNullableParam<TZUGFeRDPaymentTermsType>;
+  dueDays: IZUGFeRDNullableParam<Integer>; percentage, baseAmount: IZUGFeRDNullableParam<Currency>);
+begin
+  var PaymentTerms := TZUGFeRDPaymentTerms.Create;
+  PaymentTerms.Description := description;
+  PaymentTerms.DueDate := dueDate;
+  PaymentTerms.PaymentTermsType := paymentTermsType;
+  PaymentTerms.DueDays := dueDays;
+  PaymentTerms.Percentage := percentage;
+  PaymentTerms.BaseAmount := baseAmount;
+  FPaymentTermsList.Add(PaymentTerms);
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';

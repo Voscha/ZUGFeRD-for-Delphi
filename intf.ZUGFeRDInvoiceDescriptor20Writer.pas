@@ -87,7 +87,7 @@ type
 
 implementation
 
-uses intf.ZUGFeRDMimeTypeMapper;
+uses intf.ZUGFeRDMimeTypeMapper, intf.ZUGFeRDPaymentTermsType, System.TypInfo;
 
 { TZUGFeRDInvoiceDescriptor20Writer }
 
@@ -815,57 +815,149 @@ begin
       Writer.WriteEndElement();
     end;
 
-  (*
-              //  15. SpecifiedTradePaymentTerms (optional)
-              if (this.Descriptor.PaymentTerms != null || !string.IsNullOrWhiteSpace(Descriptor.PaymentMeans?.SEPAMandateReference))
-              {
-                  Writer.WriteStartElement("ram:SpecifiedTradePaymentTerms");
-                  Writer.WriteOptionalElementString("ram:Description", this.Descriptor.PaymentTerms?.Description);
-                  if (this.Descriptor.PaymentTerms?.DueDate.HasValue ?? false)
-                  {
-                      Writer.WriteStartElement("ram:DueDateDateTime");
-                      _writeElementWithAttribute(Writer, "udt:DateTimeString", "format", "102", _formatDate(this.Descriptor.PaymentTerms.DueDate.Value));
-                      Writer.WriteEndElement(); // !ram:DueDateDateTime
-                  }
-                  Writer.WriteOptionalElementString("ram:DirectDebitMandateID", Descriptor.PaymentMeans?.SEPAMandateReference);
-                  Writer.WriteEndElement();
-              }
-
-
-  *)
-
     //  15. SpecifiedTradePaymentTerms (optional)
-    for var PaymentTerms: TZUGFeRDPaymentTerms in Descriptor.PaymentTermsList do
-    begin
-      Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
-      Writer.WriteOptionalElementString('ram:Description', PaymentTerms.Description);
-      if (PaymentTerms.DueDate.HasValue) then
+    //  The cardinality depends on the profile.
+    case Descriptor.Profile of
+      TZUGFeRDProfile.Unknown, TZUGFeRDProfile.Minimum: ;
+      TZUGFerDProfile.XRechnung:
       begin
-        Writer.WriteStartElement('ram:DueDateDateTime');
-        _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(PaymentTerms.DueDate.Value));
-        Writer.WriteEndElement(); // !ram:DueDateDateTime
+        if (Descriptor.PaymentTermsList.Count > 0) or (assigned(Descriptor.PaymentMeans) and not string.IsNullOrWhiteSpace(Descriptor.PaymentMeans.SEPAMandateReference)) then
+        begin
+          Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+          var sbPaymentNotes := TStringBuilder.Create();
+          var dueDate: ZUGFerdNullable<TDateTime> := nil;
+          try
+            for var PaymentTerms in Descriptor.PaymentTermsList do
+            begin
+              if (PaymentTerms.PaymentTermsType.HasValue) then
+              begin
+                  sbPaymentNotes.Append('#' +
+                    GetEnumName(TypeInfo(TZUGFeRDPaymentTermsType), Integer(PaymentTerms.PaymentTermsType.Value)));
+                  sbPaymentNotes.Append('#TAGE=' + IfThen(PaymentTerms.DueDays.HasValue,
+                    IntToStr(PaymentTerms.DueDays.Value), ''));
+                  sbPaymentNotes.Append('#PROZENT=' + _formatDecimal(paymentTerms.Percentage));
+                  sbPaymentNotes.Append(IfThen(paymentTerms.BaseAmount.HasValue, '#BASISBETRAG=' +
+                    _formatDecimal(paymentTerms.BaseAmount), ''));
+                  sbPaymentNotes.AppendLine('#');
+              end
+              else
+              begin
+                  sbPaymentNotes.AppendLine(paymentTerms.Description);
+              end;
+              if not dueDate.HasValue then
+                dueDate := paymentTerms.DueDate;
+            end;
+            Writer.WriteOptionalElementString('ram:Description', sbPaymentNotes.ToString());
+            if (dueDate.HasValue) then
+            begin
+              Writer.WriteStartElement('ram:DueDateDateTime');
+              _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102', _formatDate(dueDate.Value));
+              Writer.WriteEndElement(); // !ram:DueDateDateTime
+            end;
+            Writer.WriteOptionalElementString('ram:DirectDebitMandateID',
+              Descriptor.PaymentMeans.SEPAMandateReference);
+            Writer.WriteEndElement();
+          finally
+            sbPaymentNotes.Free;
+          end;
+        end;
       end;
-      Writer.WriteOptionalElementString('ram:DirectDebitMandateID', Descriptor.PaymentMeans.SepaMandateReference);
-  (*    Writer.WriteOptionalElementString('ram:DirectDebitMandateID', PaymentTerms.DirectDebitMandateID);
-      //TODO PaymentTerms.PartialPaymentAmount
-      //TODO PaymentTerms.ApplicableTradePaymentPenaltyTerms
-      if (PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0) or
-         (PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0) or
-         PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
+      TZUGFerDProfile.Extended:
       begin
-        Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
-        if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure.HasValue then
-          _writeElementWithAttribute(Writer, 'ram:BasisPeriodMeasure', 'unitCode', TZUGFeRDQuantityCodesExtensions.EnumToString(PaymentTerms.ApplicableTradePaymentDiscountTerms.UnitCode), _formatDecimal(paymentTerms.ApplicableTradePaymentDiscountTerms.BasisPeriodMeasure, 4));
-        if PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount <> 0.0 then
-          _writeOptionalAmount(Writer, 'ram:BasisAmount', PaymentTerms.ApplicableTradePaymentDiscountTerms.BasisAmount);
-        if PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent <> 0.0 then
-          _writeOptionalAmount(Writer, 'ram:CalculationPercent', PaymentTerms.ApplicableTradePaymentDiscountTerms.CalculationPercent,4);
-        Writer.WriteEndElement();
-        //TODO PaymentTerms.ApplicableTradePaymentDiscountTerms.ActualPenaltyAmount
+        for var paymentTerms in Descriptor.PaymentTermsList do
+        begin
+            Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+            Writer.WriteOptionalElementString('ram:Description', paymentTerms.Description);
+            if (paymentTerms.DueDate.HasValue) then
+            begin
+                Writer.WriteStartElement('ram:DueDateDateTime');
+                _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102',
+                  _formatDate(paymentTerms.DueDate.Value));
+                Writer.WriteEndElement(); // !ram:DueDateDateTime
+            end;
+            if (paymentTerms.PaymentTermsType.HasValue) then
+            begin
+                if (paymentTerms.PaymentTermsType = TZUGFeRDPaymentTermsType.Skonto) then
+                begin
+                    Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
+                    _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount, 2, true);
+                    Writer.WriteOptionalElementString('ram:CalculationPercent',
+                      _formatDecimal(paymentTerms.Percentage));
+                    Writer.WriteEndElement(); // !ram:ApplicableTradePaymentDiscountTerms
+                end;
+                if (paymentTerms.PaymentTermsType = TZUGFeRDPaymentTermsType.Verzug) then
+                begin
+                    Writer.WriteStartElement('ram:ApplicableTradePaymentPenaltyTerms');
+                    _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount, 2, true);
+                    Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+                    Writer.WriteEndElement(); // !ram:ApplicableTradePaymentPenaltyTerms
+                end;
+            end;
+            Writer.WriteOptionalElementString('ram:DirectDebitMandateID',
+              Descriptor.PaymentMeans.SEPAMandateReference);
+            Writer.WriteEndElement();
+        end;
+        if (Descriptor.PaymentTermsList.Count = 0) and (assigned(Descriptor.PaymentMeans) and
+          not string.IsNullOrWhiteSpace(Descriptor.PaymentMeans.SEPAMandateReference)) then
+        begin
+            Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+            Writer.WriteOptionalElementString('ram:DirectDebitMandateID',
+              Descriptor.PaymentMeans.SEPAMandateReference);
+            Writer.WriteEndElement();
+        end;
       end;
-  *)
-      Writer.WriteEndElement();
+    else
+      begin
+        if (Descriptor.PaymentTermsList.Count > 0) or (assigned(Descriptor.PaymentMeans) and not
+          string.IsNullOrWhiteSpace(Descriptor.PaymentMeans.SEPAMandateReference)) then
+        begin
+          Writer.WriteStartElement('ram:SpecifiedTradePaymentTerms');
+          var sbPaymentNotes := TStringBuilder.create;
+          var setDueDate := true;
+          try
+            for var paymentTerms in Descriptor.PaymentTermsList do
+            begin
+              if (paymentTerms.PaymentTermsType.HasValue) then
+              begin
+                if (paymentTerms.PaymentTermsType = TZUGFeRDPaymentTermsType.Skonto) then
+                begin
+                  Writer.WriteStartElement('ram:ApplicableTradePaymentDiscountTerms');
+                  _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount, 2, true);
+                  Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+                  Writer.WriteEndElement(); // !ram:ApplicableTradePaymentDiscountTerms
+                end;
+                if (paymentTerms.PaymentTermsType = TZUGFeRDPaymentTermsType.Verzug) then
+                begin
+                  Writer.WriteStartElement('ram:ApplicableTradePaymentPenaltyTerms');
+                  _writeOptionalAmount(Writer, 'ram:BasisAmount', paymentTerms.BaseAmount, 2, true);
+                  Writer.WriteOptionalElementString('ram:CalculationPercent', _formatDecimal(paymentTerms.Percentage));
+                  Writer.WriteEndElement(); // !ram:ApplicableTradePaymentPenaltyTerms
+                end
+              end
+              else
+              begin
+                sbPaymentNotes.AppendLine(paymentTerms.Description);
+              end;
+              if (paymentTerms.DueDate.HasValue and setDueDate) then
+              begin
+                  Writer.WriteStartElement('ram:DueDateDateTime');
+                  _writeElementWithAttribute(Writer, 'udt:DateTimeString', 'format', '102',
+                    _formatDate(paymentTerms.DueDate.Value));
+                  Writer.WriteEndElement(); // !ram:DueDateDateTime
+                  setDueDate := false;
+              end;
+            end;
+            Writer.WriteOptionalElementString('ram:Description', sbPaymentNotes.ToString().TrimRight);
+            Writer.WriteOptionalElementString('ram:DirectDebitMandateID',
+              Descriptor.PaymentMeans.SEPAMandateReference);
+            Writer.WriteEndElement();
+          finally
+            sbPaymentNotes.Free;
+          end;
+        end;
+      end;
     end;
+
 
     //  16. SpecifiedTradeSettlementHeaderMonetarySummation
     Writer.WriteStartElement('ram:SpecifiedTradeSettlementHeaderMonetarySummation');

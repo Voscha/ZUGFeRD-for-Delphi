@@ -160,6 +160,12 @@ type
     procedure TestDesignatedProductClassificationWithEmptyListIdAndVersionId;
     [Test]
     procedure TestDesignatedProductClassificationWithoutClassCode;
+    [Test]
+    procedure TestPaymentTermsMultiCardinality;
+    [Test]
+    procedure TestPaymentTermsSingleCardinality;
+    [Test]
+    procedure TestPaymentTermsSingleCardinalityStructured;
   end;
 
 implementation
@@ -176,7 +182,7 @@ uses intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDProfile, intf.ZUGFeRDInvoiceType
   intf.ZUGFeRDSellerOrderreferencedDocument, intf.ZUGFeRDPaymentMeansTypeCodes,
   intf.ZUGFeRDSpecifiedProcuringProject, intf.ZUGFeRDFinancialCard, intf.ZUGFeRDNote,
   intf.ZUGFeRDBankAccount, intf.ZUGFeRDTax, intf.ZUGFeRDServiceCharge, intf.ZUGFeRDSubjectCodes,
-  intf.ZUGFeRDDesignatedProductClassificationCodes,
+  intf.ZUGFeRDDesignatedProductClassificationCodes, intf.ZUGFeRDPaymentTermsType,
   intf.ZUGFeRDContentCodes, intf.ZUGFeRDXmlHelper, intf.ZUGFeRDFormats,winapi.ActiveX;
 
 procedure TZUGFeRD22Tests.Setup;
@@ -977,7 +983,7 @@ begin
   Assert.AreEqual('DE21860000000086001055', invoiceDescriptor.DebitorBankAccounts[0].IBAN);
 
   Assert.AreEqual('Der Betrag in Höhe von EUR 529,87 wird am 20.03.2018 von Ihrem Konto per SEPA-Lastschrift eingezogen.',
-    invoiceDescriptor.PaymentTermsList[0].Description.Trim());
+    invoiceDescriptor.PaymentTermsList.First.Description.Trim());
   invoiceDescriptor.Free;
 end;
 
@@ -1242,6 +1248,171 @@ begin
   Assert.AreEqual(loadedInvoice.Payee.Country, TZUGFeRDCountryCodes.DE);
   loadedInvoice.Free;
 
+end;
+
+procedure TZUGFeRD22Tests.TestPaymentTermsMultiCardinality;
+begin
+  // Arrange
+  var timestamp: TDateTime := Date;
+  var desc := FInvoiceProvider.CreateInvoice();
+  desc.PaymentTermsList.Clear();
+  desc.AddTradePaymentTerms(
+    'Zahlbar innerhalb 30 Tagen netto bis 04.04.2018',
+    TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2018, 4, 4)));
+  desc.AddTradePaymentTerms(
+    '3% Skonto innerhalb 10 Tagen bis 15.03.2018',
+    TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2018, 3, 15)),
+    TZUGFeRDNullableParam<TZUGFeRDPaymentTermsType>.Create(TZUGFerDPaymentTermsType.Skonto),
+    TZUGFeRDNullableParam<Integer>.Create(10),
+    TZUGFeRDNullableParam<Currency>.Create(3));
+  desc.PaymentTermsList.First.DueDate := timestamp.IncDay(14);
+
+  var ms :=  TMemoryStream.create();
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFerDProfile.Extended);
+  desc.Free;
+
+  ms.Seek(0, soFromBeginning);
+  var reader := TStreamReader.Create(ms);
+  var text: string := reader.ReadToEnd();
+  reader.Free;
+
+  ms.Seek(0, soFromBeginning);
+  Assert.AreEqual(TZUGFeRDInvoiceDescriptor.GetVersion(ms), TZUGFeRDVersion.Version23);
+
+  // Act
+  ms.Seek(0, soFromBeginning);
+  var loadedInvoice := TZUGFerDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  // Assert
+  // PaymentTerms
+  var paymentTerms := loadedInvoice.PaymentTermsList;
+  Assert.IsNotNull(paymentTerms);
+  Assert.AreEqual(2, paymentTerms.Count);
+  var paymentTerm := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDPaymentTerms>(loadedInvoice.PaymentTermsList,
+    function(Item: TZUGFeRDPaymentTerms): Boolean
+    begin
+      result := Item.Description.StartsWith('Zahlbar');
+    end);
+  Assert.IsNotNull(paymentTerm);
+  Assert.AreEqual('Zahlbar innerhalb 30 Tagen netto bis 04.04.2018', paymentTerm.Description);
+  Assert.AreEqual(timestamp.IncDay(14), paymentTerm.DueDate.Value);
+
+  paymentTerm := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDPaymentTerms>(loadedInvoice.PaymentTermsList,
+    function(Item: TZUGFeRDPaymentTerms): Boolean
+    begin
+      result := Item.PaymentTermsType = TZUGFeRDPaymentTermsType.Skonto;
+    end);
+  Assert.IsNotNull(paymentTerm);
+  Assert.AreEqual('3% Skonto innerhalb 10 Tagen bis 15.03.2018', paymentTerm.Description);
+  // Assert.AreEqual(10, paymentTerm.DueDays);
+  Assert.AreEqual(Currency(3), paymentTerm.Percentage.Value);
+
+  loadedInvoice.Free;
+end;
+
+procedure TZUGFeRD22Tests.TestPaymentTermsSingleCardinality;
+begin
+  // Arrange
+  var timestamp: TDateTime := Date;
+  var desc := FInvoiceProvider.CreateInvoice();
+  desc.PaymentTermsList.Clear();
+  desc.AddTradePaymentTerms(
+    'Zahlbar innerhalb 30 Tagen netto bis 04.04.2018',
+    TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2018, 4, 4)));
+  desc.AddTradePaymentTerms(
+    '3% Skonto innerhalb 10 Tagen bis 15.03.2018',
+    TZUGFeRDNullableParam<TDateTime>.Create(EncodeDate(2018, 3, 15)),
+    nil,
+    nil,
+    TZUGFeRDNullableParam<Currency>.Create(3));
+  desc.PaymentTermsList.First.DueDate := timestamp.IncDay(14);
+
+  var ms := TMemoryStream.create();
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Comfort);
+  desc.Free;
+
+  ms.Seek(0, soFromBeginning);
+  var reader := TStreamReader.create(ms);
+  var text: string := reader.ReadToEnd();
+  reader.Free;
+
+  ms.Seek(0, soFromBeginning);
+  Assert.AreEqual(TZUGFeRDInvoiceDescriptor.GetVersion(ms), TZUGFeRDVersion.Version23);
+
+  // Act
+  ms.Seek(0, soFromBeginning);
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  // Assert
+  // PaymentTerms
+  var paymentTerms := loadedInvoice.PaymentTermsList;
+  Assert.IsNotNull(paymentTerms);
+  Assert.AreEqual(1, paymentTerms.Count);
+  var paymentTerm := loadedInvoice.PaymentTermsList.First;
+  Assert.IsNotNull(paymentTerm);
+  Assert.AreEqual('Zahlbar innerhalb 30 Tagen netto bis 04.04.2018' + #10 +
+    '3% Skonto innerhalb 10 Tagen bis 15.03.2018', paymentTerm.Description);
+  Assert.AreEqual(timestamp.IncDay(14), paymentTerm.DueDate.Value);
+
+  loadedInvoice.Free;
+end;
+
+procedure TZUGFeRD22Tests.TestPaymentTermsSingleCardinalityStructured;
+begin
+  // Arrange
+  var timestamp: TDateTime := Date;
+  var desc := FInvoiceProvider.CreateInvoice();
+  desc.PaymentTermsList.Clear();
+  desc.AddTradePaymentTerms(
+    '',
+    nil,
+    TZUGFeRDNullableParam<TZUGFeRDPaymentTermsType>.Create(TZUGFeRDPaymentTermsType.Skonto),
+    TZUGFeRDNullableParam<Integer>.create(14),
+    TZUGFeRDNullableParam<Currency>.create(2.25)
+  );
+  desc.AddTradePaymentTerms(
+    '',
+    nil,
+    TZUGFeRDNullableParam<TZUGFeRDPaymentTermsType>.Create(TZUGFeRDPaymentTermsType.Skonto),
+    TZUGFeRDNullableParam<Integer>.create(28),
+    TZUGFeRDNullableParam<Currency>.create(1)
+  );
+  desc.PaymentTermsList.First.DueDate := timestamp.IncDay(14);
+
+  var ms := TMemoryStream.create;
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFerDProfile.XRechnung);
+  desc.Free;
+
+  ms.Seek(0, soFromBeginning);
+  var reader := TStreamReader.create(ms);
+  var text: string := reader.ReadToEnd();
+  reader.Free;
+
+  ms.Seek(0, soFromBeginning);
+  Assert.AreEqual(TZUGFerdInvoiceDescriptor.GetVersion(ms), TZUGFeRDVersion.Version23);
+
+  // Act
+  ms.Seek(0, soFromBeginning);
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  // Assert
+  // PaymentTerms
+  var paymentTerms := loadedInvoice.PaymentTermsList;
+  Assert.IsNotNull(paymentTerms);
+  Assert.AreEqual(1, paymentTerms.Count);
+  var paymentTerm := loadedInvoice.PaymentTermsList.First;
+  Assert.IsNotNull(paymentTerm);
+  Assert.AreEqual('#SKONTO#TAGE=14#PROZENT=2.25#' + #10 +
+    '#SKONTO#TAGE=28#PROZENT=1.00#', paymentTerm.Description);
+  Assert.AreEqual(timestamp.incDay(14), paymentTerm.DueDate.Value);
+  //Assert.AreEqual(PaymentTermsType.Skonto, paymentTerm.PaymentTermsType);
+  //Assert.AreEqual(10, paymentTerm.DueDays);
+  //Assert.AreEqual(3m, paymentTerm.Percentage);
+
+  loadedInvoice.Free;
 end;
 
 procedure TZUGFeRD22Tests.TestReadTradeLineBillingPeriod;
@@ -1522,7 +1693,7 @@ begin
   Assert.AreEqual(desc.Taxes[1].TypeCode, TZUGFeRDTaxTypes(53));
   Assert.AreEqual(desc.Taxes[1].CategoryCode, TZUGFeRDTaxCategoryCodes(19));
 
-  Assert.AreEqual(desc.PaymentTermsList[0].DueDate.Value, EncodeDate(2020, 6, 21));
+  Assert.AreEqual(desc.PaymentTermsList.First.DueDate.Value, EncodeDate(2020, 6, 21));
 
   Assert.AreEqual(desc.CreditorBankAccounts[0].IBAN, 'DE12500105170648489890');
   Assert.AreEqual(desc.CreditorBankAccounts[0].BIC, 'INGDDEFFXXX');
