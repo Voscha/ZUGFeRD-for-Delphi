@@ -254,6 +254,52 @@ begin
         Descriptor.BuyerContact, Descriptor.BuyerElectronicAddress, Descriptor.BuyerTaxRegistration);
     {$ENDREGION}
 
+    {$REGION 'AllowanceCharge'}
+    for var tradeAllowanceCharge: TZUGFeRDTradeAllowanceCharge in Descriptor.TradeAllowanceCharges do
+    begin
+      Writer.WriteStartElement('cac:AllowanceCharge');
+
+      Writer.WriteElementString('cbc:ChargeIndicator', IfThen(tradeAllowanceCharge.ChargeIndicator, 'true', 'false'));
+
+      Writer.WriteStartElement('cbc:Amount'); // BT-92 / BT-99
+      Writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+      Writer.WriteValue(_formatDecimal(TZUGFerDNullableParam<currency>.Create(tradeAllowanceCharge.ActualAmount)));
+      Writer.WriteEndElement();
+
+      if (tradeAllowanceCharge.BasisAmount <> nil) then
+      begin
+        Writer.WriteStartElement('cbc:BaseAmount'); // BT-93 / BT-100
+        Writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+        Writer.WriteValue(_formatDecimal(tradeAllowanceCharge.BasisAmount));
+        Writer.WriteEndElement();
+      end;
+
+      if (not string.IsNullOrEmpty(tradeAllowanceCharge.Reason)) then
+      begin
+        Writer.WriteStartElement('cbc:AllowanceChargeReason'); // BT-97 / BT-104
+        Writer.WriteValue(tradeAllowanceCharge.Reason);
+        Writer.WriteEndElement();
+      end;
+
+      Writer.WriteStartElement('cac:TaxCategory');
+      Writer.WriteElementString('cbc:ID', TZUGFeRDTaxCategoryCodesExtensions.EnumToString(
+        tradeAllowanceCharge.Tax.CategoryCode));
+      if (tradeAllowanceCharge.Tax.Percent <> 0) then
+      begin
+        Writer.WriteElementString('cbc:Percent', _formatDecimal(TZUGFerDNullableParam<currency>.Create(
+          tradeAllowanceCharge.Tax.Percent)));
+      end;
+      Writer.WriteStartElement('cac:TaxScheme');
+      Writer.WriteElementString('cbc:ID', TZUGFeRDTaxTypesExtensions.EnumToString(
+        tradeAllowanceCharge.Tax.TypeCode));
+      Writer.WriteEndElement(); // cac:TaxScheme
+      Writer.WriteEndElement(); // cac:TaxCategory
+
+      Writer.WriteEndElement(); // !AllowanceCharge()
+    end;
+    {$ENDREGION}
+
+
     {$REGION 'PaymentMeans'}
       if ((Descriptor.PaymentMeans <> nil) and
         (Descriptor.PaymentMeans.TypeCode <> TZUGFeRDPaymentMeansTypeCodes.Unknown)) then
