@@ -609,9 +609,7 @@ begin
   if (tradeLineItem = nil) then
     exit;
 
-  var lineId := String.Empty;
-  if (tradeLineItem.SelectSingleNode('.//ram:AssociatedDocumentLineDocument') <> nil) then
-    lineId := XmlUtils._nodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineID');
+  var lineId := XmlUtils._nodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineID', String.Empty);
 
   Result := TZUGFeRDTradeLineItem.Create(lineID);
 
