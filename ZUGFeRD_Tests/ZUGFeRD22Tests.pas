@@ -1155,35 +1155,93 @@ end;
 procedure TZUGFeRD22Tests.TestPartyExtensions;
 begin
   var desc := FInvoiceProvider.CreateInvoice();
-  var _party := TZUGFeRDParty.Create;
-  _party.Name := 'Test';
-  _party.ContactName := 'Max Mustermann';
-  _party.Postcode := '83022';
-  _party.City := 'Rosenheim';
-  _party.Street := 'Münchnerstraße 123';
-  _party.AddressLine3 := 'EG links';
-  _party.CountrySubdivisionName := 'Bayern';
-  _party.Country := TZUGFeRDCountryCodes.DE;
+  desc.Invoicee := TZUGFeRDParty.Create;
 
-  desc.Invoicee := _Party; // this information will not be stored in the output file since it is available in Extended profile only
+  with desc.Invoicee do
+  begin
+    Name := 'Invoicee';
+    ContactName := 'Max Mustermann';
+    Postcode := '83022';
+    City := 'Rosenheim';
+    Street := 'Münchnerstraße 123';
+    AddressLine3 := 'EG links';
+    CountrySubdivisionName := 'Bayern';
+    Country := TZUGFeRDCountryCodes.DE;
+  end;;
 
-  var ms := TMemoryStream.Create;
+  desc.Payee := TZUGFeRDParty.Create; // most of this information will NOT be stored in the output file
+  with desc.Payee do
+  begin
+    Name := 'Payee';
+    ContactName := 'Max Mustermann';
+    Postcode := '83022';
+    City := 'Rosenheim';
+    Street := 'Münchnerstraße 123';
+    AddressLine3 := 'EG links';
+    CountrySubdivisionName := 'Bayern';
+    Country := TZUGFeRDCountryCodes.DE;
+  end;
 
-  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
-  desc.Free;
-  ms.Seek(0, soBeginning);
+  var ms1 := TMemoryStream.create();
 
-  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
-  ms.Free;
-  Assert.AreEqual('Test', loadedInvoice.Invoicee.Name);
-  Assert.AreEqual('Max Mustermann', loadedInvoice.Invoicee.ContactName);
-  Assert.AreEqual('83022', loadedInvoice.Invoicee.Postcode);
-  Assert.AreEqual('Rosenheim', loadedInvoice.Invoicee.City);
-  Assert.AreEqual('Münchnerstraße 123', loadedInvoice.Invoicee.Street);
-  Assert.AreEqual('EG links', loadedInvoice.Invoicee.AddressLine3);
-  Assert.AreEqual('Bayern', loadedInvoice.Invoicee.CountrySubdivisionName);
-  Assert.AreEqual(TZUGFeRDCountryCodes.DE, loadedInvoice.Invoicee.Country);
+  // test with Comfort
+  desc.Save(ms1, TZUGFeRDVersion.Version23, TZUGFerDProfile.Comfort);
+  ms1.Seek(0, soFromBeginning);
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms1);
+  ms1.Free;
+  Assert.IsNull(loadedInvoice.Invoicee);
+  Assert.IsNotNull(loadedInvoice.Seller);
+  Assert.IsNotNull(loadedInvoice.Payee);
+
+  Assert.AreEqual(loadedInvoice.Seller.Name, 'Lieferant GmbH');
+  Assert.AreEqual(loadedInvoice.Seller.Street, 'Lieferantenstraße 20');
+  Assert.AreEqual(loadedInvoice.Seller.City, 'München');
+  Assert.AreEqual(loadedInvoice.Seller.Postcode, '80333');
+
+  Assert.AreEqual(loadedInvoice.Payee.Name, 'Payee');
+  Assert.IsEmpty(loadedInvoice.Payee.ContactName);
+  Assert.AreEqual(loadedInvoice.Payee.Postcode, '');
+  Assert.AreEqual(loadedInvoice.Payee.City, '');
+  Assert.AreEqual(loadedInvoice.Payee.Street, '');
+  Assert.AreEqual(loadedInvoice.Payee.AddressLine3, '');
+  Assert.AreEqual(loadedInvoice.Payee.CountrySubdivisionName, '');
+  Assert.AreEqual(loadedInvoice.Payee.Country, TZUGFeRDCountryCodes.Unknown);
   loadedInvoice.Free;
+
+  // test with Extended
+  var ms2 := TMemoryStream.create();
+  desc.Save(ms2, TZUGFeRDVersion.Version23, TZUGFeRDProfile.Extended);
+  ms2.Seek(0, soFromBeginning);
+  desc.Free;
+
+  loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms2);
+  ms2.Free;
+
+  Assert.AreEqual(loadedInvoice.Invoicee.Name, 'Invoicee');
+  Assert.AreEqual(loadedInvoice.Invoicee.ContactName, 'Max Mustermann');
+  Assert.AreEqual(loadedInvoice.Invoicee.Postcode, '83022');
+  Assert.AreEqual(loadedInvoice.Invoicee.City, 'Rosenheim');
+  Assert.AreEqual(loadedInvoice.Invoicee.Street, 'Münchnerstraße 123');
+  Assert.AreEqual(loadedInvoice.Invoicee.AddressLine3, 'EG links');
+  Assert.AreEqual(loadedInvoice.Invoicee.CountrySubdivisionName, 'Bayern');
+  Assert.AreEqual(loadedInvoice.Invoicee.Country, TZUGFeRDCountryCodes.DE);
+
+  Assert.AreEqual(loadedInvoice.Seller.Name, 'Lieferant GmbH');
+  Assert.AreEqual(loadedInvoice.Seller.Street, 'Lieferantenstraße 20');
+  Assert.AreEqual(loadedInvoice.Seller.City, 'München');
+  Assert.AreEqual(loadedInvoice.Seller.Postcode, '80333');
+
+  Assert.AreEqual(loadedInvoice.Payee.Name, 'Payee');
+  Assert.AreEqual(loadedInvoice.Payee.ContactName, 'Max Mustermann');
+  Assert.AreEqual(loadedInvoice.Payee.Postcode, '83022');
+  Assert.AreEqual(loadedInvoice.Payee.City, 'Rosenheim');
+  Assert.AreEqual(loadedInvoice.Payee.Street, 'Münchnerstraße 123');
+  Assert.AreEqual(loadedInvoice.Payee.AddressLine3, 'EG links');
+  Assert.AreEqual(loadedInvoice.Payee.CountrySubdivisionName, 'Bayern');
+  Assert.AreEqual(loadedInvoice.Payee.Country, TZUGFeRDCountryCodes.DE);
+  loadedInvoice.Free;
+
 end;
 
 procedure TZUGFeRD22Tests.TestReadTradeLineBillingPeriod;

@@ -569,19 +569,21 @@ begin
   if (node = nil) then
     exit;
   Result := TZUGFeRDParty.Create;
-  Result.ID.ID := XMLUtils._nodeAsString(node, 'ram:ID');
-  Result.ID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiers.Unknown;
-  Result.GlobalID.ID := XMLUtils._nodeAsString(node, 'ram:GlobalID');
-  Result.GlobalID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(XMLUtils._nodeAsString(node, 'ram:GlobalID/@schemeID'));
-  Result.Name := XMLUtils._nodeAsString(node, 'ram:Name');
-  Result.Description := XMLUtils._nodeAsString(node, 'ram:Description'); // BT-33 Seller only
-  Result.Postcode := XMLUtils._nodeAsString(node, 'ram:PostalTradeAddress/ram:PostcodeCode');
-  Result.City := XMLUtils._nodeAsString(node, 'ram:PostalTradeAddress/ram:CityName');
-  Result.Country := TZUGFeRDCountryCodesExtensions.FromString(XMLUtils._nodeAsString(node, 'ram:PostalTradeAddress/ram:CountryID'));
-  Result.SpecifiedLegalOrganization := _nodeAsLegalOrganization(node, 'ram:SpecifiedLegalOrganization');
+  Result.ID.ID := XMLUtils._nodeAsString(node, './ram:ID');
+  Result.ID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(XMLUtils._nodeAsString(node, './ram:ID/@schemeID'));
+  Result.GlobalID.ID := XMLUtils._nodeAsString(node, './ram:GlobalID');
+  Result.GlobalID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(XMLUtils._nodeAsString(node, './ram:GlobalID/@schemeID'));
 
-  lineOne := XMLUtils._nodeAsString(node, 'ram:PostalTradeAddress/ram:LineOne');
-  lineTwo := XMLUtils._nodeAsString(node, 'ram:PostalTradeAddress/ram:LineTwo');
+  Result.Name := XMLUtils._nodeAsString(node, './ram:Name');
+  Result.Description := XMLUtils._nodeAsString(node, './ram:Description'); // BT-33 Seller only
+  Result.Postcode := XMLUtils._nodeAsString(node, './ram:PostalTradeAddress/ram:PostcodeCode');
+  Result.City := XMLUtils._nodeAsString(node, './ram:PostalTradeAddress/ram:CityName');
+  Result.Country := TZUGFeRDCountryCodesExtensions.FromString(XMLUtils._nodeAsString(node,
+    './ram:PostalTradeAddress/ram:CountryID'));
+  Result.SpecifiedLegalOrganization := _nodeAsLegalOrganization(node, './ram:SpecifiedLegalOrganization');
+
+  lineOne := XMLUtils._nodeAsString(node, './ram:PostalTradeAddress/ram:LineOne');
+  lineTwo := XMLUtils._nodeAsString(node, './ram:PostalTradeAddress/ram:LineTwo');
 
   if (not lineTwo.IsEmpty) then
   begin
@@ -592,8 +594,8 @@ begin
     Result.Street := lineOne;
     Result.ContactName := '';
   end;
-  Result.AddressLine3 := XMLUtils._nodeAsString(node, 'ram:PostalTradeAddress/ram:LineThree');
-  Result.CountrySubdivisionName := XMLUtils._nodeAsString(node, 'ram:PostalTradeAddress/ram:CountrySubDivisionName');
+  Result.AddressLine3 := XMLUtils._nodeAsString(node, './ram:PostalTradeAddress/ram:LineThree');
+  Result.CountrySubdivisionName := XMLUtils._nodeAsString(node, './ram:PostalTradeAddress/ram:CountrySubDivisionName');
 end;
 
 function TZUGFeRDInvoiceDescriptor23CIIReader._parseTradeLineItem(

@@ -1460,10 +1460,8 @@ begin
     TZUGFeRDPartyTypes.SellerTradeParty: ;
     TZUGFeRDPartyTypes.BuyerTradeParty: ;
     TZUGFeRDPartyTypes.ShipToTradeParty:
-      if (Descriptor.Profile <> TZUGFeRDProfile.Extended) and
-         (Descriptor.Profile <> TZUGFeRDProfile.XRechnung1) and
-         (Descriptor.Profile <> TZUGFeRDProfile.XRechnung) then
-           exit; // extended, XRechnung1, XRechnung profile only
+      if Descriptor.Profile = TZUGFerDProfile.Minimum then
+        exit;    // it is also possible to add ShipToTradeParty() to a LineItem. In this case, the correct profile filter is different!
     TZUGFeRDPartyTypes.UltimateShipToTradeParty:
       if (Descriptor.Profile <> TZUGFeRDProfile.Extended) and
          (Descriptor.Profile <> TZUGFeRDProfile.XRechnung1) and
@@ -1590,7 +1588,7 @@ begin
       writer.WriteOptionalElementString('ram:CityName', party.City); //buyer: BT-52
       writer.WriteElementString('ram:CountryID', TZUGFeRDCountryCodesExtensions.EnumToString(party.Country)); //buyer: BT-55
       writer.WriteOptionalElementString('ram:CountrySubDivisionName', party.CountrySubdivisionName); // BT-79
-    writer.WriteEndElement(); // !PostalTradeAddress
+      writer.WriteEndElement(); // !PostalTradeAddress
   end;
 
   if (electronicAddress <> nil) then
