@@ -1707,8 +1707,9 @@ begin
 
   // spec 2.3 says: Minimum/BuyerTradeParty does not include PostalTradeAddress
   if (Descriptor.Profile = TZUGFerDProfile.Extended) or
-     (partyType in [TZUGFerDPartyTypes.SellerTradeParty, TZUGFeRDPartyTypes.BuyerTaxRepresentativeTradeParty,
-    TZUGFerDPartyTypes.ShipToTradeParty, TZUGFerDPartyTypes.ShipToTradeParty,
+     (partyType in [TZUGFeRDPartyTypes.BuyerTradeParty, TZUGFerDPartyTypes.SellerTradeParty,
+      TZUGFeRDPartyTypes.BuyerTaxRepresentativeTradeParty,
+    TZUGFerDPartyTypes.ShipToTradeParty, TZUGFerDPartyTypes.ShipFromTradeParty,
     TZUGFerDPartyTypes.UltimateShipToTradeParty, TZUGFerDPartyTypes.SalesAgentTradeParty]) then
   begin
       writer.WriteStartElement('ram:PostalTradeAddress');
