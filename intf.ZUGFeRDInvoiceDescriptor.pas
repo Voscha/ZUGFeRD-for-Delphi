@@ -839,7 +839,7 @@ type
     /// </summary>
     /// <param name="description"></param>
     /// <param name="dueDate"></param>
-    procedure SetTradePaymentTerms(const description: string; dueDate: IZUGFeRDNullableParam<TDateTime> = nil);
+    procedure SetTradePaymentTerms(const description: string; dueDate: IZUGFeRDNullableParam<TDateTime> = nil); deprecated;
 
     /// <summary>
     /// Adds a trade payment term.

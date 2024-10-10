@@ -64,7 +64,8 @@ uses
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
   , intf.ZUGFeRDDesignatedProductClassification
-  ,intf.ZUGFeRDFormats;
+  ,intf.ZUGFeRDFormats,
+  intf.UBLTaxRegistrationSchemeIDMapper;
 
 type
   TZUGFeRDInvoiceDescriptor22UBLWriter = class(TZUGFeRDInvoiceDescriptorWriter)
@@ -686,7 +687,7 @@ begin
     _writer.WriteStartElement('cac:PartyTaxScheme');
     _writer.WriteElementString('cbc:CompanyID', tax.No);
     _writer.WriteStartElement('cac:TaxScheme');
-    _writer.WriteElementString('cbc:ID', TZUGFeRDTaxRegistrationSchemeIDExtensions.EnumToString(tax.SchemeID));
+    _writer.WriteElementString('cbc:ID', TUBLTaxRegistrationSchemeIDMapper.Map(tax.SchemeID));
     _writer.WriteEndElement(); //!TaxScheme
     _writer.WriteEndElement(); //!PartyTaxScheme
   end;

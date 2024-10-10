@@ -95,7 +95,8 @@ type
 implementation
 
 uses intf.ZUGFeRDDespatchAdviceReferencedDocument, System.Variants, intf.ZUGFeRDHelper,
-  intf.ZUGFeRDDesignatedProductClassificationCodes, intf.ZUGFeRDXMLUtils;
+  intf.ZUGFeRDDesignatedProductClassificationCodes, intf.ZUGFeRDXMLUtils,
+  intf.UBLTaxRegistrationSchemeIDMapper;
 
 { TZUGFeRDInvoiceDescriptor22UBLReader }
 
@@ -246,7 +247,8 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     id := XMLUtils._nodeAsString(nodes[i], './/cbc:CompanyID');
-    TAXSchemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(nodes[i], './/cac:TaxScheme/cbc:ID'));
+    TAXSchemeID :=
+      TUBLTaxRegistrationSchemeIDMapper.Map(XmlUtils._NodeAsString(node, './/cac:TaxScheme/cbc:ID'));
     Result.AddSellerTaxRegistration(id, TaxSchemeID);
   end;
 
@@ -277,7 +279,8 @@ begin
   for i := 0 to nodes.length-1 do
   begin
     id := XMLUtils._nodeAsString(nodes[i], './/cbc:CompanyID');
-    TaxSchemeID := _getUncefactTaxSchemeID(XMLUtils._nodeAsString(nodes[i], './/cac:TaxScheme/cbc:ID'));
+    TaxSchemeID :=
+      TUBLTaxRegistrationSchemeIDMapper.Map(XmlUtils._NodeAsString(node, './/cac:TaxScheme/cbc:ID'));
     Result.AddBuyerTaxRegistration(id, TaxSchemeID);
   end;
 

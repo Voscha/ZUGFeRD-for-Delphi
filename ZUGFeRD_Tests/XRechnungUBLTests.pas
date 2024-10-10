@@ -47,6 +47,8 @@ type
     procedure TestInvoiceWithAttachment;
     [Test]
     procedure TestAllowanceChargeOnDocumentLevel();
+    [Test]
+    procedure TestTaxTypes();
   end;
 
 implementation
@@ -135,7 +137,7 @@ begin
   Assert.AreEqual(loadedInvoice.SellerContact.Name, 'Max Mustermann');
   Assert.IsNull(loadedInvoice.BuyerContact);
   loadedInvoice.Free;
-end;
+end; // !TestInvoiceCreation()
 
 procedure TXRechnungUBLTests.TestInvoiceWithAttachment;
 var
@@ -217,8 +219,44 @@ begin
   Assert.AreEqual(percent, tax.Percent);
   Assert.isNull(tax.AllowanceChargeBasisAmount);
   loadedInvoice.Free;
-end; // !TestInvoiceCreation()
+end;
 
+procedure TXRechnungUBLTests.TestTaxTypes;
+var
+  data: TBytes;
+begin
+  var desc := FInvoiceProvider.CreateInvoice();
+  var ms := TMemoryStream.create();
+
+  desc.Save(ms, TZUGFeRDVersion.Version23, TZUGFeRDProfile.XRechnung, TZUGFeRDFormats.UBL);
+  ms.Seek(0, soFromBeginning);
+  desc.Free;
+
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+
+  // test writing and parsing
+  Assert.AreEqual(loadedInvoice.Taxes.Count, 2);
+  Assert.IsTrue(TZUGFeRDHelper.TrueForAll<TZUGFeRDTax>(loadedInvoice.Taxes,
+    function(Item: TZUGFerDTax): boolean
+    begin
+     result := Item.TypeCode = TZUGFerDTaxTypes.VAT;
+    end));
+
+  // test the raw xml file
+
+  SetLength(data, ms.Size);
+  ms.Position := 0;
+  ms.ReadBuffer(data[0], ms.Size);
+  var content: string := TEncoding.UTF8.GetString(data);
+  ms.Free;
+
+  Assert.IsFalse(content.ToUpper.Contains(string.UpperCase('<cbc:ID>VA</cbc:ID>')));
+  Assert.IsTrue(content.ToUpper.Contains(string.UpperCase('<cbc:ID>VAT</cbc:ID>')));
+
+  Assert.IsFalse(content.ToUpper.Contains(string.UpperCase('<cbc:ID>FC</cbc:ID>')));
+  Assert.IsTrue(content.ToUpper.Contains(string.UpperCase('<cbc:ID>ID</cbc:ID>')));
+  loadedInvoice.Free;
+end;
 
 procedure TXRechnungUBLTests.TestTradelineitemProductCharacterstics;
 begin
