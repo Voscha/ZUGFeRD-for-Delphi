@@ -947,7 +947,7 @@ begin
                   setDueDate := false;
               end;
             end;
-            Writer.WriteOptionalElementString('ram:Description', sbPaymentNotes.ToString().TrimRight);
+            Writer.WriteOptionalElementString('ram:Description', sbPaymentNotes.ToString());
             Writer.WriteOptionalElementString('ram:DirectDebitMandateID',
               Descriptor.PaymentMeans.SEPAMandateReference);
             Writer.WriteEndElement();
