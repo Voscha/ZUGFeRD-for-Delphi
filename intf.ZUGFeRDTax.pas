@@ -35,10 +35,11 @@ type
     FBasisAmount: Currency;
     FPercent: Currency;
     FTypeCode: TZUGFeRDTaxTypes;
-    FCategoryCode: TZUGFeRDTaxCategoryCodes;
+    FCategoryCode: ZUGFeRDNullable<TZUGFeRDTaxCategoryCodes>;
     FAllowanceChargeBasisAmount: ZUGFeRDNullable<Currency>;
-    FExemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes;
+    FExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
     FExemptionReason: string;
+    FLineTotalBasisAmount: ZUGFeRDNullable<Currency>;
     function GetTaxAmount: Currency;
   public
     /// <summary>
@@ -64,15 +65,19 @@ type
     /// <summary>
     /// The code valid for the invoiced goods sales tax category.
     /// </summary>
-    property CategoryCode: TZUGFeRDTaxCategoryCodes read FCategoryCode write FCategoryCode default TZUGFeRDTaxCategoryCodes.S;
+    property CategoryCode: ZUGFeRDNullable<TZUGFeRDTaxCategoryCodes> read FCategoryCode write FCategoryCode; 
     /// <summary>
     /// Total amount of charges / allowances on document level
     /// </summary>
     property AllowanceChargeBasisAmount: ZUGFeRDNullable<Currency> read FAllowanceChargeBasisAmount write FAllowanceChargeBasisAmount;
     /// <summary>
+    /// A monetary value used as the line total basis on which this trade related tax, levy or duty is calculated
+    /// </summary>
+    property LineTotalBasisAmount: ZUGFeRDNullable<Currency> read FLineTotalBasisAmount write FLineTotalBasisAmount;
+    /// <summary>
     /// ExemptionReasonCode for no Tax
     /// </summary>
-    property ExemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes read FExemptionReasonCode write FExemptionReasonCode;
+    property ExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes> read FExemptionReasonCode write FExemptionReasonCode;
     /// <summary>
     /// Exemption Reason Text for no Tax
     /// </summary>

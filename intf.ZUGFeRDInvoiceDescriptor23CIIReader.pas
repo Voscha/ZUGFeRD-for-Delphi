@@ -416,7 +416,8 @@ begin
                                  TZUGFeRDTaxTypesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:TypeCode')),
                                  TZUGFeRDTaxCategoryCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:CategoryCode')),
                                  nil,
-                                 TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:ExemptionReasonCode')),
+                                 TZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes>.Create(
+                                 TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:ExemptionReasonCode'))),
                                  XMLUtils._nodeAsString(nodes[i], './/ram:ExemptionReason'));
   end;
 

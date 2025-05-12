@@ -41,7 +41,10 @@ uses
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
   intf.ZUGFeRDDesignatedProductClassification,
   intf.ZUGFeRDDesignatedProductClassificationCodes,
-  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes
+  intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes,
+  intf.ZUGFeRDParty,
+  intf.ZUGFeRDTaxExemptionReasonCodes,
+  intf.ZUGFeRDCountryCodes
   ;
 
 type
@@ -84,6 +87,11 @@ type
     FGlobalID: TZUGFeRDGlobalID;
     FBuyerOrderReferencedDocument: TZUGFeRDBuyerOrderReferencedDocument;
     FGrossUnitPrice: ZUGFeRDNullable<Currency>;
+    FTaxExemptionReason: string;
+    FUltimateShipTo: TZUGFeRDParty;
+    FShipTo: TZUGFeRDParty;
+    FOriginTradeCountry: ZUGFeRDNullable<TZUGFeRDCountryCodes>;
+    FTaxExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
   public
     /// <summary>
     /// Initialisiert ein neues, leeres Handelspositionsobjekt
@@ -214,6 +222,12 @@ type
       classCode: TZUGFeRDDesignatedProductClassificationCodes = default(TZUGFeRDDesignatedProductClassificationCodes);
       const listID: string = '';
       const listVersionID: string = '');
+
+    /// <summary>
+    /// The value given here refers to the superior line. In this way, a hierarchy tree of invoice items can be mapped.
+    /// </summary>
+    function SetParentLineId(parentLineId: string): TZUGFeRDTradeLineItem ;
+
   public
     /// <summary>
     /// The identification of articles based on a registered scheme
@@ -301,6 +315,22 @@ type
     /// </summary>
     property TaxType: TZUGFeRDTaxTypes read FTaxType write FTaxType default TZUGFeRDTaxTypes.VAT;
 
+     /// <summary>
+     /// Exemption Reason Text for no Tax
+     ///
+     /// BT-X-96
+     /// </summary>
+     property TaxExemptionReason: string read FTaxExemptionReason write FTaxExemptionReason;
+
+      /// <summary>
+      /// ExemptionReasonCode for no Tax
+      ///
+      /// BT-X-97
+      /// </summary>
+      property TaxExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>
+      read FTaxExemptionReasonCode write FTaxExemptionReasonCode;
+
+
     /// <summary>
     /// net unit price of the item
     /// </summary>
@@ -382,6 +412,29 @@ type
     /// </summary>
     /// <returns></returns>
     property DesignatedProductClassifications: TObjectlist<TZUGFeRDDesignatedProductClassification> read FDesignatedProductClassifications;
+
+    /// <summary>
+    /// Detailed information on the item origin country
+    /// BT-159
+    /// </summary>
+    property OriginTradeCountry: ZUGFeRDNullable<TZUGFeRDCountryCodes> read FOriginTradeCountry
+      write FOriginTradeCountry;
+
+    /// <summary>
+    /// Recipient of the delivered goods. This party is optional and is written in Extended profile only
+    ///
+    /// BG-X-7
+    /// </summary>
+    property ShipTo: TZUGFeRDParty read FShipTo write FShipTo;
+
+
+    /// <summary>
+    /// Detailed information on the deviating final recipient. This party is optional and only relevant for Extended profile
+    ///
+    /// BG-X-10
+    /// </summary>
+    property UltimateShipTo: TZUGFeRDParty read FUltimateShipTo write FUltimateShipTo;
+
   end;
 
 implementation
@@ -498,6 +551,12 @@ begin
     ID := orderReferencedId;
     IssueDateTime:= orderReferencedDate;
   end;
+end;
+
+function TZUGFeRDTradeLineItem.SetParentLineId(parentLineId: string): TZUGFeRDTradeLineItem;
+begin
+  AssociatedDocument.ParentLineID := parentLineId;
+  result := self;
 end;
 
 procedure TZUGFeRDTradeLineItem.SetContractReferencedDocument(

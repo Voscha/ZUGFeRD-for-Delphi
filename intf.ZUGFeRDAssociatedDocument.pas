@@ -20,7 +20,8 @@ unit intf.ZUGFeRDAssociatedDocument;
 interface
 
 uses
-  System.Generics.Collections, intf.ZUGFeRDNote;
+  System.Generics.Collections, intf.ZUGFeRDNote, intf.ZUGFeRDLineStatusCodes,
+  intf.ZUGFeRDHelper, intf.ZUGFeRDLineStatusReasonCodes;
 
 type
   /// <summary>
@@ -30,6 +31,9 @@ type
   private
     FNotes: TObjectList<TZUGFeRDNote>;
     FLineID: string;
+    FParentLineID: string;
+    FLineStatusCode: ZUGFeRDNullable<TZUGFeRDLineStatusCodes>;
+    FLineStatusReasonCode: ZUGFeRDNullable<TZUGFeRDLineStatusReasonCodes>;
   public
     constructor Create(lineID: string);
     destructor Destroy; override;
@@ -42,6 +46,36 @@ type
     /// identifier of the invoice line item
     /// </summary>
     property LineID: string read FLineID write FLineID;
+    /// <summary>
+    /// Refers to the superior line in a hierarchical structure.
+    /// This property is used to map a hierarchy tree of invoice items, allowing child items to reference their parent line.
+    /// BT-X-304
+    ///
+    /// Example usage:
+    /// <code>
+    /// var tradeLineItem = new TradeLineItem();
+    /// tradeLineItem.SetParentLineId("1");
+    /// </code>
+    /// </summary>
+    property ParentLineID: string read FParentLineID write FParentLineID;
+    /// <summary>
+    /// Type of the invoice line item
+    ///
+    /// If the LineStatusCode element is used, the LineStatusReasonCode must be filled.
+    ///
+    /// BT-X-7
+    /// </summary>
+    property LineStatusCode: ZUGFeRDNullable<TZUGFeRDLineStatusCodes> read FLineStatusCode
+      write FLineStatusCode;
+
+    /// <summary>
+    /// Subtype of the invoice line item
+    ///
+    /// BT-X-8
+    /// </summary>
+    property LineStatusReasonCode: ZUGFeRDNullable<TZUGFeRDLineStatusReasonCodes> read FLineStatusReasonCode
+      write FLineStatusReasonCode;
+
   end;
 
 implementation

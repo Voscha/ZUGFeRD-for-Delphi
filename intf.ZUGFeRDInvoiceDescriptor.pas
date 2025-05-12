@@ -705,8 +705,9 @@ type
       const typeCode: TZUGFeRDTaxTypes;
       const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
       const allowanceChargeBasisAmount: IZUGFeRDNullableParam<Currency> = nil;
-      const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown;
-      const exemptionReason: string = '');
+      const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes> = nil;
+      const exemptionReason: string = '';
+      const lineTotalBasisAmount: IZUGFeRDNullableParam<Currency> = nil);
 
     /// <summary>
     /// Saves the descriptor object into a stream.
@@ -1509,8 +1510,9 @@ procedure TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(
   const percent: Currency; const typeCode: TZUGFeRDTaxTypes;
   const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
   const allowanceChargeBasisAmount: IZUGFeRDNullableParam<Currency> = nil;
-  const exemptionReasonCode: TZUGFeRDTaxExemptionReasonCodes = TZUGFeRDTaxExemptionReasonCodes.Unknown;
-  const exemptionReason: string = '');
+  const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes> = nil;
+  const exemptionReason: string = '';
+  const lineTotalBasisAmount: IZUGFeRDNullableParam<Currency> = nil);
 var
   tax: TZUGFeRDTax;
 begin
@@ -1521,6 +1523,7 @@ begin
   tax.AllowanceChargeBasisAmount := allowanceChargeBasisAmount;
   tax.ExemptionReasonCode := exemptionReasonCode;
   tax.ExemptionReason := exemptionReason;
+  tax.LineTotalBasisAmount := lineTotalBasisAmount;
 
   if (categoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
     tax.CategoryCode := categoryCode;

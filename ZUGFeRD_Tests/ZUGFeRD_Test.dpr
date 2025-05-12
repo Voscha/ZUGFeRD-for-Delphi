@@ -39,7 +39,11 @@ uses
   ZUGFeRD22Tests in 'ZUGFeRD22Tests.pas',
   XRechnungUBLTests in 'XRechnungUBLTests.pas',
   DataTypeReaderTests in 'DataTypeReaderTests.pas',
-  intf.UBLTaxRegistrationSchemeIDMapper in '..\intf.UBLTaxRegistrationSchemeIDMapper.pas';
+  intf.UBLTaxRegistrationSchemeIDMapper in '..\intf.UBLTaxRegistrationSchemeIDMapper.pas',
+  intf.ZUGFeRDLineStatusCodes in '..\intf.ZUGFeRDLineStatusCodes.pas',
+  intf.ZUGFeRDLineStatusReasonCodes in '..\intf.ZUGFeRDLineStatusReasonCodes.pas',
+  intf.ZUGFeRDTaxExemptionReasonCodes in '..\intf.ZUGFeRDTaxExemptionReasonCodes.pas',
+  EnumStringMappingAttribute in '..\EnumStringMappingAttribute.pas';
 
 { keep comment here to protect the following conditional from being removed by the IDE when adding a unit }
 {$IFNDEF TESTINSIGHT}

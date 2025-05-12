@@ -20,7 +20,7 @@ unit intf.ZUGFeRDInvoiceDescriptor22UblReader;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.DateUtils, System.Math
+  System.SysUtils, System.Classes, System.DateUtils, System.Math, System.Generics.Collections
   ,System.NetEncoding
   ,Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf
   ,Xml.Win.msxmldom, Winapi.MSXMLIntf, Winapi.msxml
@@ -67,7 +67,8 @@ type
   TZUGFeRDInvoiceDescriptor22UBLReader = class(TZUGFeRDInvoiceDescriptorReader)
   private
     function GetValidURIs : TArray<string>;
-    function _parseTradeLineItem(tradeLineItem : IXmlDomNode {nsmgr: XmlNamespaceManager = nil; }) : TZUGFeRDTradeLineItem;
+    function _parseTradeLineItem(tradeLineItem : IXmlDomNode; const parentLineID: string = ''):
+      TObjectList<TZUGFeRDTradeLineItem>;
     function _nodeAsLegalOrganization(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDLegalOrganization;
     function _nodeAsParty(basenode: IXmlDomNode; const xpath: string) : TZUGFeRDParty;
     function _nodeAsAddressParty(baseNode: IXMLDomNode; const xpath: string) : TZUGFeRDParty;
@@ -200,6 +201,8 @@ var
   id, schemeID: string;
   TaxSchemeID: TZUGFeRDTaxRegistrationSchemeID;
 begin
+
+
   doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(xmldocument);
   Result := TZUGFeRDInvoiceDescriptor.Create;
 
@@ -422,8 +425,8 @@ begin
                                  TZUGFeRDTaxCategoryCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i],
                                   'cac:TaxCategory/cbc:ID')),
                                  nil,
-                                 TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(
-                                  XMLUtils._nodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReasonCode')),
+                                 TZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes>.Create(TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(
+                                  XMLUtils._nodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReasonCode'))),
                                  XMLUtils._nodeAsString(nodes[i], 'cac:TaxCategory/cbc:TaxExemptionReason'));
   end;
 
@@ -694,8 +697,9 @@ begin
   result := retval;
 end;
 
-function TZUGFeRDInvoiceDescriptor22UBLReader._parseTradeLineItem(
-  tradeLineItem: IXmlDomNode): TZUGFeRDTradeLineItem;
+function TZUGFeRDInvoiceDescriptor22UBLReader._parseTradeLineItem(tradeLineItem : IXmlDomNode;
+  const parentLineID: string = ''): TObjectList<TZUGFeRDTradeLineItem>;
+
 var
   nodes : IXMLDOMNodeList;
   i : Integer;
@@ -705,15 +709,19 @@ begin
   if (tradeLineItem = nil) then
     exit;
 
-  var lineId := XmlUtils._NodeAsString(tradeLineItem, './/cbc:ID');
-  Result := TZUGFeRDTradeLineItem.Create(lineID);
+  result := TObjectList<TZUGFeRDTradeLineItem>.create;
 
-(*
-  // TODO: Find value //GlobalID = new GlobalID(default(GlobalIDSchemeIdentifiers).FromString(XMLUtils._nodeAsString(tradeLineItem, ".//ram:SpecifiedTradeProduct/ram:GlobalID/@schemeID", nsmgr)),
-  //                          XMLUtils._nodeAsString(tradeLineItem, ".//ram:SpecifiedTradeProduct/ram:GlobalID", nsmgr)),
-  Result.GlobalID.ID := XMLUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID');
-  Result.GlobalID.SchemeID := TZUGFeRDGlobalIDSchemeIdentifiersExtensions.FromString(XMLUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID/@schemeID'));
+  var lineId := XmlUtils._NodeAsString(tradeLineItem, './/cbc:ID');
+  var isInvoice := XmlUtils._NodeExists(tradeLineItem, './/cbc:InvoicedQuantity');
+  var BilledQuantity := ifThen(isInvoice, XMLUtils._NodeasDecimal(TradeLineItem, './/cbc:InvoicedQuantity'),
+    XMLUtils._NodeasDecimal(TradeLineItem, './/cbc:CreditedQuantity'));
+(* TODO
+  var unitCode := isInvoice
+      ? default(QuantityCodes).FromString(XmlUtils.NodeAsString(tradeLineItem, ".//cbc:InvoicedQuantity/@unitCode", nsmgr))
+      : default(QuantityCodes).FromString(XmlUtils.NodeAsString(tradeLineItem, ".//cbc:CreditedQuantity/@unitCode", nsmgr));
 *)
+
+
   Result.SellerAssignedID := XMLUtils._nodeAsString(tradeLineItem, './/cac:Item/cac:SellersItemIdentification/cbc:ID');
   Result.BuyerAssignedID := XMLUtils._nodeAsString(tradeLineItem, './/cac:Item/cac:BuyersItemIdentification/cbc:ID');
   Result.Name := XMLUtils._nodeAsString(tradeLineItem, './/cac:Item/cbc:Name');

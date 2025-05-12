@@ -41,6 +41,7 @@ type
       defaultValue: IZUGFeRDNullableParam<Double> = nil): ZUGFeRDNullable<Double>;
     class function _nodeAsDateTime(node: IXmlDomNode; const xpath: string;
       defaultValue: IZUGFeRDNullableParam<TDateTime> = nil): ZUGFeRDNullable<TDateTime>;
+    class function _nodeExists(node: IXmlDomNode; const xpath: string): Boolean;
   end;
 
 implementation
@@ -289,6 +290,17 @@ begin
     on ex: Exception do
       raise ex;
   end;
+end;
+
+class function XMLUtils._nodeExists(node: IXmlDomNode; const xpath: string): Boolean;
+var
+  _node: IXmlDomNode;
+begin
+  if node = nil then
+    exit(False);
+
+  _node := node.SelectSingleNode(xpath);
+  Result := _node <> nil;
 end;
 
 end.

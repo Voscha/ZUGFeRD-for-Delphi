@@ -1559,7 +1559,7 @@ begin
     for var charge: TZUGFeRDTradeAllowanceCharge in _tradeAllowanceCharges do
     begin
       Assert.AreEqual(charge.Tax.TypeCode, TZUGFeRDTaxTypes.VAT);
-      Assert.AreEqual(charge.Tax.CategoryCode, TZUGFeRDTaxCategoryCodes.S);
+      Assert.AreEqual(charge.Tax.CategoryCode.Value, TZUGFeRDTaxCategoryCodes.S);
     end;
 
     Assert.AreEqual(_tradeAllowanceCharges.Count, 4);
@@ -1570,7 +1570,7 @@ begin
 
     Assert.AreEqual(desc.ServiceCharges.Count, 1);
     Assert.AreEqual(desc.ServiceCharges[0].Tax.TypeCode, TZUGFeRDTaxTypes.VAT);
-    Assert.AreEqual(desc.ServiceCharges[0].Tax.CategoryCode, TZUGFeRDTaxCategoryCodes.S);
+    Assert.AreEqual(desc.ServiceCharges[0].Tax.CategoryCode.Value, TZUGFeRDTaxCategoryCodes.S);
     Assert.AreEqual(desc.ServiceCharges[0].Tax.Percent, Currency(19));
   finally
     desc.Free;
@@ -1685,13 +1685,13 @@ begin
   Assert.AreEqual(desc.Taxes[0].BasisAmount, Currency(1245.98));
   Assert.AreEqual(desc.Taxes[0].Percent, Currency(19));
   Assert.AreEqual(desc.Taxes[0].TypeCode, TZUGFeRDTaxTypes(53));
-  Assert.AreEqual(desc.Taxes[0].CategoryCode, TZUGFeRDTaxCategoryCodes(19));
+  Assert.AreEqual(desc.Taxes[0].CategoryCode.Value, TZUGFeRDTaxCategoryCodes(19));
 
   Assert.AreEqual(desc.Taxes[1].TaxAmount, Currency(14.0000));
   Assert.AreEqual(desc.Taxes[1].BasisAmount, Currency(200.00));
   Assert.AreEqual(desc.Taxes[1].Percent, Currency(7));
   Assert.AreEqual(desc.Taxes[1].TypeCode, TZUGFeRDTaxTypes(53));
-  Assert.AreEqual(desc.Taxes[1].CategoryCode, TZUGFeRDTaxCategoryCodes(19));
+  Assert.AreEqual(desc.Taxes[1].CategoryCode.Value, TZUGFeRDTaxCategoryCodes(19));
 
   Assert.AreEqual(desc.PaymentTermsList.First.DueDate.Value, EncodeDate(2020, 6, 21));
 
@@ -2483,7 +2483,7 @@ begin
   Assert.AreEqual(Currency(275), tax.BasisAmount);
   Assert.AreEqual(Currency(7), tax.Percent);
   Assert.AreEqual(TZUGFeRDTaxTypes.VAT, tax.TypeCode);
-  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.S, tax.CategoryCode);
+  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.S, tax.CategoryCode.Value);
 
   Assert.AreEqual(timestamp, loadedInvoice.BillingPeriodStart.Value);
   Assert.AreEqual(timestamp.IncDay(14), loadedInvoice.BillingPeriodEnd.Value);
@@ -2502,7 +2502,7 @@ begin
   Assert.AreEqual(TZUGFeRDCurrencyCodes.EUR, tradeAllowanceCharge.Currency);
   Assert.AreEqual(Currency(19), tradeAllowanceCharge.Tax.Percent);
   Assert.AreEqual(TZUGFeRDTaxTypes.AAB, tradeAllowanceCharge.Tax.TypeCode);
-  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.AB, tradeAllowanceCharge.Tax.CategoryCode);
+  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.AB, tradeAllowanceCharge.Tax.CategoryCode.Value);
 
   //ServiceCharges
   var serviceCharge := TZUGFeRDHelper.FindFirstMatchingItem<TZUGFeRDServiceCharge>(
@@ -2515,7 +2515,7 @@ begin
   Assert.AreEqual(Currency(10), serviceCharge.Amount);
   Assert.AreEqual(Currency(7), serviceCharge.Tax.Percent);
   Assert.AreEqual(TZUGFeRDTaxTypes.AAC, serviceCharge.Tax.TypeCode);
-  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.AC, serviceCharge.Tax.CategoryCode);
+  Assert.AreEqual(TZUGFeRDTaxCategoryCodes.AC, serviceCharge.Tax.CategoryCode.Value);
 
   Assert.AreEqual('Zahlbar innerhalb 30 Tagen netto bis 04.04.2018, 3% Skonto innerhalb 10 Tagen bis 15.03.2018',
     loadedInvoice.PaymentTermsList[0].Description);
