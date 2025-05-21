@@ -29,6 +29,10 @@ type
   TZUGFeRDInvoiceDescriptorWriter = class abstract
   private
     function _FloatFormat(cval: Currency; numDecimals: Integer): string;
+  protected const
+    ALL_PROFILES = [TZUGFeRDProfile.Minimum, TZUGFeRDProfile.BasicWL,
+      TZUGFeRDProfile.Basic, TZUGFeRDProfile.Comfort, TZUGFeRDProfile.Extended,
+      TZUGFeRDProfile.XRechnung1, TZUGFeRDProfile.XRechnung];
   public
     procedure Save(_descriptor: TZUGFeRDInvoiceDescriptor; _stream: TStream;
       _format: TZUGFeRDFormats = TZUGFeRDFormats.CII); overload; virtual; abstract;

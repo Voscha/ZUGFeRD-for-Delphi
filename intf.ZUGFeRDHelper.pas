@@ -35,8 +35,9 @@ type
     class function CreateUuid : String;
     class function GetDataAsBase64(_Stream : TStream) : String;
     class function FindFirstMatchingItem<T:class>(List: TObjectList<T>; Predicate: TFunc<T, Boolean>): T;
-    class function Any<T:class>(const List: TObjectList<T>; Predicate: TFunc<T, Boolean>): Boolean;
+    class function Any<T:class>(const List: TList<T>; Predicate: TFunc<T, Boolean>): Boolean;
     class function TrueForAll<T: class>(const List: TObjectList<T>; Predicate: TFunc<T, Boolean>): Boolean;
+    class function Where<T:class>(const List:TObjectList<T>; Predicate: TFunc<T, Boolean>): TObjectList<T>;
   end;
 
   IZUGFeRDPdfHelper = interface
@@ -131,6 +132,7 @@ type
     function VisualizeFile(const _InvoiceXMLFilename : String; out _CmdOutput,_VisualizationAsHTML : String) : Boolean;
     function VisualizeFileAsPdf(const _InvoiceXMLFilename : String; out _CmdOutput : String; out _VisualizationAsPdf : TMemoryStream) : Boolean;
   end;
+
 
 function GetZUGFeRDPdfHelper : IZUGFeRDPdfHelper;
 begin
@@ -447,7 +449,7 @@ end;
 
 { TZUGFeRDHelper }
 
-class function TZUGFeRDHelper.Any<T>(const List: TObjectList<T>;
+class function TZUGFeRDHelper.Any<T>(const List: TList<T>;
   Predicate: TFunc<T, Boolean>): Boolean;
 var
   Item: T;
@@ -525,6 +527,21 @@ begin
     end;
   end;
 
+end;
+
+class function TZUGFeRDHelper.Where<T>(const List: TObjectList<T>;
+  Predicate: TFunc<T, Boolean>): TObjectList<T>;
+var
+  Item: T;
+  ResultList: TObjectList<T>;
+begin
+  ResultList := TObjectList<T>.Create(False);
+  For Item In List do
+  begin
+    if Predicate(Item) then
+      ResultList.Add(Item);
+  end;
+  Result := ResultList;
 end;
 
 { ZUGFeRDNullable<T> }

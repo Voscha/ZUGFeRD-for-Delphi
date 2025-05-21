@@ -21,7 +21,7 @@ interface
 
 uses
   System.Classes, System.SysUtils, System.Generics.Collections,
-  System.StrUtils,
+  System.StrUtils, Spring.Collections,
   Xml.xmldom,Xml.XMLDoc,Xml.XMLIntf,Xml.XMLSchema,
   Xml.Win.msxmldom, Winapi.MSXMLIntf, Winapi.msxml,
   intf.ZUGFeRDProfile;
@@ -46,14 +46,17 @@ type
     CurrentFilename : String;
     CurrentStream : TStream;
     XmlNodeStack: TStack<IXMLNode>;
+    _NeedToIndentEndElement: Boolean;
 
     function GetFormatting: TZUGFeRDXmlFomatting;
     procedure SetFormatting(value: TZUGFeRDXmlFomatting);
 
     function _DoesProfileFitToCurrentProfile(profile: TZUGFeRDProfiles): Boolean;
     function _IsNodeVisible: Boolean;
+    function GetRawIdentation: string;
   public
     property Formatting: TZUGFeRDXmlFomatting read GetFormatting write SetFormatting;
+    property RawIdentation: string read GetRawIdentation;
 
     constructor Create(const filename: string; encoding: TEncoding; profile: TZUGFeRDProfile); overload;
     constructor Create(w: TStream; encoding: TEncoding; profile: TZUGFeRDProfile); overload;
@@ -76,6 +79,12 @@ type
     procedure WriteStartElement(const prefix, localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
     procedure WriteStartElement(const localName: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
     procedure WriteStartElement(const localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT); overload;
+    procedure SetNamespaces(Dictionary: IOrderedDictionary<string, string>);
+    procedure WriteRawString(const value: string; profile:TZUGFeRDProfiles = [TZUGFeRDProfile.Unknown]);
+    /// <summary>
+    /// Writes the raw indention using IndentChars according to the current xml tree position.
+    /// </summary>
+    procedure WriteRawIndention(profile: TZUGFeRDProfiles = [TZUGFeRDProfile.Unknown]);
   end;
 
 implementation
@@ -153,12 +162,27 @@ begin
     Result := TZUGFeRDXmlFomatting.xmlFormatting_None;
 end;
 
+function TZUGFeRDProfileAwareXmlTextWriter.GetRawIdentation: string;
+var
+  i: Integer;
+begin
+  result := '';
+  for i := 1 to XmlNodeStack.Count do
+    Result  := result + TextWriter.NodeIndentStr;
+end;
+
 procedure TZUGFeRDProfileAwareXmlTextWriter.SetFormatting(value: TZUGFeRDXmlFomatting);
 begin
   case value of
     xmlFormatting_None: TXMLDocument(TextWriter).Options := TXMLDocument(TextWriter).Options - [doNodeAutoIndent];
     xmlFormatting_Indented: TXMLDocument(TextWriter).Options := TXMLDocument(TextWriter).Options + [doNodeAutoIndent];
   end;
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.SetNamespaces(
+  Dictionary: IOrderedDictionary<string, string>);
+begin
+  //    TextWriter.DocumentElement.DeclareNamespace(DictPair.Key, DictPair.Value);
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteStartElement(const prefix, localName, ns: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);
@@ -218,6 +242,33 @@ procedure TZUGFeRDProfileAwareXmlTextWriter.WriteOptionalElementString(
 begin
   if (value <> '') then
     WriteElementString(tagName, value, profile);
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteRawIndention(profile: TZUGFeRDProfiles);
+var
+  infoForCurrentNode: TZUGFeRDStackInfo;
+begin
+  infoForCurrentNode := XmlStack.Peek;
+  if not infoForCurrentNode.IsVisible then
+    exit;
+
+  _NeedToIndentEndElement := true;
+
+  //TODO??  [vs]
+end;
+
+procedure TZUGFeRDProfileAwareXmlTextWriter.WriteRawString(const value: string;
+  profile: TZUGFeRDProfiles);
+var
+  infoForCurrentNode: TZUGFeRDStackInfo;
+begin
+  infoForCurrentNode := XmlStack.Peek;
+  if not infoForCurrentNode.IsVisible then
+    exit;
+
+  _NeedToIndentEndElement := true;
+
+  XmlNodeStack.Peek.Text := value;
 end;
 
 procedure TZUGFeRDProfileAwareXmlTextWriter.WriteElementString(const prefix, localName, ns, value: string; profile: TZUGFeRDProfiles = TZUGFERDPROFILES_DEFAULT);

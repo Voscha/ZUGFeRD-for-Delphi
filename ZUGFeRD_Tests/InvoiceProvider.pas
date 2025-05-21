@@ -32,7 +32,8 @@ implementation
 uses intf.ZUGFeRDCurrencyCodes, intf.ZUGFeRDSubjectCodes, intf.ZUGFeRDQuantityCodes,
   intf.ZUGFeRDTaxTypes, intf.ZUGFeRDHelper, intf.ZUGFeRDTaxCategoryCodes, intf.ZUGFeRDGlobalID,
   intf.ZUGFeRDGlobalIDSchemeIdentifiers, intf.ZUGFeRDCountryCodes, intf.ZUGFeRDLegalOrganization,
-  intf.ZUGFeRDTaxRegistrationSchemeID, intf.ZUGFeRDPaymentMeansTypeCodes, intf.ZUGFeRDPaymentTerms;
+  intf.ZUGFeRDTaxRegistrationSchemeID, intf.ZUGFeRDPaymentMeansTypeCodes, intf.ZUGFeRDPaymentTerms,
+  intf.ZUGFeRDElectronicAddressSchemeIdentifiers;
 
 { TInvoiceProvider }
 
@@ -40,6 +41,7 @@ function TInvoiceProvider.CreateInvoice: TZUGFeRDInvoiceDescriptor;
 begin
   var desc:TZUGFeRDInvoiceDescriptor := TZUGFeRDInvoiceDescriptor.CreateInvoice('471102',
     EncodeDate(2018, 03, 05), TZUGFeRDCurrencyCodes.EUR);
+  desc.BusinessProcess := 'urn:fdc:peppol.eu:2017:poacc:billing:01:1.0';
 	desc.Name := 'WARENRECHNUNG';
   desc.AddNote('Rechnung gemäß Bestellung vom 01.03.2018.');
   desc.AddNote('Lieferant GmbH\r\nLieferantenstraße 20\r\n80333 München\r\nDeutschland\r\nGeschäftsführer: Hans Muster\r\nHandelsregisternummer: H A 123\r\n',
@@ -50,8 +52,8 @@ begin
     '',
     TZUGFeRDQuantityCodes.H87,
     nil,
-    TZUGFeRDNullableParam<Currency>.Create(9.9),
-    TZUGFeRDNullableParam<Currency>.Create(9.9),
+    TZUGFeRDNullableParam<Double>.Create(9.9),
+    TZUGFeRDNullableParam<Double>.Create(9.9),
     20.0,
     0,
     TZugFeRDTaxTypes.VAT,
@@ -67,8 +69,8 @@ begin
     '',
     TZUGFeRDQuantityCodes.H87,
     nil,
-    TZUGFeRDNullableParam<Currency>.Create(5.5),
-    TZUGFeRDNullableParam<Currency>.Create(5.5),
+    TZUGFeRDNullableParam<Double>.Create(5.5),
+    TZUGFeRDNullableParam<Double>.Create(5.5),
     50,
     0,
     TZugFeRDTaxTypes.VAT,
@@ -85,7 +87,7 @@ begin
     TZUGFeRDCountryCodes.DE, '', TZUGFeRDGlobalID.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, '4000001123452'),
     TZUGFeRDLegalOrganization.CreateWithParams(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, '4000001123452', 'Lieferant GmbH')
   );
-
+  desc.SetSellerElectronicAddress('DE123456789', TZUGFeRDElectronicAddressSchemeIdentifiers.GermanyVatNumber);
   desc.SetSellerContact('Max Mustermann', 'Muster-Einkauf', 'Max@Mustermann.de', '+49891234567');
   desc.AddSellerTaxRegistration('201/113/40209', TZUGFeRDTaxRegistrationSchemeID.FC);
   desc.AddSellerTaxRegistration('DE123456789', TZUGFeRDTaxRegistrationSchemeID.VA);
@@ -94,6 +96,7 @@ begin
     'Kunden AG Mitte', '69876', 'Frankfurt', 'Kundenstraße 15',
     TZUGFeRDCountryCodes.DE, 'GE2020211'
   );
+  desc.SetBuyerElectronicAddress('DE2020211', TZUGFeRDElectronicAddressSchemeIdentifiers.GermanyVatNumber);
 
   desc.ActualDeliveryDate := ZUGFeRDNullableDateTime.Create(EncodeDate(2018, 03, 05));
   desc.SetPaymentMeans(TZUGFeRDPaymentMeansTypeCodes.SEPACreditTransfer, 'Zahlung per SEPA Überweisung.');
@@ -104,14 +107,11 @@ begin
     '',
     '',
     'Kunden AG');
-  desc.AddDebitorFinancialAccount(
-    'DB02120300000000202051',
-    'DBBYLADEM1001',
-    '',
-    '',
-    'KundenDB AG');
-  desc.AddApplicableTradeTax(275.0, 7.0, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
-  desc.AddApplicableTradeTax(198.0, 19.0,TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
+
+  desc.AddApplicableTradeTax(275.0, 7.0, (275.0/100 * 7), TZUGFeRDTaxTypes.VAT,
+    TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S));
+  desc.AddApplicableTradeTax(198.0, 19.0,(198.0/100 * 19), TZUGFeRDTaxTypes.VAT,
+     TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S));
 
   var PaymentTerms: TZUGFeRDPaymentTerms := TZUGFeRDPaymentTerms.Create;
   PaymentTerms.Description := 'Zahlbar innerhalb 30 Tagen netto bis 04.04.2018, 3% Skonto innerhalb 10 Tagen bis 15.03.2018';

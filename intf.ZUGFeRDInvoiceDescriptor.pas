@@ -67,7 +67,10 @@ uses
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
   intf.ZUGFeRDFormats,
-  intf.ZUGFeRDPaymentTermsType
+  intf.ZUGFeRDPaymentTermsType,
+  intf.ZUGFeRDTransportmodeCodes,
+  intf.ZUGFeRDTradeDeliveryTermCodes,
+  intf.ZUGFeRDAllowanceReasonCodes
   ;
 
 type
@@ -90,15 +93,21 @@ type
     FBuyer: TZUGFeRDParty;
     FBuyerContact: TZUGFeRDContact;
     FBuyerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
+    FShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
     FBuyerElectronicAddress: TZUGFeRDElectronicAddress;
     FSeller: TZUGFeRDParty;
     FSellerContact: TZUGFeRDContact;
     FSellerTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
+    FInvoiceeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
+    FSellerTaxRepresentativeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration>;
     FSellerElectronicAddress: TZUGFeRDElectronicAddress;
     FInvoicee: TZUGFeRDParty;
     FShipTo: TZUGFeRDParty;
     FPayee: TZUGFeRDParty;
     FShipFrom: TZUGFeRDParty;
+    FShipToContact: TZUGFeRDContact;
+    FUltimateShipToContact: TZUGFeRDContact;
+    FUltimateShipTo: TZUGFeRDParty;
     FNotes: TObjectList<TZUGFeRDNote>;
     FBusinessProcess: string;
     FIsTest: Boolean;
@@ -129,13 +138,24 @@ type
     FSellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument;
     FDespatchAdviceReferencedDocument: TZUGFeRDDespatchAdviceReferencedDocument;
     FName: string;
-    FTaxCurrency: TZUGFeRDCurrencyCodes;
+    FTaxCurrency: ZUGFeRDNullable<TZUGFeRDCurrencyCodes>;
     FSellerReferenceNo: string;
     FInvoicer: TZUGFeRDParty;
+    FSellerTaxRepresentative: TZUGFeRDParty;
+    FTransportMode: ZUGFeRDNullable<TZUGFeRDTransportModeCodes>;
+    FApplicableTradeDeliveryTermsCode:ZUGFeRDNullable<TZUGFeRDTradeDeliveryTermCodes>;
     procedure SetInvoicerParty(const Value: TZUGFeRDParty);
     procedure SetSellerParty(const Value: TZUGFeRDParty);
     procedure SetInvoiceeParty(const Value: TZUGFeRDParty);
     procedure SetBuyerParty(const Value: TZUGFeRDParty);
+    procedure SetSellerTaxRepresentative(const Value: TZUGFeRDParty);
+    procedure SetShipTo(const Value: TZUGFeRDParty);
+    procedure SetUltimateShipTo(const Value: TZUGFeRDParty);
+    procedure SetUltimateShipToContact(const Value: TZUGFeRDContact);
+    procedure SetShipToContact(const Value: TZUGFeRDContact);
+    function GetAnyCreditorFinancialAccount: Boolean;
+    function GetAnyDebitorFinancialAcoount: Boolean;
+    function GetAnyApplicableTradeTaxes: Boolean;
   public
     /// <summary>
     /// Invoice Number
@@ -218,7 +238,7 @@ type
     ///
     /// BT-6
 		/// </summary>
-		property TaxCurrency: TZUGFeRDCurrencyCodes read FTaxCurrency write FTaxCurrency;
+		property TaxCurrency: ZUGFeRDNullable<TZUGFeRDCurrencyCodes> read FTaxCurrency write FTaxCurrency;
     /// <summary>
     /// Information about the buyer
     /// </summary>
@@ -246,9 +266,29 @@ type
 		property SellerReferenceNo: string read FSellerReferenceNo write FSellerReferenceNo;
 
     /// <summary>
+    /// A group of business terms providing information about the Seller's tax representative.
+    /// BG-11
+    /// </summary>
+    property SellerTaxRepresentative: TZUGFeRDParty read FSellerTaxRepresentative write SetSellerTaxRepresentative;
+
+    /// <summary>
+    /// List of tax registration numbers for the seller.
+    ///
+    /// BT-63
+    /// </summary>
+    property SellerTaxRepresentativeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read
+       FSellerTaxRepresentativeTaxRegistration;
+
+    /// <summary>
     /// This party is optional and only relevant for Extended profile
     /// </summary>
     property Invoicee: TZUGFeRDParty read FInvoicee write SetInvoiceeParty;
+
+    /// <summary>
+    ///     Detailed information on tax information
+    ///     BT-X-242-00
+    /// </summary>
+    property InvoiceeTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FInvoiceeTaxRegistration;
 
 		/// <summary>
 		/// This party is optional and only relevant for Extended profile.
@@ -260,7 +300,30 @@ type
     /// <summary>
     /// This party is optional and only relevant for Extended profile
     /// </summary>
-    property ShipTo: TZUGFeRDParty read FShipTo write FShipTo;
+    property ShipTo: TZUGFeRDParty read FShipTo write SetShipTo;
+
+    /// <summary>
+    ///     Detailed information on tax information of the goods recipient
+    ///     BT-X-66-00
+    /// </summary>
+    property ShipToTaxRegistration: TObjectList<TZUGFeRDTaxRegistration> read FShipToTaxRegistration;
+
+    /// <summary>
+    /// Detailed contact information of the recipient
+    /// BG-X-26
+    /// </summary>
+    property ShipToContact: TZUGFeRDContact read FShipToContact write SetShipToContact;
+
+    /// <summary>
+    /// This party is optional and only relevant for Extended profile
+    /// </summary>
+    property UltimateShipTo: TZUGFeRDParty read FUltimateShipTo write SetUltimateShipTo;
+
+    /// <summary>
+    /// Detailed contact information of the final goods recipient
+    /// BG-X-11
+    /// </summary>
+    property UltimateShipToContact: TZUGFeRDContact read FUltimateShipToContact write SetUltimateShipToContact;
 
     /// <summary>
     /// This party is optional and only relevant for Extended profile
@@ -456,12 +519,47 @@ type
     property BillingPeriodEnd: ZUGFeRDNullable<TDateTime> read FBillingPeriodEnd write FBillingPeriodEnd;
 
     /// <summary>
+    /// Code for trade delivery terms / Detailangaben zu den Lieferbedingungen, BT-X-22
+    /// </summary>
+    property ApplicableTradeDeliveryTermsCode: ZUGFeRDNullable<TZUGFeRDTradeDeliveryTermCodes>
+      read FApplicableTradeDeliveryTermsCode write FApplicableTradeDeliveryTermsCode;
+
+    /// <summary>
     /// Details about the associated order confirmation (BT-14).
     /// This is optional and can be used in Profiles Comfort and Extended.
     /// If you add a SellerOrderReferencedDocument you must set the property "ID".
     /// The property "IssueDateTime" is optional an only used in profile "Extended"
     /// </summary>
     property SellerOrderReferencedDocument: TZUGFeRDSellerOrderReferencedDocument read FSellerOrderReferencedDocument write FSellerOrderReferencedDocument;
+
+    /// <summary>
+    /// The code specifying the mode, such as air, sea, rail, road or inland waterway, for this logistics transport movement.
+    /// BG-X-24 --> BT-X-152
+    /// </summary>
+    property TransportMode: ZUGFeRDNullable<TZUGFeRDTransportModeCodes> read FTransportMode write FTransportMode;
+
+    /// <summary>
+    /// Checks if any creditor financial accounts exist
+    ///
+    /// BG-17
+    /// </summary>
+    /// <returns>True if creditor financial accounts exist, false otherwise</returns>
+    property AnyCreditorFinancialAccount: Boolean read GetAnyCreditorFinancialAccount;
+
+    /// <summary>
+    /// Checks if any debitor financial accounts exist
+    /// </summary>
+    /// <returns>True if debitor financial accounts exist, false otherwise</returns>
+    property AnyDebitorFinancialAccount: Boolean read GetAnyDebitorFinancialAcoount;
+
+    /// <summary>
+    /// Checks if any trade taxes are defined
+    ///
+    /// BG-23
+    /// </summary>
+    /// <returns>True if trade taxes exist, false otherwise</returns>
+    property AnyApplicableTradeTaxes: Boolean read GetAnyApplicableTradeTaxes;
+
   public
     constructor Create;
     destructor Destroy; override;
@@ -543,6 +641,31 @@ type
     procedure AddSellerTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
 
     /// <summary>
+    /// Adds a tax registration number for the seller's tax representative.
+    ///
+    /// BT-11
+    /// </summary>
+    /// <param name="no">The tax registration number.</param>
+    /// <param name="schemeID">The tax registration scheme identifier.</param>
+    procedure AddSellerTaxRepresentativeTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+
+    /// Adds a tax registration number for the ship to trade party.
+    ///
+    /// BT-X-66-00
+    /// </summary>
+    /// <param name="no">The tax registration number.</param>
+    /// <param name="schemeID">The tax registration scheme identifier.</param>
+    procedure   AddShipToTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+
+    /// <summary>
+    /// Adds a tax registration number for the invoicee party.
+    /// BT-X-242-00
+    /// </summary>
+    /// <param name="no">The tax registration number.</param>
+    /// <param name="schemeID">The tax registration scheme identifier.</param>
+    procedure AddInvoiceeTaxRegistration(const no: string; const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+
+    /// <summary>
     /// Sets the Buyer Electronic Address for Peppol
     /// </summary>
     /// <param name="address">Peppol Address</param>
@@ -566,11 +689,13 @@ type
     /// <param name="referenceTypeCode">Type of the referenced document</param>
     /// <param name="attachmentBinaryObject"></param>
     /// <param name="filename"></param>
+    /// <param name="uriID">Optional URI identifier</param>    ///
     procedure AddAdditionalReferencedDocument(const id: string;
       const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
       const issueDateTime: IZUGFeRDNullableParam<TDateTime> = nil; const name: string = '';
-      const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
-      const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
+      const referenceTypeCode: IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes> = nil;
+      const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '';
+      const uriID: string = '');
 
     /// <summary>
     /// Sets details of the associated order
@@ -615,23 +740,26 @@ type
     /// <summary>
     /// Adds an allowance or charge on document level.
     ///
+    /// BG-27
     /// Allowance represents a discount whereas charge represents a surcharge.
     /// </summary>
-    /// <param name="isDiscount">Marks if the allowance charge is a discount. Please note that in contrary to this function, the xml file indicated a surcharge, not a discount (value will be inverted)</param>
-    /// <param name="basisAmount">Base amount (basis of allowance)</param>
-    /// <param name="currency">Curency of the allowance</param>
-    /// <param name="actualAmount">Actual allowance charge amount</param>
-    /// <param name="reason">Reason for the allowance</param>
-    /// <param name="taxTypeCode">VAT type code for document level allowance/ charge</param>
-    /// <param name="taxCategoryCode">VAT type code for document level allowance/ charge</param>
-    /// <param name="taxPercent">VAT rate for the allowance</param>
+    /// <param name="isDiscount">True if this is a discount, false if it's a charge</param>
+    /// <param name="basisAmount">Base amount for calculation</param>
+    /// <param name="currency">Currency code</param>
+    /// <param name="actualAmount">Actual amount of allowance/charge</param>
+    /// <param name="reason">Reason for allowance/charge</param>
+    /// <param name="taxTypeCode">Type of tax</param>
+    /// <param name="taxCategoryCode">Tax category</param>
+    /// <param name="taxPercent">Tax percentage</param>
+    /// <param name="reasonCode">Optional reason code</param>
     procedure AddTradeAllowanceCharge(const isDiscount: Boolean;
              const basisAmount: IZUGFeRDNullableParam<Currency>;
              const currency: TZUGFeRDCurrencyCodes;
              const actualAmount: Currency; const reason: string;
              const taxTypeCode: TZUGFeRDTaxTypes;
              const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
-             const taxPercent: Currency); overload;
+             const taxPercent: Currency;
+             const reasonCode: TZUGFeRDAllowanceReasonCodes = TZUGFeRDAllowanceReasonCodes.Unknown); overload;
 
     /// <summary>
     /// Adds an allowance or charge on document level.
@@ -647,13 +775,16 @@ type
     /// <param name="taxTypeCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxCategoryCode">VAT type code for document level allowance/ charge</param>
     /// <param name="taxPercent">VAT rate for the allowance</param>
+    /// <param name="reasonCode">Reason code for the allowance</param>
     procedure AddTradeAllowanceCharge(const isDiscount: Boolean;
-             const basisAmount: Currency; const currency: TZUGFeRDCurrencyCodes;
-             const actualAmount: Currency; const chargePercentage : Currency;
+             const basisAmount: ZUGFeRDNullableCurrency;
+             const currency: TZUGFeRDCurrencyCodes;
+             const actualAmount: Currency; const chargePercentage : ZUGFeRDNullableCurrency;
              const reason: string;
              const taxTypeCode: TZUGFeRDTaxTypes;
              const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
-             const taxPercent: Currency); overload;
+             const taxPercent: Currency;
+             const reasonCode: TZUGFeRDAllowanceReasonCodes = TZUGFeRDAllowanceReasonCodes.Unknown); overload;
 
     /// <summary>
     /// Set Information about Preceding Invoice. Please note that all versions prior
@@ -691,23 +822,28 @@ type
     /// Add information about VAT and apply to the invoice line items for goods and services on the invoice.
     ///
     /// This tax is added per VAT/ tax rate.
+    ///
+    /// BG-23
     /// </summary>
-    /// <param name="basisAmount"></param>
-    /// <param name="percent">Tax rate where the tax belongs to</param>
-    /// <param name="typeCode"></param>
-    /// <param name="categoryCode"></param>
-    /// <param name="allowanceChargeBasisAmount"></param>
-    /// <param name="exemptionReasonCode"></param>
-    /// <param name="exemptionReason"></param>
-    procedure AddApplicableTradeTax(
+    /// <param name="basisAmount">Base amount for tax calculation</param>
+    /// <param name="percent">Tax percentage rate</param>
+    /// <param name="taxAmount">Calculated tax amount</param>
+    /// <param name="typeCode">Type of tax</param>
+    /// <param name="categoryCode">Tax category</param>
+    /// <param name="allowanceChargeBasisAmount">Base amount for allowances/charges</param>
+    /// <param name="exemptionReasonCode">Tax exemption reason code</param>
+    /// <param name="exemptionReason">Tax exemption reason text</param>
+    /// <param name="lineTotalBasisAmount">Line total base amount for tax calculation</param>
+    function AddApplicableTradeTax(
       const basisAmount: Currency;
       const percent: Currency;
+      const taxAmount: Currency;
       const typeCode: TZUGFeRDTaxTypes;
-      const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
+      const categoryCode: IZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes> = nil;
       const allowanceChargeBasisAmount: IZUGFeRDNullableParam<Currency> = nil;
       const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes> = nil;
       const exemptionReason: string = '';
-      const lineTotalBasisAmount: IZUGFeRDNullableParam<Currency> = nil);
+      const lineTotalBasisAmount: IZUGFeRDNullableParam<Currency> = nil): TZUGFeRDTax;
 
     /// <summary>
     /// Saves the descriptor object into a stream.
@@ -772,6 +908,7 @@ type
     /// <param name="buyerAssignedID"></param>
     /// <param name="deliveryNoteID"></param>
     /// <param name="deliveryNoteDate"></param>
+    /// <param name="buyerOrderLineID">Buyer's order line reference</param>
     /// <param name="buyerOrderID"></param>
     /// <param name="buyerOrderDate"></param>
     /// <param name="billingPeriodStart"></param>
@@ -780,11 +917,11 @@ type
     /// <returns></returns>
     function AddTradeLineItem(const name: string; const description: string;
                   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: IZUGFeRDNullableParam<Double> = nil;
-                  const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil; const netUnitPrice: IZUGFeRDNullableParam<Currency> = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
+                  const grossUnitPrice: IZUGFeRDNullableParam<Double> = nil; const netUnitPrice: IZUGFeRDNullableParam<Double> = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
                   const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = '';
                   const buyerAssignedID: string = ''; const deliveryNoteID: string = ''; const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil;
-                  const buyerOrderID: string = ''; const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil; const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
+                  const buyerOrderLineID: string = ''; const buyerOrderID: string = ''; const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil; const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
                   const billingPeriodEnd: IZUGFeRDNullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem; overload;
 
 
@@ -793,11 +930,11 @@ type
     /// </summary>
     function AddTradeLineItem(const lineID: string; const name: string; const description: string;
                   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown; const unitQuantity: IZUGFeRDNullableParam<Double> = nil;
-                  const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil; const netUnitPrice: IZUGFeRDNullableParam<Currency> = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
+                  const grossUnitPrice: IZUGFeRDNullableParam<Double> = nil; const netUnitPrice: IZUGFeRDNullableParam<Double> = nil; const billedQuantity: Double = 0; const lineTotalAmount : Currency = 0;
                   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown; const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown; const taxPercent: Double = 0;
                   const comment: string = ''; const id: TZUGFeRDGlobalID = nil; const sellerAssignedID: string = ''; const buyerAssignedID: string = '';
-                  const deliveryNoteID: string = ''; const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil; const buyerOrderID: string = '';
-                  const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil; const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
+                  const deliveryNoteID: string = ''; const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil; const buyerOrderLineID: string = '';
+                  const buyerOrderID: string = ''; const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil; const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
                   const billingPeriodEnd: IZUGFeRDNullableParam<TDateTime> = nil): TZUGFeRDTradeLineItem; overload;
 
     procedure SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';
@@ -827,6 +964,7 @@ type
     procedure AddCreditorFinancialAccount(const iban: string; const bic: string; const id: string = '';
       const bankleitzahl: string = ''; const bankName: string = ''; const name: string = '');
 
+
     procedure AddDebitorFinancialAccount(const iban: string; const bic: string; const id: string = '';
       const bankleitzahl: string = ''; const bankName: string = '');
 
@@ -843,21 +981,28 @@ type
     procedure SetTradePaymentTerms(const description: string; dueDate: IZUGFeRDNullableParam<TDateTime> = nil); deprecated;
 
     /// <summary>
-    /// Adds a trade payment term.
+    /// Adds payment terms to the invoice
+    ///
+    /// BT-20
     /// </summary>
-    /// <param name="description"></param>
-    /// <param name="dueDate"></param>
-    /// <param name="paymentTermsType"></param>
-    /// <param name="dueDays"></param>
-    /// <param name="percentage"></param>
-    /// <param name="baseAmount"></param>
+    /// <param name="description">Description of payment terms</param>
+    /// <param name="dueDate">Due date for payment</param>
+    /// <param name="paymentTermsType">Type of payment terms</param>
+    /// <param name="dueDays">Number of days until payment is due</param>
+    /// <param name="percentage">Optional percentage</param>
+    /// <param name="baseAmount">Optional base amount</param>
+    /// <param name="actualAmount">Optional actual amount</param>
+    /// <param name="maturityDate"></param>
     procedure AddTradePaymentTerms(
       const description: string;
       dueDate: IZUGFeRDNullableParam<TDateTime> = nil;
       paymentTermsType: IZUGFeRDNullableParam<TZUGFeRDPaymentTermsType> = nil;
       dueDays: IZUGFeRDNullableParam<Integer> = nil;
       percentage: IZUGFeRDNullableParam<Currency> = nil;
-      baseAmount: IZUGFeRDNullableParam<Currency> = nil);
+      baseAmount: IZUGFeRDNullableParam<Currency> = nil;
+      actualAmount: IZUGFeRDNullableParam<Currency> = nil;
+      maturityDate: IZUGFerDNullableParam<TDateTime> = nil
+      );
   private
     function _getNextLineId: string;
   end;
@@ -884,10 +1029,13 @@ begin
   FBuyer                         := nil;//TZUGFeRDParty.Create;
   FBuyerContact                  := nil;//TZUGFeRDContact.Create;
   FBuyerTaxRegistration          := TObjectList<TZUGFeRDTaxRegistration>.Create;
+  FShipToTaxRegistration         := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FBuyerElectronicAddress        := TZUGFeRDElectronicAddress.Create;
   FSeller                        := nil;//TZUGFeRDParty.Create;
   FSellerContact                 := nil;//TZUGFeRDContact.Create;
   FSellerTaxRegistration         := TObjectList<TZUGFeRDTaxRegistration>.Create;
+  FInvoiceeTaxRegistration       := TObjectList<TZUGFeRDTaxRegistration>.Create;
+  FSellerTaxRepresentativeTaxRegistration := TObjectList<TZUGFeRDTaxRegistration>.Create;
   FSellerElectronicAddress       := TZUGFeRDElectronicAddress.Create;
   FInvoicer                      := nil;
   FInvoicee                      := nil;//TZUGFeRDParty.Create;
@@ -906,12 +1054,13 @@ begin
   FDebitorBankAccounts           := TObjectList<TZUGFeRDBankAccount>.Create;
   FPaymentMeans                  := nil;//TZUGFeRDPaymentMeans.Create;
   FSellerOrderReferencedDocument := nil;//TZUGFeRDSellerOrderReferencedDocument.Create;
+  FSellerTaxRepresentative       := nil;
 
   //Default values:
   FProfile := TZUGFeRDProfile.Unknown;
   FType := TZUGFeRDInvoiceType.Invoice;
   FSellerReferenceNo := '';
-  FTaxCurrency := TZUGFeRDCurrencyCodes.Unknown;
+  FTaxCurrency := nil;
 end;
 
 destructor TZUGFeRDInvoiceDescriptor.Destroy;
@@ -924,14 +1073,20 @@ begin
   if Assigned(FBuyer                         ) then begin FBuyer.Free; FBuyer                          := nil; end;
   if Assigned(FBuyerContact                  ) then begin FBuyerContact.Free; FBuyerContact                   := nil; end;
   if Assigned(FBuyerTaxRegistration          ) then begin FBuyerTaxRegistration.Free; FBuyerTaxRegistration           := nil; end;
+  if Assigned(FShipToTaxRegistration         ) then begin FShipToTaxRegistration.Free; FShipToTaxRegistration           := nil; end;
   if Assigned(FBuyerElectronicAddress        ) then begin FBuyerElectronicAddress        .Free; FBuyerElectronicAddress         := nil; end;
   if Assigned(FSeller                        ) then begin FSeller.Free; FSeller                         := nil; end;
   if Assigned(FInvoicer                      ) then begin FInvoicer.Free; FInvoicer                     := nil; end;
   if Assigned(FSellerContact                 ) then begin FSellerContact.Free; FSellerContact                  := nil; end;
   if Assigned(FSellerTaxRegistration         ) then begin FSellerTaxRegistration.Free; FSellerTaxRegistration          := nil; end;
+  if Assigned(FInvoiceeTaxRegistration       ) then begin FInvoiceeTaxRegistration.Free; FInvoiceeTaxRegistration          := nil; end;
+  if Assigned(FSellerTaxRepresentativeTaxRegistration) then begin FSellerTaxRepresentativeTaxRegistration.Free; FSellerTaxRepresentativeTaxRegistration:= nil; end;
   if Assigned(FSellerElectronicAddress       ) then begin FSellerElectronicAddress       .Free; FSellerElectronicAddress        := nil; end;
   if Assigned(FInvoicee                      ) then begin FInvoicee.Free; FInvoicee                       := nil; end;
   if Assigned(FShipTo                        ) then begin FShipTo.Free; FShipTo                         := nil; end;
+  if Assigned(FUltimateShipTo                ) then begin FUltimateShipTo.Free; FUltimateShipTo         := nil; end;
+  if Assigned(FUltimateShipToContact         ) then begin FUltimateShipToContact.Free; FUltimateShipToContact  := nil; end;
+  if Assigned(FShipToContact                 ) then begin FShipToContact.Free; FShipToContact  := nil; end;
   if Assigned(FPayee                         ) then begin FPayee.Free; FPayee                          := nil; end;
   if Assigned(FShipFrom                      ) then begin FShipFrom.Free; FShipFrom                       := nil; end;
   if Assigned(FNotes                         ) then begin FNotes.Free; FNotes                          := nil; end;
@@ -946,6 +1101,7 @@ begin
   if Assigned(FDebitorBankAccounts          ) then begin FDebitorBankAccounts.Free; FDebitorBankAccounts           := nil; end;
   if Assigned(FPaymentMeans                 ) then begin FPaymentMeans.Free; FPaymentMeans                  := nil; end;
   if Assigned(FSellerOrderReferencedDocument) then begin FSellerOrderReferencedDocument.Free; FSellerOrderReferencedDocument := nil; end;
+  if Assigned(FSellerTaxRepresentative      ) then begin FSellerTaxRepresentative.Free; FSellerTaxRepresentative := nil; end;
   inherited;
 end;
 
@@ -998,6 +1154,21 @@ begin
   end;
 
   raise TZUGFeRDUnsupportedException.Create('No ZUGFeRD invoice reader was able to parse this file "' + filename + '"!');
+end;
+
+function TZUGFeRDInvoiceDescriptor.GetAnyApplicableTradeTaxes: Boolean;
+begin
+  result := assigned(FTaxes) and (FTaxes.Count > 0);
+end;
+
+function TZUGFeRDInvoiceDescriptor.GetAnyCreditorFinancialAccount: Boolean;
+begin
+  result := assigned(FCreditorBankAccounts) and (FCreditorBankAccounts.Count > 0);
+end;
+
+function TZUGFeRDInvoiceDescriptor.GetAnyDebitorFinancialAcoount: Boolean;
+begin
+  result := assigned(FDebitorBankAccounts) and (FDebitorBankAccounts.Count > 0);
 end;
 
 class function TZUGFeRDInvoiceDescriptor.GetVersion(
@@ -1319,6 +1490,22 @@ begin
   FSellerTaxRegistration[SellerTaxRegistration.Count - 1].SchemeID := schemeID;
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.AddSellerTaxRepresentativeTaxRegistration(const no: string;
+  const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+begin
+  FSellerTaxRepresentativeTaxRegistration.Add(TZUGFeRDTaxRegistration.Create);
+  FSellerTaxRepresentativeTaxRegistration[SellerTaxRepresentativeTaxRegistration.Count - 1].No := no;
+  FSellerTaxRepresentativeTaxRegistration[SellerTaxRepresentativeTaxRegistration.Count - 1].SchemeID := schemeID;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.AddShipToTaxRegistration(const no: string;
+  const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+begin
+  FShipToTaxRegistration.Add(TZUGFeRDTaxRegistration.create);
+  FShipToTaxRegistration[FShipToTaxRegistration.Count - 1].No := no;
+  FShipToTaxRegistration[FShipToTaxRegistration.Count - 1].SchemeID := schemeID;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.SetBuyerElectronicAddress(address : string; electronicAddressSchemeID : TZUGFeRDElectronicAddressSchemeIdentifiers);
 begin
   FBuyerElectronicAddress.Address := address;
@@ -1338,20 +1525,42 @@ begin
   FSeller := Value;
 end;
 
+procedure TZUGFeRDInvoiceDescriptor.SetSellerTaxRepresentative(const Value: TZUGFeRDParty);
+begin
+  if assigned(FSellerTaxRepresentative) then
+    FSellerTaxRepresentative.Free;
+  FSellerTaxRepresentative := Value;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.SetShipTo(const Value: TZUGFeRDParty);
+begin
+  if assigned(FShipTo) then
+    FShipTo.Free;
+  FShipTo := Value;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.SetShipToContact(const Value: TZUGFeRDContact);
+begin
+  if assigned(FShipToContact) then
+    FShipToContact.Free;
+  FShipToContact := Value;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor.AddAdditionalReferencedDocument(const id: string;
   const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
-  const issueDateTime: IZUGFeRDNullableParam<TDateTime> = nil; const name: string = '';
-  const referenceTypeCode: TZUGFeRDReferenceTypeCodes = TZUGFeRDReferenceTypeCodes.Unknown;
-  const attachmentBinaryObject: TMemoryStream = nil; const filename: string = '');
+  const issueDateTime: IZUGFeRDNullableParam<TDateTime>; const name: string;
+  const referenceTypeCode: IZUGFeRDNullableParam<TZUGFeRDReferenceTypeCodes>;
+  const attachmentBinaryObject: TMemoryStream; const filename, uriID: string);
 begin
   FAdditionalReferencedDocuments.Add(TZUGFeRDAdditionalReferencedDocument.Create(false));
-  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].ReferenceTypeCode := referenceTypeCode;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].ID := id;
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].TypeCode := typeCode;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].IssueDateTime:= issueDateTime;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].Name := name;
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].ReferenceTypeCode := referenceTypeCode;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].AttachmentBinaryObject := attachmentBinaryObject;
   FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].Filename := filename;
-  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].TypeCode := typeCode;
+  FAdditionalReferencedDocuments[AdditionalReferencedDocuments.Count - 1].URIID := uriID;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.SetBuyerOrderReferenceDocument(const orderNo: string; const orderDate: TDateTime = 0);
@@ -1416,20 +1625,21 @@ begin
   FServiceCharges.Add(serviceCharge);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(
-  const isDiscount: Boolean;
-  const basisAmount: IZUGFeRDNullableParam<Currency>;
-  const currency: TZUGFeRDCurrencyCodes; const actualAmount: Currency;
-  const reason: string;
-  const taxTypeCode: TZUGFeRDTaxTypes;
-  const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
-  const taxPercent: Currency);
+procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(const isDiscount: Boolean;
+             const basisAmount: IZUGFeRDNullableParam<Currency>;
+             const currency: TZUGFeRDCurrencyCodes;
+             const actualAmount: Currency; const reason: string;
+             const taxTypeCode: TZUGFeRDTaxTypes;
+             const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
+             const taxPercent: Currency;
+             const reasonCode: TZUGFeRDAllowanceReasonCodes);
 var
   tradeAllowanceCharge: TZUGFeRDTradeAllowanceCharge;
 begin
   tradeAllowanceCharge := TZUGFeRDTradeAllowanceCharge.Create;
   tradeAllowanceCharge.ChargeIndicator := not isDiscount;
   tradeAllowanceCharge.Reason := reason;
+  tradeAllowanceCharge.ReasonCode := reasonCode;
   tradeAllowanceCharge.BasisAmount := basisAmount;
   tradeAllowanceCharge.ActualAmount := actualAmount;
   tradeAllowanceCharge.Currency := currency;
@@ -1441,18 +1651,21 @@ begin
   FTradeAllowanceCharges.Add(tradeAllowanceCharge);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(
-  const isDiscount: Boolean; const basisAmount: Currency;
-  const currency: TZUGFeRDCurrencyCodes; const actualAmount,
-  chargePercentage: Currency; const reason: string;
-  const taxTypeCode: TZUGFeRDTaxTypes;
-  const taxCategoryCode: TZUGFeRDTaxCategoryCodes; const taxPercent: Currency);
+procedure TZUGFeRDInvoiceDescriptor.AddTradeAllowanceCharge(const isDiscount: Boolean;
+             const basisAmount: ZUGFeRDNullableCurrency; const currency: TZUGFeRDCurrencyCodes;
+             const actualAmount: Currency; const chargePercentage : ZUGFeRDNullableCurrency;
+             const reason: string;
+             const taxTypeCode: TZUGFeRDTaxTypes;
+             const taxCategoryCode: TZUGFeRDTaxCategoryCodes;
+             const taxPercent: Currency;
+             const reasonCode: TZUGFeRDAllowanceReasonCodes);
 var
   tradeAllowanceCharge: TZUGFeRDTradeAllowanceCharge;
 begin
   tradeAllowanceCharge := TZUGFeRDTradeAllowanceCharge.Create;
   tradeAllowanceCharge.ChargeIndicator := not isDiscount;
   tradeAllowanceCharge.Reason := reason;
+  tradeAllowanceCharge.ReasonCode := reasonCode;
   tradeAllowanceCharge.BasisAmount := basisAmount;
   tradeAllowanceCharge.ActualAmount := actualAmount;
   tradeAllowanceCharge.Currency := currency;
@@ -1469,6 +1682,14 @@ begin
   if assigned(FInvoicee) then
     FInvoicee.Free;
   FInvoicee := Value;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.AddInvoiceeTaxRegistration(const no: string;
+  const schemeID: TZUGFeRDTaxRegistrationSchemeID);
+begin
+  FInvoiceeTaxRegistration.Add(TZUGFeRDTaxRegistration.create);
+  FInvoiceeTaxRegistration[FInvoiceeTaxRegistration.Count - 1].No := no;
+  FInvoiceeTaxRegistration[FInvoiceeTaxRegistration.Count - 1].SchemeID := schemeID;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.AddInvoiceReferencedDocument(const id: string; const IssueDateTime: TDateTime = 0);
@@ -1505,19 +1726,36 @@ begin
   AddTradePaymentTerms(description, dueDate);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(
-  const basisAmount: Currency;
-  const percent: Currency; const typeCode: TZUGFeRDTaxTypes;
-  const categoryCode: TZUGFeRDTaxCategoryCodes = TZUGFeRDTaxCategoryCodes.Unknown;
-  const allowanceChargeBasisAmount: IZUGFeRDNullableParam<Currency> = nil;
-  const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes> = nil;
-  const exemptionReason: string = '';
-  const lineTotalBasisAmount: IZUGFeRDNullableParam<Currency> = nil);
+procedure TZUGFeRDInvoiceDescriptor.SetUltimateShipTo(const Value: TZUGFeRDParty);
+begin
+  if assigned(FUltimateShipTo) then
+    FUltimateShipTo.Free;
+  FUltimateShipTo := Value;
+end;
+
+procedure TZUGFeRDInvoiceDescriptor.SetUltimateShipToContact(const Value: TZUGFeRDContact);
+begin
+  if assigned(FUltimateShipToContact) then
+    FUltimateShipToContact.Free;
+  FUltimateShipToContact := Value;
+end;
+
+function TZUGFeRDInvoiceDescriptor.AddApplicableTradeTax(
+      const basisAmount: Currency;
+      const percent: Currency;
+      const taxAmount: Currency;
+      const typeCode: TZUGFeRDTaxTypes;
+      const categoryCode: IZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>;
+      const allowanceChargeBasisAmount: IZUGFeRDNullableParam<Currency>;
+      const exemptionReasonCode: IZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes>;
+      const exemptionReason: string;
+      const lineTotalBasisAmount: IZUGFeRDNullableParam<Currency>): TZUGFeRDTax;
 var
   tax: TZUGFeRDTax;
 begin
   tax := TZUGFeRDTax.Create;
   tax.BasisAmount := basisAmount;
+  tax.TaxAmount := taxAmount;
   tax.Percent := percent;
   tax.TypeCode := typeCode;
   tax.AllowanceChargeBasisAmount := allowanceChargeBasisAmount;
@@ -1525,10 +1763,11 @@ begin
   tax.ExemptionReason := exemptionReason;
   tax.LineTotalBasisAmount := lineTotalBasisAmount;
 
-  if (categoryCode <> TZUGFeRDTaxCategoryCodes.Unknown) then
+  if (categoryCode <> nil) and (categoryCode.Value <> TZUGFeRDTaxCategoryCodes.Unknown) then
     tax.CategoryCode := categoryCode;
 
   Taxes.Add(tax);
+  result := tax;
 end;
 
 procedure TZUGFeRDInvoiceDescriptor.Save(const stream: TStream;
@@ -1621,8 +1860,8 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string;
   const description: string;
   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
   const unitQuantity: IZUGFeRDNullableParam<Double> = nil;
-  const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
-  const netUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
+  const grossUnitPrice: IZUGFeRDNullableParam<Double> = nil;
+  const netUnitPrice: IZUGFeRDNullableParam<Double> = nil;
   const billedQuantity: Double = 0;
   const lineTotalAmount: Currency = 0;
   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown;
@@ -1634,6 +1873,7 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const name: string;
   const buyerAssignedID: string = '';
   const deliveryNoteID: string = '';
   const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil;
+  const buyerOrderLineID: string = '';
   const buyerOrderID: string = '';
   const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil;
   const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
@@ -1642,7 +1882,7 @@ begin
   Result := AddTradeLineItem(_getNextLineId(), name, description, unitCode,
     unitQuantity, grossUnitPrice, netUnitPrice, billedQuantity, lineTotalAmount,
     taxType, categoryCode, taxPercent, comment, id, sellerAssignedID,
-    buyerAssignedID, deliveryNoteID, deliveryNoteDate, buyerOrderID,
+    buyerAssignedID, deliveryNoteID, deliveryNoteDate, buyerOrderLineID, buyerOrderID,
     buyerOrderDate, billingPeriodStart, billingPeriodEnd);
 end;
 
@@ -1650,8 +1890,8 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string;
   const name: string; const description: string;
   const unitCode: TZUGFeRDQuantityCodes = TZUGFeRDQuantityCodes.Unknown;
   const unitQuantity: IZUGFeRDNullableParam<Double> = nil;
-  const grossUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
-  const netUnitPrice: IZUGFeRDNullableParam<Currency> = nil;
+  const grossUnitPrice: IZUGFeRDNullableParam<Double> = nil;
+  const netUnitPrice: IZUGFeRDNullableParam<Double> = nil;
   const billedQuantity: Double = 0;
   const lineTotalAmount: Currency = 0;
   const taxType: TZUGFeRDTaxTypes = TZUGFeRDTaxTypes.Unknown;
@@ -1663,6 +1903,7 @@ function TZUGFeRDInvoiceDescriptor.AddTradeLineItem(const lineID: string;
   const buyerAssignedID: string = '';
   const deliveryNoteID: string = '';
   const deliveryNoteDate: IZUGFeRDNullableParam<TDateTime> = nil;
+  const buyerOrderLineID: string = '';
   const buyerOrderID: string = '';
   const buyerOrderDate: IZUGFeRDNullableParam<TDateTime> = nil;
   const billingPeriodStart: IZUGFeRDNullableParam<TDateTime> = nil;
@@ -1709,8 +1950,8 @@ begin
   if (not deliveryNoteID.IsEmpty) or (deliveryNoteDate <> Nil) then
     newItem.SetDeliveryNoteReferencedDocument(deliveryNoteID,deliveryNoteDate);
 
-  if (not buyerOrderID.IsEmpty) or (buyerOrderDate <> nil) then
-    newItem.SetOrderReferencedDocument(buyerOrderID, buyerOrderDate);
+  if (not String.IsNullOrWhiteSpace(buyerOrderLineID) or (buyerOrderDate <> nil)  or  not String.IsNullOrWhiteSpace(buyerOrderID)) then
+    newItem.SetOrderReferencedDocument(buyerOrderID, buyerOrderDate, buyerOrderLineID);
 
   TradeLineItems.Add(newItem);
 
@@ -1720,7 +1961,8 @@ end;
 procedure TZUGFeRDInvoiceDescriptor.AddTradePaymentTerms(const description: string;
   dueDate: IZUGFeRDNullableParam<TDateTime>;
   paymentTermsType: IZUGFeRDNullableParam<TZUGFeRDPaymentTermsType>;
-  dueDays: IZUGFeRDNullableParam<Integer>; percentage, baseAmount: IZUGFeRDNullableParam<Currency>);
+  dueDays: IZUGFeRDNullableParam<Integer>; percentage, baseAmount: IZUGFeRDNullableParam<Currency>;
+  actualAmount: IZUGFeRDNullableParam<Currency>; maturityDate: IZUGFerDNullableParam<TDateTime>);
 begin
   var PaymentTerms := TZUGFeRDPaymentTerms.Create;
   PaymentTerms.Description := description;
@@ -1729,10 +1971,13 @@ begin
   PaymentTerms.DueDays := dueDays;
   PaymentTerms.Percentage := percentage;
   PaymentTerms.BaseAmount := baseAmount;
+  PaymentTerms.ActualAmount := actualAmount;
+  PaymentTerms.MaturityDate := maturityDate;
   FPaymentTermsList.Add(PaymentTerms);
 end;
 
-procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes; const information: string = '';
+procedure TZUGFeRDInvoiceDescriptor.SetPaymentMeans(paymentCode: TZUGFeRDPaymentMeansTypeCodes;
+  const information: string = '';
   const identifikationsnummer: string = ''; const mandatsnummer: string = '');
 begin
   if Self.PaymentMeans = nil then Self.PaymentMeans := TZUGFeRDPaymentMeans.Create;

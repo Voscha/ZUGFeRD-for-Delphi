@@ -54,7 +54,8 @@ uses
   ,intf.ZUGFeRDQuantityCodes
   ,intf.ZUGFeRDSpecialServiceDescriptionCodes
   ,intf.ZUGFeRDAllowanceOrChargeIdentificationCodes
-  ,intf.ZUGFerDFormats
+  ,intf.ZUGFerDFormats,
+  intf.ZUGFeRDAllowanceReasonCodes
   ;
 
 type
@@ -62,13 +63,16 @@ type
   private
     Writer: TZUGFeRDProfileAwareXmlTextWriter;
     Descriptor: TZUGFeRDInvoiceDescriptor;
-    procedure _writeOptionalAmount(_writer : TZUGFeRDProfileAwareXmlTextWriter; _tagName : string; _value : ZUGFeRDNullable<Currency>; _numDecimals : Integer = 2);
+    procedure _writeOptionalAmount(_writer : TZUGFeRDProfileAwareXmlTextWriter; _tagName : string;
+      _value : ZUGFeRDNullable<Currency>; _numDecimals : Integer = 2); overload;
+    procedure _writeOptionalAmount(_writer : TZUGFeRDProfileAwareXmlTextWriter; _tagName : string;
+      _value : ZUGFeRDNullable<Double>; _numDecimals : Integer = 2);overload;
     procedure _writeNotes(_writer : TZUGFeRDProfileAwareXmlTextWriter; notes : TObjectList<TZUGFeRDNote>);
     procedure _writeOptionalContact(_writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag: String; contact: TZUGFeRDContact);
     procedure _writeOptionalParty(_writer: TZUGFeRDProfileAwareXmlTextWriter; PartyTag: String; Party: TZUGFeRDParty; Contact: TZUGFeRDContact = nil; TaxRegistrations: TObjectList<TZUGFeRDTaxRegistration> = nil);
     procedure _writeOptionalTaxes(_writer: TZUGFeRDProfileAwareXmlTextWriter);
     procedure _writeElementWithAttribute(_writer: TZUGFeRDProfileAwareXmlTextWriter; tagName, attributeName,attributeValue, nodeValue: String);
-    function _translateInvoiceType(type_ : TZUGFeRDInvoiceType) : String;
+//    function _translateInvoiceType(type_ : TZUGFeRDInvoiceType) : String;
     function _encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
   public
     function Validate(_descriptor: TZUGFeRDInvoiceDescriptor; _throwExceptions: Boolean = True): Boolean; override;
@@ -198,10 +202,13 @@ begin
         Writer.WriteEndElement(); // !IssueDateTime()
       end;
 
-      if (document.ReferenceTypeCode <> TZUGFeRDReferenceTypeCodes.Unknown) then
-      begin
-        Writer.WriteElementString('ram:TypeCode', TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
-      end;
+      if (document.TypeCode.HasValue) then
+        Writer.WriteElementString('ram:TypeCode',
+          TZUGFeRDAdditionalReferencedDocumentTypeCodeExtensions.EnumToString(document.TypeCode));
+
+      if (document.ReferenceTypeCode.HasValue) then
+        Writer.WriteElementString('ram:ReferenceTypeCode',
+          TZUGFeRDReferenceTypeCodesExtensions.EnumToString(document.ReferenceTypeCode));
 
       Writer.WriteElementString('ram:ID', document.ID);
       Writer.WriteEndElement(); // !ram:AdditionalReferencedDocument
@@ -384,18 +391,8 @@ begin
       Writer.WriteValue(_formatDecimal(TZUGFeRDNullableParam<Currency>.Create(tradeAllowanceCharge.ActualAmount), 4));
       Writer.WriteEndElement();
 
-      if tradeAllowanceCharge.ChargeIndicator then
-      begin
-        Writer.WriteOptionalElementString('ram:ReasonCode',
-           TZUGFeRDSpecialServiceDescriptionCodesExtensions.EnumToString(
-                                     tradeAllowanceCharge.ReasonCodeCharge));
-      end else
-      begin
-        Writer.WriteOptionalElementString('ram:ReasonCode',
-           TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.EnumToString(
-                                     tradeAllowanceCharge.ReasonCodeAllowance));
-      end;
-
+      Writer.WriteOptionalElementString('ram:ReasonCode', TZUGFeRDAllowanceReasonCodesExtensions.EnumToString(
+        tradeAllowanceCharge.ReasonCode), [TZUGFeRDProfile.Comfort, TZUGFeRDProfile.Extended]);
       Writer.WriteOptionalElementString('ram:Reason', tradeAllowanceCharge.Reason, [TZUGFeRDProfile.Comfort,TZUGFeRDProfile.Extended]);
 
       if (tradeAllowanceCharge.Tax<> nil) then
@@ -856,6 +853,19 @@ begin
   _writer.WriteEndElement(); // !*TradeParty
 end;
 
+procedure TZUGFeRDInvoiceDescriptor1Writer._writeOptionalAmount(
+  _writer: TZUGFeRDProfileAwareXmlTextWriter; _tagName: string; _value: ZUGFeRDNullable<Double>;
+  _numDecimals: Integer);
+begin
+  if (_value.HasValue) then // && (value.Value != decimal.MinValue))
+  begin
+    _writer.WriteStartElement(_tagName);
+    _writer.WriteAttributeString('currencyID', TZUGFeRDCurrencyCodesExtensions.EnumToString(Descriptor.Currency));
+    _writer.WriteValue(_formatDecimal(_value, _numDecimals));
+    _writer.WriteEndElement; // !tagName
+  end;
+end;
+
 procedure TZUGFeRDInvoiceDescriptor1Writer._writeOptionalContact(
   _writer: TZUGFeRDProfileAwareXmlTextWriter; contactTag : String;
   contact : TZUGFeRDContact);
@@ -892,6 +902,7 @@ begin
   _writer.WriteEndElement();
 end;
 
+(*
 function TZUGFeRDInvoiceDescriptor1Writer._translateInvoiceType(type_ : TZUGFeRDInvoiceType) : String;
 begin
   case type_ of
@@ -904,6 +915,7 @@ begin
     else Result := '';
   end;
 end;
+*)
 
 function TZUGFeRDInvoiceDescriptor1Writer._encodeInvoiceType(type_ : TZUGFeRDInvoiceType) : Integer;
 begin

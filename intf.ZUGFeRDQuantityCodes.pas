@@ -575,14 +575,12 @@ type
         /// microlitre
         /// Abkürzung: µl
         /// </summary>
-        [EnumStringValue('4G')]
         _4G,
 
         /// <summary>
         /// megabecquerel
         /// Abkürzung: MBq
         /// </summary>
-        [EnumStringValue('4N')]
         _4N,
 
         /// <summary>
@@ -649,88 +647,7 @@ type
         /// <summary>
         /// Mutually Defined
         /// </summary>
-        ZZ,
-
-        /// <summary>
-        /// Metric Carat
-        /// </summary>
-        /// <remarks>
-        /// Einheit für die Masse von Edelsteinen. Abkürzung Kt oder ct (kein gesetzliches Einheitszeichen)
-        /// </remarks>
-        CTM,
-
-        /// <summary>
-        /// Ampoule, non-protected
-        /// </summary>
-        XAM,
-
-        /// <summary>
-        /// Ampoule, protected
-        /// </summary>
-        XAP,
-
-        /// <summary>
-        /// Balloon, non-protected
-        /// </summary>
-        XBF,
-
-        /// <summary>
-        /// Can, rectangular
-        /// </summary>
-        XCA,
-
-        /// <summary>
-        /// Cask
-        /// </summary>
-        XCK,
-
-        /// <summary>
-        /// Cartridge
-        /// Package containing a charge such as propelling explosive for firearms or ink toner for a printer.
-        /// </summary>
-        XCQ,
-
-        /// <summary>
-        /// Case
-        /// </summary>
-        XCS,
-
-        /// <summary>
-        /// Can, cylindrical
-        /// </summary>
-        XCX,
-
-        /// <summary>
-        /// Flask
-        /// </summary>
-        XFL,
-
-        /// <summary>
-        /// Receptacle, glass
-        /// Containment vessel made of glass for retaining substances or articles.
-        /// </summary>
-        XGR,
-
-        /// <summary>
-        /// Unpacked or unpackaged
-        /// </summary>
-        XNE,
-
-        /// <summary>
-        /// Container, outer
-        /// A type of containment box that serves as the outer shipping container, not otherwise specified as transport equipment.
-        /// </summary>
-        XOU,
-
-        /// <summary>
-        /// Pouch
-        /// </summary>
-        XPO,
-
-        /// <summary>
-        /// Pot
-        /// </summary>
-        XPT
+        ZZ
   );
 
   TZUGFeRDQuantityCodesExtensions = class
@@ -748,6 +665,12 @@ class function TZUGFeRDQuantityCodesExtensions.EnumToString(
 begin
   if codes = TZUGFeRDQuantityCodes.SET_ then
     Result := 'SET'
+  else if codes = TZUGFeRDQuantityCodes.Unknown then
+    Result := 'ZZ'
+  else if codes = TZUGFeRDQuantityCodes._4G then
+    Result := '4G'
+  else if codes = TZUGFeRDQuantityCodes._4N then
+    Result := '4N'
   else
     Result := GetEnumName(TypeInfo(TZUGFeRDQuantityCodes), Integer(codes));
 end;
@@ -772,7 +695,12 @@ begin
   else if SameText(s, 'HAR') then
     exit(TZUGFeRDQuantityCodes.H18)
   else if SameText(s, 'D64') then
-    exit(TZUGFeRDQuantityCodes.XOK);
+    exit(TZUGFeRDQuantityCodes.XOK)
+  else if SameText(s, '4G') then
+    exit(TZUGFeRDQuantityCodes._4G)
+  else if SameText(s, '4N') then
+    exit(TZUGFeRDQuantityCodes._4N);
+
 
   enumValue := GetEnumValue(TypeInfo(TZUGFeRDQuantityCodes), s);
   if enumValue >= 0 then

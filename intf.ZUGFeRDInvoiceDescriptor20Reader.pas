@@ -85,7 +85,9 @@ type
 
 implementation
 
-uses intf.ZUGFeRDXMLUtils, intf.ZUGFeRDHelper, intf.ZUGFeRDDataTypeReader, intf.ZUGFeRDPaymentTermsType;
+uses intf.ZUGFeRDXMLUtils, intf.ZUGFeRDHelper, intf.ZUGFeRDDataTypeReader, intf.ZUGFeRDPaymentTermsType,
+  intf.ZUGFeRDLineStatusCodes, intf.ZUGFeRDLineStatusReasonCodes, intf.ZUGFeRDIncludedReferencedProduct,
+  intf.ZUGFeRDTradeDeliveryTermCodes, intf.ZUGFeRDDateTypeCodes;
 
 { TZUGFeRDInvoiceDescriptor20Reader }
 
@@ -143,7 +145,7 @@ begin
 
   Result := TZUGFeRDInvoiceDescriptor.Create;
 
-  Result.IsTest := XMLUtils._nodeAsBool(doc.documentElement,'//*[local-name()="ExchangedDocumentContext"]/ram:TestIndicator');
+  Result.IsTest := XMLUtils._nodeAsBool(doc.documentElement,'//*[local-name()="ExchangedDocumentContext"]/ram:TestIndicator', false);
   Result.BusinessProcess := XMLUtils._nodeAsString(doc.DocumentElement, '//*[local-name()="BusinessProcessSpecifiedDocumentContextParameter"]/ram:ID');//, nsmgr),
   Result.Profile := TZUGFeRDProfileExtensions.FromString(XMLUtils._nodeAsString(doc.DocumentElement, '//ram:GuidelineSpecifiedDocumentContextParameter/ram:ID'));//, nsmgr)),
   Result.Name := XMLUtils._nodeAsString(doc.DocumentElement, '//*[local-name()="ExchangedDocument"]/ram:Name');
@@ -321,14 +323,19 @@ begin
   nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:ApplicableTradeTax');
   for i := 0 to nodes.length-1 do
   begin
-    Result.AddApplicableTradeTax(XMLUtils._nodeAsDecimal(nodes[i], './/ram:BasisAmount', TZUGFeRDNullableParam<Currency>.Create(0)),
-                                 XMLUtils._nodeAsDecimal(nodes[i], './/ram:RateApplicablePercent',TZUGFeRDNullableParam<Currency>.Create(0)),
-                                 TZUGFeRDTaxTypesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:TypeCode')),
-                                 TZUGFeRDTaxCategoryCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:CategoryCode')),
-                                 nil,
-          TZUGFeRDNullableParam<TZUGFeRDTaxExemptionReasonCodes>.Create(
-            TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:ExemptionReasonCode'))),
-                                 XMLUtils._nodeAsString(nodes[i], './/ram:ExemptionReason'));
+    Result.AddApplicableTradeTax(
+      XMLUtils._nodeAsDecimal(nodes[i], './/ram:BasisAmount', TZUGFeRDNullableParam<Currency>.Create(0)),
+      XMLUtils._nodeAsDecimal(nodes[i], './/ram:RateApplicablePercent',TZUGFeRDNullableParam<Currency>.Create(0)),
+      XmlUtils._nodeAsDecimal(nodes[i], './/ram:CalculatedAmount', TZUGFeRDNullableParam<Currency>.Create(0)),
+      TZUGFeRDTaxTypesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:TypeCode')),
+      TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(
+         TZUGFeRDTaxCategoryCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:CategoryCode'))),
+      XMLUtils._nodeAsDecimal(nodes[i], './/ram:AllowanceChargeBasisAmount'),
+      TZUGFeRDTaxExemptionReasonCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './/ram:ExemptionReasonCode')),
+      XMLUtils._nodeAsString(nodes[i], './/ram:ExemptionReason'),
+      XMLUtils._nodeAsDecimal(nodes[i], './/ram:LineTotalBasisAmount'))
+      .SetTaxPointDate(XMLUtils._nodeAsDateTime(nodes[i], './/ram:TaxPointDate/udt:DateString'),
+        TZUGFeRDDateTypeCodesExtensions.FromString(XMLUtils._nodeAsstring(nodes[i], './/ram:DueDateTypeCode')));
   end;
 
   nodes := doc.SelectNodes('//ram:ApplicableHeaderTradeSettlement/ram:SpecifiedTradeAllowanceCharge');
@@ -417,6 +424,16 @@ begin
   for i := 0 to nodes.length-1 do
     Result.TradeLineItems.Add(_parseTradeLineItem(nodes[i]));
 
+  var deliveryCodeStr := XmlUtils._nodeAsString(doc.DocumentElement,
+    '//ram:ApplicableHeaderTradeAgreement/ram:ApplicableTradeDeliveryTerms/ram:DeliveryTypeCode');
+  if not string.IsNullOrWhiteSpace(deliveryCodeStr) then
+  begin
+    var tradeCode := TZUGFeRDTradeDeliveryTermCodesExtensions.FromString(deliveryCodeStr);
+    if (tradeCode <> nil) then
+      Result.ApplicableTradeDeliveryTermsCode := tradeCode;
+
+  end;
+
   // Read SellerOrderReferencedDocument
   node := doc.SelectSingleNode('//ram:ApplicableHeaderTradeAgreement/ram:SellerOrderReferencedDocument');
   if node <> nil then
@@ -501,6 +518,11 @@ begin
   var lineId := XmlUtils._NodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineID',
     String.Empty);
 
+   var lineStatusCode := TZUGFeRDLineStatusCodesExtensions.FromString(
+    XmlUtils._nodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineStatusCode'));
+  var lineStatusReasonCode := TZUGFeRDLineStatusReasonCodesExtensions.FromString(
+    XmlUtils._nodeAsString(tradeLineItem, './/ram:AssociatedDocumentLineDocument/ram:LineStatusReasonCode'));
+
   Result := TZUGFeRDTradeLineItem.Create(lineId);
 
   Result.GlobalID.ID := XMLUtils._nodeAsString(tradeLineItem, './/ram:SpecifiedTradeProduct/ram:GlobalID');
@@ -513,17 +535,19 @@ begin
   Result.BilledQuantity := XMLUtils._nodeAsDouble(tradeLineItem, './/ram:BilledQuantity', TZUGFeRDNullableParam<Double>.Create(0));
   Result.PackageQuantity := XMLUtils._nodeAsDouble(tradeLineItem, './/ram:PackageQuantity', TZUGFeRDNullableParam<Double>.Create(0));
   Result.ChargeFreeQuantity := XMLUtils._nodeAsDouble(tradeLineItem, './/ram:ChargeFreeQuantity', TZUGFeRDNullableParam<Double>.Create(0));
-//  Result.LineTotalAmount.SetValue(XMLUtils._nodeAsDecimal(tradeLineItem, './/ram:LineTotalAmount', 0));
   Result.LineTotalAmount:= XMLUtils._nodeAsDouble(tradeLineItem, './/ram:LineTotalAmount', TZUGFeRDNullableParam<Double>.Create(0));
   Result.TaxCategoryCode := TZUGFeRDTaxCategoryCodesExtensions.FromString(XMLUtils._nodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:CategoryCode'));
   Result.TaxType := TZUGFeRDTaxTypesExtensions.FromString(XMLUtils._nodeAsString(tradeLineItem, './/ram:ApplicableTradeTax/ram:TypeCode'));
   Result.TaxPercent := XMLUtils._nodeAsDecimal(tradeLineItem, './/ram:ApplicableTradeTax/ram:RateApplicablePercent', TZUGFeRDNullableParam<Currency>.Create(0));
-  Result.NetUnitPrice:= XMLUtils._nodeAsDecimal(tradeLineItem, './/ram:NetPriceProductTradePrice/ram:ChargeAmount', TZUGFeRDNullableParam<Currency>.Create(0));
-  Result.GrossUnitPrice:= XMLUtils._nodeAsDecimal(tradeLineItem, './/ram:GrossPriceProductTradePrice/ram:ChargeAmount', TZUGFeRDNullableParam<Currency>.Create(0));
+  Result.NetUnitPrice:= XMLUtils._nodeAsDouble(tradeLineItem, './/ram:NetPriceProductTradePrice/ram:ChargeAmount', TZUGFeRDNullableParam<Double>.Create(0));
+  Result.GrossUnitPrice:= XMLUtils._nodeAsDouble(tradeLineItem, './/ram:GrossPriceProductTradePrice/ram:ChargeAmount', TZUGFeRDNullableParam<Double>.Create(0));
   Result.UnitCode := TZUGFeRDQuantityCodesExtensions.FromString(XMLUtils._nodeAsString(tradeLineItem,
     './/ram:BilledQuantity/@unitCode'));
   Result.BillingPeriodStart:= XMLUtils._nodeAsDateTime(tradeLineItem, './/ram:BillingSpecifiedPeriod/ram:StartDateTime/udt:DateTimeString');
   Result.BillingPeriodEnd:= XMLUtils._nodeAsDateTime(tradeLineItem, './/ram:BillingSpecifiedPeriod/ram:EndDateTime/udt:DateTimeString');
+
+  if (lineStatusCode.HasValue and  lineStatusReasonCode.HasValue) then
+    Result.SetLineStatus(lineStatusCode.Value, lineStatusReasonCode.Value);
 
   nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedTradeProduct/ram:ApplicableProductCharacteristic');
   for i := 0 to nodes.length-1 do
@@ -532,6 +556,25 @@ begin
     apcItem.Description := XMLUtils._nodeAsString(nodes[i], './/ram:Description');
     apcItem.Value := XMLUtils._nodeAsString(nodes[i], './/ram:Value');
     Result.ApplicableProductCharacteristics.Add(apcItem);
+  end;
+
+  nodes := tradeLineItem.SelectNodes('.//ram:SpecifiedTradeProduct/ram:IncludedReferencedProduct');
+  for i := 0 to nodes.Length - 1 do
+  begin
+
+      var unitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes> := nil;
+      var unitCodeAsString := XmlUtils._nodeAsString(nodes[i], './/ram:UnitQuantity/@unitCode');
+
+      if (not String.IsNullOrWhiteSpace(unitCodeAsString)) then
+          unitCode := TZUGFeRDQuantityCodesExtensions.FromString(unitCodeAsString);
+
+
+      var index := result.IncludedReferencedProducts.Add(TZUGFeRDIncludedReferencedProduct.Create);
+      result.IncludedReferencedProducts[index].Name :=
+        XmlUtils._nodeAsString(nodes[i], './/ram:Name');
+      result.IncludedReferencedProducts[index].UnitQuantity :=
+        XmlUtils._nodeAsDouble(nodes[i], './/ram:UnitQuantity');
+      result.IncludedReferencedProducts[index].UnitCode := unitCode
   end;
 
   if (tradeLineItem.SelectSingleNode('.//ram:AssociatedDocumentLineDocument') <> nil) then
@@ -553,25 +596,16 @@ begin
   begin
 
     var chargeIndicator : Boolean := XMLUtils._nodeAsBool(nodes[i], './ram:ChargeIndicator/udt:Indicator');
-    var basisAmount : Currency := XMLUtils._nodeAsDecimal(nodes[i], './ram:BasisAmount',TZUGFeRDNullableParam<Currency>.Create(0));
+    var basisAmount := XMLUtils._nodeAsDecimal(nodes[i], './ram:BasisAmount',TZUGFeRDNullableParam<Currency>.Create(0));
     var basisAmountCurrency : String := XMLUtils._nodeAsString(nodes[i], './ram:BasisAmount/@currencyID');
     var actualAmount : Currency := XMLUtils._nodeAsDecimal(nodes[i], './ram:ActualAmount', TZUGFeRDNullableParam<Currency>.Create(0));
-    var actualAmountCurrency : String := XMLUtils._nodeAsString(nodes[i], './ram:ActualAmount/@currencyID');
     var reason : String := XMLUtils._nodeAsString(nodes[i], './ram:Reason');
-    var reasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes := TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
-    var reasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes := TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown;
-    if chargeIndicator then
-      reasonCodeCharge := TZUGFeRDSpecialServiceDescriptionCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './ram:ReasonCode'))
-    else
-      reasonCodeAllowance := TZUGFeRDAllowanceOrChargeIdentificationCodesExtensions.FromString(XMLUtils._nodeAsString(nodes[i], './ram:ReasonCode'));
 
     Result.AddTradeAllowanceCharge(not chargeIndicator, // wichtig: das not beachten
                                     TZUGFeRDCurrencyCodesExtensions.FromString(basisAmountCurrency),
                                     basisAmount,
                                     actualAmount,
-                                    reason,
-                                    reasonCodeCharge,
-                                    reasonCodeAllowance);
+                                    reason);
   end;
 
   if (Result.UnitCode = TZUGFeRDQuantityCodes.Unknown) then

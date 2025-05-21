@@ -29,7 +29,7 @@ type
       const day: string = '0'; const hour: string = '0'; const minute: string = '0';
       const second: string = '0'): TDateTime;
   public
-    class function _nodeAsBool(node: IXmlDomNode; const xpath: string; defaultValue: Boolean = False): Boolean;
+    class function _nodeAsBool(node: IXmlDomNode; const xpath: string; defaultValue: Boolean = True): Boolean;
     class function _nodeAsString(node: IXmlDomNode; const xpath: string; defaultValue: string = ''): string;
     class function _nodeAsInt(node: IXmlDomNode; const xpath: string; defaultValue: Integer = 0): Integer;
     /// <summary>
@@ -115,7 +115,8 @@ begin
   if node = nil then
     exit;
 
-  format := '';
+  format := String.Empty;
+
   dateNode := node.SelectSingleNode(xpath);
   if dateNode = nil then
   begin
@@ -123,14 +124,15 @@ begin
   end;
 
   if dateNode.Attributes.getNamedItem('format') <> nil then
-  if dateNode.Attributes.getNamedItem('format').text <> '' then
     format := dateNode.Attributes.getNamedItem('format').text;
 
   rawValue := dateNode.text;
-  rawValue := rawValue.Trim;
 
-  if (Trim(rawValue) = '') then // we have to deal with real-life ZUGFeRD files :(
-    exit;
+  if (String.IsNullOrWhiteSpace(rawValue)) then // we have to deal with real-life ZUGFeRD files :(
+    exit(nil);
+
+  // to protect from space and /r /n characters
+  rawValue := rawValue.Trim;
 
   if (format='102') then
   begin
@@ -143,8 +145,8 @@ begin
 
     Result := SafeParseDateTime(year, month, day);
     exit;
-  end else
-  if (format='610') then
+  end
+  else if (format='610') then
   begin
     if Length(rawValue) <> 6 then
       raise Exception.Create('Wrong length of datetime element (format 610)');
@@ -155,8 +157,8 @@ begin
 
     Result := SafeParseDateTime(year, month, day);
     exit;
-  end else
-  if (format='616') then
+  end
+  else if (format='616') then
   begin
     if Length(rawValue) <> 6 then
       raise Exception.Create('Wrong length of datetime element (format 616)');
@@ -182,36 +184,31 @@ begin
     Result := SafeParseDateTime(year, month, day);
     exit;
   end
-  else if (Length(rawValue) = 10) then
+  else if ((Length(rawValue)= 10) and (rawValue[5] = '-') and (rawValue[8] = '-'))  then// yyyy-mm-dd
   begin
-    year := '';
-    if (rawValue[5] = '-') and (rawValue[8] = '-') then // yyyy-mm-dd
-    begin
-      year := Copy(rawValue, 1, 4);
-      month := Copy(rawValue, 6, 2);
-      day := Copy(rawValue, 9, 2);
-    end
-    else if (rawValue[3] = FormatSettings.DateSeparator) and (rawValue[6] = FormatSettings.DateSeparator) then //dd.mm.yyyy
-    begin
-      year := Copy(rawValue, 7, 4);
-      month := Copy(rawValue, 4, 2);
-      day := Copy(rawValue, 1, 2);
-    end;
-    if year <> '' then
-      Result := SafeParseDateTime(year, month, day);
-    exit;
+    year := rawValue.Substring(0, 4);
+    month := rawValue.Substring(5, 2);
+    day := rawValue.Substring(8, 2);
+    Exit(safeParseDateTime(year, month, day));
+  end
+  else if ((Length(rawValue) = 16) and (rawValue[5] = '-') and (rawValue[8] = '-')
+        and (rawValue[11] = '+')) then // yyyy-mm-dd+hh:mm
+  begin
+    year := rawValue.Substring(0, 4);
+    month := rawValue.Substring(5, 2);
+    day := rawValue.Substring(8, 2);
+    Exit(safeParseDateTime(year, month, day));
   end
   else if Length(rawValue) = 19 then
   begin
-    year := Copy(rawValue, 1, 4);
-    month := Copy(rawValue, 6, 2);
-    day := Copy(rawValue, 9, 2);
-    hour := Copy(rawValue, 12, 2);
-    minute := Copy(rawValue, 15, 2);
-    second := Copy(rawValue, 18, 2);
+    year := rawValue.Substring(0, 4);
+    month := rawValue.Substring(5, 2);
+    day := rawValue.Substring(8, 2);
 
-    Result := SafeParseDateTime(year, month, day, hour, minute, second);
-    exit;
+    hour := rawValue.Substring(11, 2);
+    minute := rawValue.Substring(14, 2);
+    second := rawValue.Substring(17, 2);
+    Exit(SafeParseDateTime(year, month, day, hour, minute, second));
   end
   else
     raise TZUGFeRDUnsupportedException.Create('Invalid length of datetime value');

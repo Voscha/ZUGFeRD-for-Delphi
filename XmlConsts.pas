@@ -15,28 +15,20 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDPartyTypes;
+unit XmlConsts;
 
 interface
 
 type
-  TZUGFeRDPartyTypes = (
-    Unknown,
-    SellerTradeParty,
-    BuyerTradeParty,
-    ShipToTradeParty,
-    UltimateShipToTradeParty,
-    ShipFromTradeParty,
-    InvoiceeTradeParty,
-    PayeeTradeParty,
-    SalesAgentTradeParty,
-    BuyerTaxRepresentativeTradeParty,
-    ProductEndUserTradeParty,
-    BuyerAgentTradeParty,
-    InvoicerTradeParty,
-    PayerTradeParty,
-    SellerTaxRepresentativeTradeParty
-  );
+  XmlConstants = class
+  public
+    /// <summary>
+    /// Xml new line. Funktioniert wie Environment.NewLine in C#.
+    ///
+    /// Bitte beachten: Es funktioniert nicht, wenn dieser Wert durch #10 ersetzt wird.
+    /// </summary>
+    const XmlNewLine: string = '&#10;';
+  end;
 
 implementation
 

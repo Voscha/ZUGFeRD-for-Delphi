@@ -34,6 +34,8 @@ type
     [TearDown]
     procedure TearDown;
     [Test]
+    procedure TestLineStatusCode;
+    [Test]
     procedure TestReferenceBasicInvoice;
     [Test]
     procedure TestReferenceExtendedInvoice;
@@ -62,6 +64,10 @@ type
     /// </summary>
     [Test]
     procedure TestWriteAndReadExtended;
+    [Test]
+    procedure TestApplicableTradeDeliveryTermsExists;
+    [Test]
+    procedure TestApplicableTradeDeliveryTermsIsNull;
   end;
 
 implementation
@@ -76,7 +82,9 @@ uses intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDProfile, intf.ZUGFeRDInvoiceType
   intf.ZUGFeRDFinancialCard, intf.ZUGFeRDTradeLineItem, intf.ZUGFeRDApplicableProductCharacteristic,
   intf.ZUGFeRDBankAccount, intf.ZUGFeRDPaymentMeansTypeCodes, intf.ZUGFeRDNote, intf.ZUGFeRDTax,
   intf.ZUGFeRDTradeAllowanceCharge, intf.ZUGFeRDServiceCharge, intf.ZUGFeRDAdditionalReferencedDocument,
-  System.DateUtils, Winapi.ActiveX;
+  System.DateUtils, Winapi.ActiveX, System.IOUtils,
+  intf.ZUGFeRDLineStatusReasonCodes, intf.ZUGFeRDLineStatusCodes, intf.ZUGFeRDTradeDeliveryTermCodes;
+
 
 
 procedure TZUGFerd20Tests.Setup;
@@ -90,6 +98,143 @@ begin
   CoUninitialize;
   FInvoiceProvider.Free;
 end;
+
+procedure TZUGFerd20Tests.TestApplicableTradeDeliveryTermsExists;
+var
+  uuid: string;
+  issueDateTime: TDateTime;
+  desc: TZUGFeRDInvoiceDescriptor;
+  loadedInvoice: TZUGFeRDInvoiceDescriptor;
+begin
+  uuid := TZUGFeRDHelper.CreateUuid;
+
+  desc := FInvoiceProvider.CreateInvoice();
+  desc.ApplicableTradeDeliveryTermsCode := TZUGFeRDTradeDeliveryTermCodes.CFR;
+
+  var ms := TMemoryStream.Create;
+  desc.Save(ms, TZUGFeRDVersion.Version20, TZUGFeRDProfile.Extended);
+  desc.Free;
+
+  ms.Seek(0, soFromBeginning);
+  var reader := TStreamReader.Create(ms);
+  var text := reader.ReadToEnd();
+  reader.Free;
+
+  ms.Seek(0, soFromBeginning);
+  loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(TZUGFeRDProfile.Extended, loadedInvoice.Profile);
+  Assert.AreEqual(loadedInvoice.ApplicableTradeDeliveryTermsCode.Value, TZUGFeRDTradeDeliveryTermCodes.CFR);
+  loadedInvoice.Free;
+
+end;
+
+procedure TZUGFerd20Tests.TestApplicableTradeDeliveryTermsIsNull;
+var
+  uuid: string;
+  issueDateTime: TDateTime;
+  desc: TZUGFeRDInvoiceDescriptor;
+  loadedInvoice: TZUGFeRDInvoiceDescriptor;
+begin
+  uuid := TZUGFeRDHelper.CreateUuid;
+
+  desc := FInvoiceProvider.CreateInvoice();
+
+  var ms := TMemoryStream.Create;
+  desc.Save(ms, TZUGFeRDVersion.Version20, TZUGFeRDProfile.Extended);
+  desc.Free;
+
+  ms.Seek(0, soFromBeginning);
+  var reader := TStreamReader.Create(ms);
+  var text := reader.ReadToEnd();
+  reader.Free;
+
+  ms.Seek(0, soFromBeginning);
+  loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(TZUGFeRDProfile.Extended, loadedInvoice.Profile);
+  Assert.IsNull(loadedInvoice.ApplicableTradeDeliveryTermsCode);
+  loadedInvoice.Free;
+end;
+
+procedure TZUGFerd20Tests.TestLineStatusCode;
+var
+  path: string;
+  desc: TZUGFeRDInvoiceDescriptor;
+begin
+  path := '..\..\..\demodata\zugferd20\zugferd_2p0_EXTENDED_Warenrechnung.xml';
+  path := makeSurePathIsCrossPlatformCompatible(path);
+
+  var fs: TFileStream := TFile.Open(path, TFileMode.fmOpen);
+  desc := TZUGFeRDInvoiceDescriptor.Load(fs);
+  fs.Free;
+
+  desc.TradeLineItems.Clear();
+
+  var tradeLineItem1 := desc.AddTradeLineItem(
+      'Trennbl‰tter A4', '',
+      TZUGFeRDQuantityCodes.H87,
+      nil,
+      TZUGFeRDNullableParam<Double>.Create(9.9),
+      TZUGFeRDNullableParam<Double>.Create(9.9),
+      20.0,
+      0.0,
+      TZUGFeRDTaxTypes.VAT,
+      TZUGFeRDTaxCategoryCodes.S,
+      19.0
+  );
+
+  tradeLineItem1.SetLineStatus(TZUGFeRDLineStatusCodes.New, TZUGFeRDLineStatusReasonCodes.DETAIL);
+
+  desc.AddTradeLineItem(
+      'Joghurt Banane',
+      '',
+      TZUGFeRDQuantityCodes.H87,
+      nil,
+      TZUGFeRDNullableParam<Double>.Create(5.5),
+      TZUGFeRDNullableParam<Double>.Create(5.5),
+      50,
+      0,
+      TZUGFeRDTaxTypes.VAT,
+      TZUGFeRDTaxCategoryCodes.S,
+      7.0
+  );
+
+  var tradeLineItem3 := desc.AddTradeLineItem(
+      'Abschlagsrechnung vom 01.01.2024', '',
+      TZUGFeRDQuantityCodes.C62,
+      nil,
+      nil,
+      TZUGFeRDNullableParam<Double>.Create(500),
+      -1,
+      0,
+      TZUGFeRDTaxTypes.VAT,
+      TZUGFeRDTaxCategoryCodes.S,
+      19.0
+  );
+
+  tradeLineItem3.SetLineStatus(TZUGFeRDLineStatusCodes.DocumentationClaim, TZUGFeRDLineStatusReasonCodes.INFORMATION);
+
+  var ms := TMemoryStream.Create;
+  desc.Save(ms, TZUGFeRDVersion.Version20, TZUGFeRDProfile.Extended);
+  desc.Free;
+
+  ms.Seek(0, soFromBeginning);
+  var loadedInvoice := TZUGFeRDInvoiceDescriptor.Load(ms);
+  ms.Free;
+
+  Assert.AreEqual(loadedInvoice.TradeLineItems.Count, 3);
+  Assert.AreEqual(loadedInvoice.TradeLineItems[0].AssociatedDocument.LineStatusCode.Value, TZUGFeRDLineStatusCodes.New);
+  Assert.AreEqual(loadedInvoice.TradeLineItems[0].AssociatedDocument.LineStatusReasonCode.Value, TZUGFeRDLineStatusReasonCodes.DETAIL);
+  Assert.IsNull(loadedInvoice.TradeLineItems[1].AssociatedDocument.LineStatusCode);
+  Assert.IsNull(loadedInvoice.TradeLineItems[1].AssociatedDocument.LineStatusReasonCode);
+  Assert.AreEqual(loadedInvoice.TradeLineItems[2].AssociatedDocument.LineStatusCode.Value, TZUGFeRDLineStatusCodes.DocumentationClaim);
+  Assert.AreEqual(loadedInvoice.TradeLineItems[2].AssociatedDocument.LineStatusReasonCode.Value, TZUGFeRDLineStatusReasonCodes.INFORMATION);
+
+  loadedInvoice.Free;
+end; // !TestLineStatusCode()
 
 procedure TZUGFerd20Tests.TestLoadingSepaPreNotification;
 var
@@ -150,7 +295,7 @@ const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
           TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
           TZUGFeRDNullableParam<TDateTime>.Create(timestamp),
           'EmbeddedPdf',
-          TZUGFeRDReferenceTypeCodes.Unknown,
+          nil,
           msref1,
           filename1
       );
@@ -163,7 +308,7 @@ const id: string; const typeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
           TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
           TZUGFeRDNullableParam<TDateTime>.Create(timestamp),
           'EmbeddedBin',
-          TZUGFeRDReferenceTypeCodes.Unknown,
+          nil,
           msref2,
           filename2
       );
@@ -433,8 +578,8 @@ begin
       '',
       TZUGFeRDQuantityCodes.C62,
       nil,
-      TZUGFeRDNullableParam<Currency>.Create(9.9),
-      TZUGFeRDNullableParam<Currency>.Create(9.9),
+      TZUGFeRDNullableParam<Double>.Create(9.9),
+      TZUGFeRDNullableParam<Double>.Create(9.9),
       20,
       0,
       TZUGFeRDTaxTypes.VAT,
@@ -452,8 +597,8 @@ begin
       '',
       TZUGFeRDQuantityCodes.C62,
       nil,
-      TZUGFeRDNullableParam<Currency>.Create(5.5),
-      TZUGFeRDNullableParam<Currency>.Create(5.5),
+      TZUGFeRDNullableParam<Double>.Create(5.5),
+      TZUGFeRDNullableParam<Double>.Create(5.5),
       50,
       0,
       TZUGFeRDTaxTypes.VAT,
@@ -504,8 +649,10 @@ begin
       '201/113/40209'));
     d.SellerTaxRegistration.Add(TZUGFeRDTaxRegistration.CreateWithParams(TZUGFeRDTaxRegistrationSchemeID.VA,
       'DE123456789'));
-    d.AddApplicableTradeTax(275.00, 7.00, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
-    d.AddApplicableTradeTax(198.00, 19.00, TZUGFeRDTaxTypes.VAT, TZUGFeRDTaxCategoryCodes.S);
+    d.AddApplicableTradeTax(275.00, 7.00, (275.00 / 100 * 7.00), TZUGFeRDTaxTypes.VAT,
+      TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S));
+    d.AddApplicableTradeTax(198.00, 19.00, (198.00 / 100 * 19.00), TZUGFeRDTaxTypes.VAT,
+      TZUGFeRDNullableParam<TZUGFeRDTaxCategoryCodes>.Create(TZUGFeRDTaxCategoryCodes.S));
 
     d.Save(ms, TZUGFeRDVersion.Version20, TZUGFeRDProfile.Comfort);
     ms.Seek(0, soBeginning);
@@ -528,7 +675,7 @@ var
   uuid: string;
   issueDateTime: TDateTime;
   desc: TZUGFeRDInvoiceDescriptor;
-  msExtended, msBasic: TMemoryStream;
+  msExtended: TMemoryStream;
   loadedInvoice: TZUGFeRDInvoiceDescriptor;
 begin
   uuid := TZUGFeRDHelper.CreateUuid;
@@ -608,7 +755,7 @@ begin
       TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
       TZUGFeRDNullableParam<TDateTime>.Create(timestamp- 2),
       'EmbeddedPdf',
-      TZUGFeRDReferenceTypeCodes.Unknown,
+      nil,
       msref1,
       filename2);
 
@@ -707,11 +854,13 @@ begin
     Assert.IsNotNull(lineItem);
     lineItem.Description := 'This is line item TB100A4';
     lineItem.BuyerAssignedID := '0815';
-    lineItem.SetOrderReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.create(timestamp));
-    lineItem.SetDeliveryNoteReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.create(timestamp));
-    lineItem.SetContractReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.create(timestamp));
+    lineItem.SetOrderReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.create(timestamp), '1');
+    lineItem.SetDeliveryNoteReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.create(timestamp), '1');
+    lineItem.SetContractReferencedDocument('12345', TZUGFeRDNullableParam<TDateTime>.create(timestamp), '1');
 
-    lineItem.AddAdditionalReferencedDocument('xyz', TZUGFeRDReferenceTypeCodes.AAB,
+    lineItem.AddAdditionalReferencedDocument('xyz',
+      TZUGFeRDAdditionalReferencedDocumentTypeCode.ReferenceDocument,
+      TZUGFerDNullableParam<TZUGFeRDReferenceTypeCodes>.create(TZUGFeRDReferenceTypeCodes.AAB),
       TZUGFeRDNullableParam<TDateTime>.create(timestamp));
 
     lineItem.UnitQuantity := 3;
@@ -724,7 +873,8 @@ begin
     lineItem.BillingPeriodEnd := timestamp.IncDay(10);
 
     lineItem.AddReceivableSpecifiedTradeAccountingAccount('987654');
-    lineItem.AddTradeAllowanceCharge(false, TZUGFeRDCurrencyCodes.EUR, 10, 50, 'Reason: UnitTest');
+    lineItem.AddTradeAllowanceCharge(false, TZUGFeRDCurrencyCodes.EUR,
+    TZUGFeRDNullableParam<Currency>.Create(10), 50, 'Reason: UnitTest');
 
 
     var ms := TMemoryStream.create;
@@ -754,7 +904,7 @@ begin
 
     Assert.AreEqual('Lieferantenstraﬂe 20', loadedInvoice.Seller.Street);
     Assert.AreEqual(TZUGFeRDCountryCodes.DE, loadedInvoice.Seller.Country);
-    Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, loadedInvoice.Seller.GlobalID.SchemeID);
+    Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.GLN, loadedInvoice.Seller.GlobalID.SchemeID.Value);
     Assert.AreEqual('4000001123452', loadedInvoice.Seller.GlobalID.ID);
     Assert.AreEqual('Max Mustermann', loadedInvoice.SellerContact.Name);
     Assert.AreEqual('Muster-Einkauf', loadedInvoice.SellerContact.OrgUnit);
@@ -780,7 +930,7 @@ begin
     //Assert.AreEqual("Project 123", loadedInvoice.SpecifiedProcuringProject.Name);
 
     Assert.AreEqual<string>('123', loadedInvoice.ShipTo.ID.ID);
-    Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.DUNS, loadedInvoice.ShipTo.GlobalID.SchemeID);
+    Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.DUNS, loadedInvoice.ShipTo.GlobalID.SchemeID.Value);
     Assert.AreEqual('789', loadedInvoice.ShipTo.GlobalID.ID);
     Assert.AreEqual('Ship To', loadedInvoice.ShipTo.Name);
     Assert.AreEqual('Max Mustermann', loadedInvoice.ShipTo.ContactName);
@@ -790,7 +940,7 @@ begin
     Assert.AreEqual(TZUGFeRDCountryCodes.DE, loadedInvoice.ShipTo.Country);
 
     Assert.AreEqual<string>('123', loadedInvoice.ShipFrom.ID.ID);
-    Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.DUNS, loadedInvoice.ShipFrom.GlobalID.SchemeID);
+    Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.DUNS, loadedInvoice.ShipFrom.GlobalID.SchemeID.Value);
     Assert.AreEqual('789', loadedInvoice.ShipFrom.GlobalID.ID);
     Assert.AreEqual('Ship From', loadedInvoice.ShipFrom.Name);
     Assert.AreEqual('Eva Musterfrau', loadedInvoice.ShipFrom.ContactName);
@@ -928,16 +1078,16 @@ begin
 
     Assert.AreEqual('TB100A4', loadedLineItem.SellerAssignedID);
     Assert.AreEqual('0815', loadedLineItem.BuyerAssignedID);
-    Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, loadedLineItem.GlobalID.SchemeID);
+    Assert.AreEqual(TZUGFeRDGlobalIDSchemeIdentifiers.EAN, loadedLineItem.GlobalID.SchemeID.Value);
     Assert.AreEqual('4012345001235', loadedLineItem.GlobalID.ID);
 
     //GrossPriceProductTradePrice
-    Assert.AreEqual(Currency(9.9), loadedLineItem.GrossUnitPrice.Value);
+    Assert.AreEqual(Double(9.9), loadedLineItem.GrossUnitPrice.Value);
     Assert.AreEqual(TZUGFeRDQuantityCodes.H87, loadedLineItem.UnitCode);
     Assert.AreEqual(Double(3), loadedLineItem.UnitQuantity.Value);
 
     //NetPriceProductTradePrice
-    Assert.AreEqual(Currency(9.9), loadedLineItem.NetUnitPrice.Value);
+    Assert.AreEqual(Double(9.9), loadedLineItem.NetUnitPrice.Value);
     Assert.AreEqual(Double(20), loadedLineItem.BilledQuantity);
 
     Assert.AreEqual(TZUGFeRDTaxTypes.VAT, loadedLineItem.TaxType);
@@ -960,7 +1110,7 @@ begin
     Assert.IsNotNull(lineItemReferencedDoc);
     Assert.AreEqual('xyz', lineItemReferencedDoc.ID);
     Assert.AreEqual(timestamp, lineItemReferencedDoc.IssueDateTime.Value);
-    Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAB, lineItemReferencedDoc.ReferenceTypeCode);
+    Assert.AreEqual(TZUGFeRDReferenceTypeCodes.AAB, lineItemReferencedDoc.ReferenceTypeCode.Value);
 
 
     var productCharacteristics: TZUGFeRDApplicableProductCharacteristic :=

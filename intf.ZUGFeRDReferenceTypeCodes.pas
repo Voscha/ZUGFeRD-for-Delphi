@@ -20,8 +20,7 @@ unit intf.ZUGFeRDReferenceTypeCodes;
 interface
 
 uses
-  System.SysUtils,System.TypInfo
-  ;
+  System.SysUtils,System.TypInfo, intf.ZUGFeRDHelper;
 
 type
   /// <summary>
@@ -31,11 +30,6 @@ type
   /// https://www.xrepository.de/details/urn:xoev-de:kosit:codeliste:untdid.1153_3#version
   /// </summary>
   TZUGFeRDReferenceTypeCodes = (
-    /// <summary>
-    /// Unknown/ invalid value
-    /// </summary>
-    Unknown,
-
     /// <summary>
     /// Auftragsbestätigungsnummer
     /// </summary>
@@ -147,6 +141,12 @@ type
     AWR,
 
     /// <summary>
+    /// Aktueller Anfangszählerstand
+    /// (z.B. Kilometerstand eines Fahrzeugs)
+    /// </summary>
+    BA,
+
+    /// <summary>
     /// Rahmenauftragsnummer
     /// </summary>
     BO,
@@ -188,6 +188,13 @@ type
     OI,
 
     /// <summary>
+    /// Order document identifier, buyer assigned
+    /// [1022]
+    /// Identifier assigned by the buyer to an order.
+    /// </summary>
+    ON,
+
+    /// <summary>
     /// Preisliste
     /// </summary>
     PL,
@@ -208,6 +215,11 @@ type
     PP,
 
     /// <summary>
+    /// Seriennummer
+    /// </summary>
+    SE,
+
+    /// <summary>
     /// Transportauftragsnummer
     /// </summary>
     TIN,
@@ -220,7 +232,7 @@ type
 
   TZUGFeRDReferenceTypeCodesExtensions = class
   public
-    class function FromString(const s: string): TZUGFeRDReferenceTypeCodes;
+    class function FromString(const s: string): ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes>;
     class function EnumToString(codes: TZUGFeRDReferenceTypeCodes): string;
   end;
 
@@ -235,15 +247,18 @@ begin
 end;
 
 class function TZUGFeRDReferenceTypeCodesExtensions.FromString(
-  const s: string): TZUGFeRDReferenceTypeCodes;
+  const s: string): ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes>;
 var
   enumValue : Integer;
 begin
+  if string.IsNullOrEmpty(s) then
+    exit(nil);
+
   enumValue := GetEnumValue(TypeInfo(TZUGFeRDReferenceTypeCodes), s);
   if enumValue >= 0 then
     Result := TZUGFeRDReferenceTypeCodes(enumValue)
   else
-    Result := TZUGFeRDReferenceTypeCodes.Unknown;
+    Result := nil;
 end;
 
 end.

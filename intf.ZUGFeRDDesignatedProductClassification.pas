@@ -28,13 +28,9 @@ type
   TZUGFeRDDesignatedProductClassification = class
   private
     FClassName: string;
-    FListID: string;
+    FListID: TZUGFeRDDesignatedProductClassificationCodes;
     FListVersionID: string;
-    FClassCode: ZUGFeRDNullableInt;
-    procedure SetClassCode(const Value: ZUGFeRDNullableInt);
-    procedure SetClassName(const Value: string);
-    procedure SetListID(const Value: string);
-    procedure SetListVersionID(const Value: string);
+    FClassCode: string;
   public
     /// <summary>
     /// A code for the classification of an item according to type or kind or nature.
@@ -43,50 +39,25 @@ type
     /// purposes, for instance like public procurement, in accordance with the Common Vocabulary for Public Procurement
     /// [CPV]), e-Commerce(UNSPSC) etc.
     /// </summary>
-    property ClassCode: ZUGFeRDNullableInt read FClassCode write SetClassCode;
+    property ClassCode: string read FClassCode write FClassCode;
 
     /// <summary>
     /// Product classification name
     /// </summary>
-    property ListID: string read FListID write SetListID;
+    property ListID: TZUGFeRDDesignatedProductClassificationCodes read FListID write FListID;
 
     /// <summary>
     /// Version of product classification
     /// </summary>
-    property ListVersionID: string read FListVersionID write SetListVersionID;
+    property ListVersionID: string read FListVersionID write FListVersionID;
 
     /// <summary>
     /// Classification name
     /// </summary>
-    property ClassName_: string read FClassName write SetClassName;
+    property ClassName_: string read FClassName write FClassName;
   end;
 
 implementation
 
-{ TZUGFeRDDesignatedProductClassification }
-
-procedure TZUGFeRDDesignatedProductClassification.SetClassCode(
-  const Value: ZUGFeRDNullableInt);
-begin
-  if Value.HasValue and (Value.Value <= Integer(High(TZUGFeRDDesignatedProductClassificationCodes))) then
-    FClassCode := Value
-  else
-    FClassCode.ClearValue;
-end;
-
-procedure TZUGFeRDDesignatedProductClassification.SetClassName(const Value: string);
-begin
-  FClassName := Value;
-end;
-
-procedure TZUGFeRDDesignatedProductClassification.SetListID(const Value: string);
-begin
-  FListID := Value;
-end;
-
-procedure TZUGFeRDDesignatedProductClassification.SetListVersionID(const Value: string);
-begin
-  FListVersionID := Value;
-end;
 
 end.

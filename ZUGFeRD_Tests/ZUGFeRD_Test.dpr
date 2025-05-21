@@ -43,7 +43,11 @@ uses
   intf.ZUGFeRDLineStatusCodes in '..\intf.ZUGFeRDLineStatusCodes.pas',
   intf.ZUGFeRDLineStatusReasonCodes in '..\intf.ZUGFeRDLineStatusReasonCodes.pas',
   intf.ZUGFeRDTaxExemptionReasonCodes in '..\intf.ZUGFeRDTaxExemptionReasonCodes.pas',
-  EnumStringMappingAttribute in '..\EnumStringMappingAttribute.pas';
+  EnumStringMappingAttribute in '..\EnumStringMappingAttribute.pas',
+  intf.ZUGFeRDAllowanceReasonCodes in '..\intf.ZUGFeRDAllowanceReasonCodes.pas',
+  intf.ZUGFeRDTradeDeliveryTermCodes in '..\intf.ZUGFeRDTradeDeliveryTermCodes.pas',
+  intf.ZUGFeRDDateTypeCodes in '..\intf.ZUGFeRDDateTypeCodes.pas',
+  XmlConsts in '..\XmlConsts.pas';
 
 { keep comment here to protect the following conditional from being removed by the IDE when adding a unit }
 {$IFNDEF TESTINSIGHT}

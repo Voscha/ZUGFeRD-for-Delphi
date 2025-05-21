@@ -23,6 +23,7 @@ uses
   intf.ZUGFeRDCharge,intf.ZUGFeRDCurrencyCodes,
   intf.ZUGFeRDAllowanceOrChargeIdentificationCodes,
   intf.ZUGFeRDSpecialServiceDescriptionCodes,
+  intf.ZUGFeRDAllowanceReasonCodes,
   intf.ZUGFeRDHelper
   ;
 
@@ -51,8 +52,7 @@ type
     FCurrency: TZUGFeRDCurrencyCodes;
     FActualAmount: Currency;
     FChargePercentage: ZUGFeRDNullable<Currency>;
-    FReasonCodeAllowance: TZUGFeRDAllowanceOrChargeIdentificationCodes;
-    FReasonCodeCharge: TZUGFeRDSpecialServiceDescriptionCodes;
+    FReasonCodeAllowance: TZUGFeRDAllowanceReasonCodes;
   public
     constructor Create;
   public
@@ -67,15 +67,15 @@ type
     property ChargeIndicator: Boolean read FChargeIndicator write FChargeIndicator;
 
     /// <summary>
-    /// The reason code - one tag -> 2 Types
-    /// </summary>
-    property ReasonCodeAllowance : TZUGFeRDAllowanceOrChargeIdentificationCodes read FReasonCodeAllowance write FReasonCodeAllowance;
-    property ReasonCodeCharge : TZUGFeRDSpecialServiceDescriptionCodes read FReasonCodeCharge write FReasonCodeCharge;
-
-    /// <summary>
     /// The reason for the surcharge or discount in written form
     /// </summary>
     property Reason: string read FReason write FReason;
+
+    /// <summary>
+    /// The reason code for the surcharge or discount
+    /// </summary>
+    property ReasonCode: TZUGFeRDAllowanceReasonCodes read FReasonCodeAllowance write FReasonCodeAllowance;
+
     /// <summary>
     /// The base amount that may be used in conjunction with the percentage of the invoice line discount to calculate the amount of the invoice line discount
     /// </summary>
@@ -109,8 +109,7 @@ begin
   FCurrency:= TZUGFeRDCurrencyCodes.Unknown;
   FActualAmount:= 0;
   FChargePercentage:= 0;
-  FReasonCodeAllowance:= TZUGFeRDAllowanceOrChargeIdentificationCodes.Unknown;
-  FReasonCodeCharge := TZUGFeRDSpecialServiceDescriptionCodes.Unknown;
+  FReasonCodeAllowance:= TZUGFeRDAllowanceReasonCodes.Unknown;
 end;
 
 end.

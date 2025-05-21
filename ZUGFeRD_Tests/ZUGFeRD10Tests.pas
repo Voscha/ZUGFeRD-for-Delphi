@@ -20,7 +20,7 @@ unit ZUGFeRD10Tests;
 interface
 
 uses
-  DUnitX.TestFramework, System.Classes, System.SysUtils, TestBase, InvoiceProvider;
+  DUnitX.TestFramework, System.Classes, System.SysUtils, TestBase, InvoiceProvider, XML.XMLIntf;
 
 type
   [TestFixture]
@@ -40,6 +40,15 @@ type
     procedure TestStoringInvoiceViaFile;
     [Test]
     procedure TestStoringInvoiceViaStreams;
+    /// <summary>
+    /// This test ensure that a BIC is created for the debitor account if it specified (in contrary to later versions of ZUGFeRD)
+    /// </summary>
+    [Test]
+    procedure TestBICIDForDebitorFinancialInstitution;
+    [Test]
+    procedure TestSpecifiedTradePaymentTermsDescription;
+    [Test]
+    procedure TestSpecifiedTradePaymentTermsCalculationPercent;
     [Test]
     procedure TestMissingPropertiesAreNull;
   end;
@@ -47,7 +56,7 @@ type
 implementation
 
 uses intf.ZUGFeRDInvoiceDescriptor, intf.ZUGFeRDProfile, intf.ZUGFeRDInvoiceTypes, intf.ZUGFeRDVersion,
-  intf.ZUGFeRDTradeLineItem, winapi.ActiveX;
+  intf.ZUGFeRDTradeLineItem, winapi.ActiveX, XML.XMLDoc, intf.ZUGFeRDXmlHelper;
 
 procedure TZUGFeRD10Tests.Setup;
 begin
@@ -60,6 +69,44 @@ begin
   FInvoiceProvider.Free;
   CoUninitialize;
 end;
+
+procedure TZUGFeRD10Tests.TestBICIDForDebitorFinancialInstitution;
+var
+  desc: TZUGFeRDInvoiceDescriptor;
+  XMLdoc: IXMLDocument;
+begin
+  desc := FInvoiceProvider.CreateInvoice();
+  //PayerSpecifiedDebtorFinancialInstitution
+  desc.AddDebitorFinancialAccount('DE02120300000000202051', 'MYBIC');
+
+  var ms := TMemoryStream.Create;
+  desc.Save(ms, TZUGFeRDVersion.Version1, TZUGFeRDProfile.Comfort);
+  desc.Free;
+
+  ms.Seek(0, soFromBeginning);
+
+  var reader := TStreamReader.Create(ms);
+  var text := reader.ReadToEnd();
+  reader.Free;
+
+  ms.Seek(0, soFromBeginning);
+
+  XMLdoc := NewXMLDocument;
+  XMLdoc.LoadFromStream(ms);
+  ms.Free;
+
+  XMLdoc.DocumentElement.DeclareNamespace('rsm', 'urn:ferd:CrossIndustryDocument:invoice:1p0');
+  XMLdoc.DocumentElement.DeclareNamespace('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:12');
+  XMLdoc.DocumentElement.DeclareNamespace('udt', 'urn:un:unece:uncefact:data:standard:UnqualifiedDataType:15');
+
+  // no financial instituation shall be present for the debitor
+  var doc := TZUGFeRDXmlHelper.PrepareDocumentForXPathQuerys(XMLdoc);
+  var nodes := doc.SelectNodes('//ram:ApplicableSupplyChainTradeSettlement/ram:SpecifiedTradeSettlementPaymentMeans/ram:PayerSpecifiedDebtorFinancialInstitution');
+  Assert.AreEqual(nodes.Length, 1);
+  Assert.AreEqual(nodes[0].SelectSingleNode('./ram:BICID').Text, 'MYBIC');
+
+
+end;  // !TestBICIDForDebitorFinancialInstitution()
 
 procedure TZUGFeRD10Tests.TestMissingPropertiesAreNull;
 var
@@ -122,6 +169,40 @@ begin
   end;
 
 end;
+
+procedure TZUGFeRD10Tests.TestSpecifiedTradePaymentTermsCalculationPercent;
+var
+  path: string;
+  desc: TZUGFeRDInvoiceDescriptor;
+begin
+  path := '..\..\..\demodata\zugferd10\ZUGFeRD_1p0_EXTENDED_Warenrechnung.xml';
+  path := makeSurePathIsCrossPlatformCompatible(path);
+
+  desc := TZUGFeRDInvoiceDescriptor.Load(path);
+  try
+    Assert.IsNotNull(desc.PaymentTermsList.First().Percentage);
+    Assert.AreEqual(Currency(2.0), desc.PaymentTermsList.First().Percentage.Value);
+  finally
+    desc.Free;
+  end;
+end;
+
+procedure TZUGFeRD10Tests.TestSpecifiedTradePaymentTermsDescription;
+var
+  path: string;
+  desc: TZUGFeRDInvoiceDescriptor;
+begin
+  path := '..\..\..\demodata\zugferd10\ZUGFeRD_1p0_EXTENDED_Warenrechnung.xml';
+  path := makeSurePathIsCrossPlatformCompatible(path);
+  desc := TZUGFeRDInvoiceDescriptor.Load(path);
+  try
+    Assert.IsNotNull(desc.PaymentTermsList.First().Description);
+    Assert.AreEqual('Bei Zahlung innerhalb 14 Tagen gewähren wir 2,0% Skonto.',
+      desc.PaymentTermsList.First().Description);
+  finally
+    desc.Free;
+  end;
+end; // !TestSpecifiedTradePaymentTermsDescription()
 
 procedure TZUGFeRD10Tests.TestStoringInvoiceViaFile;
 var

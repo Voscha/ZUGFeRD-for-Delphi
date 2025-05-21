@@ -24,7 +24,8 @@ uses
   intf.ZUGFeRDBaseReferencedDocument,
   intf.ZUGFeRDAdditionalReferencedDocumentTypeCodes,
   intf.ZUGFeRDReferenceTypeCodes,
-  intf.ZUGFeRDMimeTypeMapper
+  intf.ZUGFeRDMimeTypeMapper,
+  intf.ZUGFeRDHelper
   ;
 
 type
@@ -35,20 +36,37 @@ type
   /// </summary>
   TZUGFeRDAdditionalReferencedDocument = class(TZUGFeRDBaseReferencedDocument)
   private
-    FReferenceTypeCode: TZUGFeRDReferenceTypeCodes;
+    FReferenceTypeCode: ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes>;
     FName: string;
     FAttachmentBinaryObject: TMemoryStream;
     FFilename: string;
-    FTypeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode;
+    FTypeCode: ZUGFeRDNullable<TZUGFeRDAdditionalReferencedDocumentTypeCode>;
+    FURIID: string;
+    FLineID: string;
     function GetMimeType: string;
   public
     constructor Create(CreateAttachmentBinaryObject : Boolean);
     destructor Destroy; override;
   public
     /// <summary>
+    /// External document location
+    /// BT-124, BT-X-28
+    /// </summary>
+    property URIID: string read FURIID write FURIID;
+    /// <summary>
+    /// Referenced position
+    /// BT-X-29
+    /// </summary>
+    property LineID: string read FLineID write FLineID;
+    /// <summary>
+    /// Type of the reference document
+    /// BT-17-0, BT-18-0, BT-122-0, BT-X-30
+    /// </summary>
+    property TypeCode: ZUGFeRDNullable<TZUGFeRDAdditionalReferencedDocumentTypeCode> read FTypeCode write FTypeCode;
+    /// <summary>
     /// Reference documents are strongly typed, specify ReferenceTypeCode to allow easy processing by invoicee
     /// </summary>
-    property ReferenceTypeCode: TZUGFeRDReferenceTypeCodes read FReferenceTypeCode write FReferenceTypeCode;
+    property ReferenceTypeCode: ZUGFeRDNullable<TZUGFeRDReferenceTypeCodes> read FReferenceTypeCode write FReferenceTypeCode;
     /// <summary>
     /// Description of document
     /// </summary>
@@ -61,10 +79,6 @@ type
     /// Filename of attachment
     /// </summary>
     property Filename: string read FFilename write FFilename;
-    /// <summary>
-    /// Type of the reference document
-    /// </summary>
-    property TypeCode: TZUGFeRDAdditionalReferencedDocumentTypeCode read FTypeCode write FTypeCode;
     /// <summary>
     /// MimeType of the attached document embedded as binary object.
     /// </summary>

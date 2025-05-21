@@ -108,6 +108,10 @@
         <DCCReference Include="..\intf.ZUGFeRDLineStatusReasonCodes.pas"/>
         <DCCReference Include="..\intf.ZUGFeRDTaxExemptionReasonCodes.pas"/>
         <DCCReference Include="..\EnumStringMappingAttribute.pas"/>
+        <DCCReference Include="..\intf.ZUGFeRDAllowanceReasonCodes.pas"/>
+        <DCCReference Include="..\intf.ZUGFeRDTradeDeliveryTermCodes.pas"/>
+        <DCCReference Include="..\intf.ZUGFeRDDateTypeCodes.pas"/>
+        <DCCReference Include="..\XmlConsts.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

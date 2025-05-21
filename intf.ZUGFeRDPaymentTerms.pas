@@ -36,6 +36,9 @@ type
     FPercentage: ZUGFeRDNullableCurrency;
     FDueDays: ZUGFeRDNullableInt;
     FPaymentTermsType: ZUGFeRDNullable<TZUGFeRDPaymentTermsType>;
+    FMaturityDate: ZUGFeRDNullable<TDateTime>;
+    FActualAmount: ZUGFeRDNullable<Currency>;
+    FPartialPaymentAmount: ZUGFeRDNullable<Currency>;
   public
     /// <summary>
     /// A textual description of the payment terms that apply to the amount due for payment (including description of possible penalties).
@@ -61,6 +64,17 @@ type
     /// Base amount applied to percentage of discount or surcharge
     /// </summary>
     property BaseAmount: ZUGFeRDNullableCurrency read FBaseAmount write FBaseAmount;
+    /// <summary>
+    /// The actual amount of discount or surcharge
+    /// </summary>
+    property ActualAmount: ZUGFeRDNullable<Currency> read FActualAmount write FActualAmount;
+    /// <summary>
+    /// Fälligkeitsdatum im Kontext der spezifischen Zahlungsbedingung
+    /// </summary>
+    /// BT-X-276-0/BT-X-282-0
+    property MaturityDate: ZUGFeRDNullable<TDateTime> read FMaturityDate write FMaturityDate;
+
+    property PartialPaymentAmount: ZUGFeRDNullable<Currency> read FPartialPaymentAmount write FPartialPaymentAmount;
   end;
 
 implementation

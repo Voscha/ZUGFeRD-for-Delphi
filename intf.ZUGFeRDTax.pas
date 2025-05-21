@@ -24,7 +24,8 @@ uses
   intf.ZUGFeRDTaxTypes,
   intf.ZUGFeRDTaxCategoryCodes,
   intf.ZUGFeRDTaxExemptionReasonCodes,
-  intf.ZUGFeRDHelper;
+  intf.ZUGFeRDHelper,
+  intf.ZUGFeRDDateTypeCodes;
 
 type
   /// <summary>
@@ -40,14 +41,16 @@ type
     FExemptionReasonCode: ZUGFeRDNullable<TZUGFeRDTaxExemptionReasonCodes>;
     FExemptionReason: string;
     FLineTotalBasisAmount: ZUGFeRDNullable<Currency>;
-    function GetTaxAmount: Currency;
+    FDueDateTypeCode: ZUGFeRDNullable<TZUGFerDDateTypeCodes>;
+    FTaxPointDate: ZUGFeRDNullable<TDateTime>;
+    FTaxAmount: Currency;
   public
     /// <summary>
     /// Returns the amount of the tax (Percent * BasisAmount)
     ///
-    /// This information is calculated live.
+    /// This information is not calculated anymore but must be set explicitly as of version 17.0 of the component.
     /// </summary>
-    property TaxAmount: Currency read GetTaxAmount;
+    property TaxAmount: Currency read FTaxAmount write FTaxAmount;
     /// <summary>
     /// VAT category taxable amount
     /// </summary>
@@ -82,16 +85,44 @@ type
     /// Exemption Reason Text for no Tax
     /// </summary>
     property ExemptionReason: string read FExemptionReason write FExemptionReason;
+    /// <summary>
+    /// Value added tax point date
+    /// The date when the VAT becomes accountable for the Seller and for the Buyer in so far as that date can be determined and differs from the date of issue of the invoice, according to the VAT directive.
+    /// </summary>
+    property TaxPointDate: ZUGFeRDNullable<TDateTime> read FTaxPointDate write FTaxPointDate;
+    /// <summary>
+    /// Value added tax point date code
+    /// The code of the date when the VAT becomes accountable for the Seller and for the Buyer.
+    /// </summary>
+    property DueDateTypeCode: ZUGFeRDNullable<TZUGFeRDDateTypeCodes> read FDueDateTypeCode write FDueDateTypeCode;
+
+    /// <summary>
+    /// The tax point is usually the date goods were supplied or services completed (the 'basic tax point'). There are
+    /// some variations.Please refer to Article 226 (7) of the Council Directive 2006/112/EC[2] for more information.
+    /// This element is required if the Value added tax point date is different from the Invoice issue date.
+    /// Both Buyer and Seller should use the Tax Point Date when provided by the Seller.The use of BT-7 and BT-8 is
+    /// mutually exclusive.
+    ///
+    /// BT-7
+    ///
+    /// Use: The date when the VAT becomes accountable for the Seller and for the Buyer in so far as that date can be
+    /// determined and differs from the date of issue of the invoice, according to the VAT directive.
+    /// </summary>
+    /// <param name="taxPointDate">Value added tax point date</param>
+    /// <param name="dueDateTypeCode">Value added tax point date code</param>
+    procedure SetTaxPointDate(taxPointDate: IZUGFeRDNullableParam<TDateTime> = nil;
+      dueDateTypeCode: IZUGFeRDNullableParam<TZUGFeRDDateTypeCodes> = nil);
   end;
 
 implementation
 
 { TZUGFeRDTax }
 
-function TZUGFeRDTax.GetTaxAmount: Currency;
+procedure TZUGFeRDTax.SetTaxPointDate(taxPointDate: IZUGFeRDNullableParam<TDateTime>;
+  dueDateTypeCode: IZUGFeRDNullableParam<TZUGFeRDDateTypeCodes>);
 begin
-  //TODO pruefen System.Math.Round(0.01m * this.Percent * this.BasisAmount, 2, MidpointRounding.AwayFromZero);
-  Result := RoundTo(0.01 * FPercent * FBasisAmount,-2);
+  FTaxPointDate := taxPointDate;
+  FDueDateTypeCode := dueDateTypeCode;
 end;
 
 end.

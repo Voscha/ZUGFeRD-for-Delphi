@@ -20,6 +20,8 @@ unit intf.ZUGFeRDLineStatusReasonCodes;
 
 interface
 
+uses System.SysUtils,System.TypInfo, Intf.ZUGFeRDHelper;
+
 type
     /// <summary>
     /// Used in BT-X-8
@@ -50,6 +52,41 @@ type
       INFORMATION
     );
 
+  TZUGFeRDLineStatusReasonCodesExtensions = class
+  public
+    class function FromString(const s: string):  ZUGFeRDNullable<TZUGFeRDLineStatusReasonCodes>;
+    class function EnumToString(t: ZUGFeRDNullable<TZUGFeRDLineStatusReasonCodes>): string;
+  end;
+
 implementation
+
+{ TZUGFeRDLineStatusReasonCodesExtension }
+
+
+class function TZUGFeRDLineStatusReasonCodesExtensions.EnumToString(
+  t: ZUGFeRDNullable<TZUGFeRDLineStatusReasonCodes>): string;
+begin
+  if not t.HasValue then
+    Result:= 'Unknown'
+  else
+    Result := GetEnumName(TypeInfo(TZUGFeRDLineStatusReasonCodes), Integer(t.Value));
+
+end;
+
+class function TZUGFeRDLineStatusReasonCodesExtensions.FromString(
+  const s: string): ZUGFeRDNullable<TZUGFeRDLineStatusReasonCodes>;
+var
+  enumValue : Integer;
+begin
+  if string.IsNullOrEmpty(s) then
+    Result := nil
+  else begin
+    enumValue := GetEnumValue(TypeInfo(TZUGFeRDLineStatusReasonCodes), s);
+    if enumValue >= 0 then
+      Result := TZUGFeRDLineStatusReasonCodes(enumValue)
+    else
+      Result :=  TZUGFeRDLineStatusReasonCodes.Unknown
+  end;
+end;
 
 end.

@@ -15,29 +15,47 @@
  * specific language governing permissions and limitations
  * under the License.}
 
-unit intf.ZUGFeRDReceivableSpecifiedTradeAccountingAccount;
+unit intf.ZUGFeRDIncludedReferencedProduct;
 
 interface
 
 uses
-  intf.ZUGFeRDAccountingAccountTypeCodes, intf.ZUGFeRDHelper;
+  System.Generics.Collections,
+  intf.ZUGFeRDHelper,
+  intf.ZUGFeRDQuantityCodes;
 
 type
-  /// <summary>Detailinformationen zur Buchungsreferenz</summary>
-  TZUGFeRDReceivableSpecifiedTradeAccountingAccount = class
+  /// <summary>
+  /// An included Item referenced from this trade product.
+  /// </summary>
+  TZUGFeRDIncludedReferencedProduct = class
   private
-    FTradeAccountID: string;
-    FTradeAccountTypeCode: ZUGFeRDNullable<TZUGFeRDAccountingAccountTypeCodes>;
+    FName: string;
+    FUnitQuantity: ZUGFeRDNullable<Double>;
+    FUnitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes>;
   public
     /// <summary>
-    /// Ein Textwert, der angibt, an welcher Stelle die betreffenden Daten in den Finanzkonten des Käufers zu verbuchen sind
+    /// Name of Included Item
+    ///
+    /// BT-X-18
     /// </summary>
-    property TradeAccountID: string read FTradeAccountID write FTradeAccountID;
+    property Name: string read FName write FName;
+
     /// <summary>
-    /// EDIFICAS-EU Type Codes: https://www.unece.org/fileadmin/DAM/uncefact/codelist/standard/EDIFICASEU_AccountingAccountType_D11A.xsd
+    /// Included quantity
+    ///
+    /// BT-X-20
     /// </summary>
-    property TradeAccountTypeCode: ZUGFeRDNullable<TZUGFeRDAccountingAccountTypeCodes> read FTradeAccountTypeCode write FTradeAccountTypeCode;
-  end;
+    property UnitQuantity: ZUGFeRDNullable<Double> read FUnitQuantity write FUnitQuantity;
+
+    /// <summary>
+    /// Item Base Quantity Unit Code
+    ///
+    /// BT-X-20-1
+    /// </summary>
+    property UnitCode: ZUGFeRDNullable<TZUGFeRDQuantityCodes> read FUnitCode write FUnitCode;
+
+   end;
 
 implementation
 
